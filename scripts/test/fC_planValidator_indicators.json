@@ -1,0 +1,41 @@
+{
+"files": {
+  "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/Rhombus_600.dcm",
+  "rtstructFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/Rombus_Plan_11B_flash_rtstruct.dcm",
+  "CTname" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Spiral_WaterPhantom/reggui_CT2/reggui_CT2_0001.dcm",
+  "output_path" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2",
+  "indicators" : [
+                "D:/programs/openREGGUI/flashTPS/scripts/test/indicators_dose.json" ,
+                "D:/programs/openREGGUI/flashTPS/scripts/test/indicators_doseRate.json",
+                ""
+                ],
+  "TESTMap" : [
+                [
+                  "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2/Outputs/Outputs_beam1/Dose_withCEF.dcm"
+                ],
+                [
+                  "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2/Outputs/Outputs_beam1/DRprct_beam_1_in_TotalMask.dcm",
+                  "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2/Outputs/Outputs_beam1/DRprct_beam_1_in_TotalMask.dcm"
+                ],
+                [
+                  "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2/Outputs/Outputs_beam1/Dose_withCEF.dcm"
+                ]
+              ],
+  "REFMap" :  [
+                [
+                  "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/RD1.2.752.243.1.1.20220901164833575.7500.10032.dcm"
+                ],
+                [
+                  "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2/Outputs/Outputs_beam1/DRprct_beam_1_in_TotalMask.dcm",
+                  "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2/Outputs/Outputs_beam1/DRprct_beam_1_in_TotalMask.dcm"
+                ],
+                [
+                  "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/RD1.2.752.243.1.1.20220901164833575.7500.10032.dcm"
+                ]
+              ]
+  },
+  "GammaIndex": {
+              "DistanceTolerance" : 3,
+              "DoseTolerance" : 3
+              }
+}

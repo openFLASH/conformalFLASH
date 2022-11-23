@@ -1,0 +1,29 @@
+{
+"files": {
+  "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/Rhombus_600.dcm",
+  "rtstructFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/Rombus_Plan_11B_flash_rtstruct.dcm",
+  "CTname" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Spiral_WaterPhantom/reggui_CT2/reggui_CT2_0001.dcm",
+  "output_path" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2"
+  },
+
+"BeamProp":{
+  "protonsBeamlet" : 1e6,
+  "protonsFullDose" : 5e4,
+  "protonsHighResDose" : 5e4
+  },
+
+"RTstruct": {
+  "selected_ROIs" : [
+     "Shallow Sphere"
+      ],
+  "DRCritical_ROIs" : [
+      "Shallow Sphere"
+      ],
+  "ExternalROI" : "body",
+  "TargetROI" : "rombus"
+},
+
+"DoseRate": {
+  "Dref" : 2
+  }
+}

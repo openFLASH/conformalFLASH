@@ -1,0 +1,32 @@
+{
+ "files" : {
+   "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/Rhombus_600.dcm",
+   "RecordName" : "D:/programs/openREGGUI/REGGUI_userdata/test_data/QA Testing material/LogFolder/01_LAT/20160729_112220_561.PBS.2.6.zip",
+   "rtstructFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/Rombus_Plan_11B_flash_rtstruct.dcm",
+   "CTname" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Spiral_WaterPhantom/reggui_CT2/reggui_CT2_0001.dcm",
+   "AggregatePaintings" : 0,
+   "output_path" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rhombus_out2",
+   "ResultTXT" : "result.json"
+  },
+
+  "BeamProp":{
+    "protonsBeamlet" : 1e6,
+    "protonsFullDose" : 5e4,
+    "protonsHighResDose" : 5e4
+    },
+
+  "RTstruct": {
+    "selected_ROIs" : [
+       "Shallow Sphere"
+        ],
+    "DRCritical_ROIs" : [
+        "Shallow Sphere"
+        ],
+    "ExternalROI" : "body",
+    "TargetROI" : "rombus"
+  },
+
+  "DoseRate": {
+    "Dref" : 2
+    }
+}
