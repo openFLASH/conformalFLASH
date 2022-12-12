@@ -16,7 +16,7 @@
 %% Input arguments
 % |spot| - _SCLAR MATRIX_ - The i-th spot to deliver is spot(i,:) = [x,y]
 %
-% |ScarfWidth| -_SCALAR_- Maximum width (in |spot| length units) of a scarf to obtain high dose rate inside a scarf
+% |V| -_SCALAR VECTOR_- [Vx , Vy] Scanning speed (m/s = mm/ms) in X and Y
 %
 % |NbScarves| -_NTEGER_- Number of scarve to lay paralell to the main ellipse axis. Each scarf will be scanned sequentially
 %
@@ -43,12 +43,15 @@ function [OrderedSpot , OrderedCoord] = orderALongScarves(spot, V , NbScarves , 
 
   CoordType = 'space'; %The trajectory is optimised in physical distance
   %CoordType = 'time'; %The trajectory is optimised in time distance
+
   switch(CoordType)
     case 'space'
       spotT = spot;
+      scarfUnit = 'mm';
     case 'time'
       Vap = getV(Lat , V);
       spotT = spot ./ repmat(Vap,size(spot,1),1); %Convert distances into approximate delivery times
+      scarfUnit = 'ms';
   end
 
   stats = fitEllipse(spotT(:,1:2)); %Find the properties of the ellipse enclosing all PBS spots
@@ -56,19 +59,19 @@ function [OrderedSpot , OrderedCoord] = orderALongScarves(spot, V , NbScarves , 
   [latticeSpacing , Ts , GridSize] = getLatticeInfo(spotT(:,1:2)); %Get lattice info in the time domain
 
   if isempty(NbScarves)
-    %No number of scarve is defined. Let's compute it
+    %Number of scarve is not defined. Let's compute it
     ScarfWidth = 100; %ms
     NbScarves = round(stats.MinorAxisLength ./ ScarfWidth); %Number of paralell scarves. Round nb of scarves to closest integer
     if (NbScarves==0)
       NbScarves =1;
     end
   else
-    ScarfWidth = 1.3 .* stats.MinorAxisLength ./ NbScarves; %Cover a width larger than the minior axis length with the scarves
+    ScarfWidth = 1.3 .* stats.MinorAxisLength ./ NbScarves; %Cover a width larger than the minor axis length with the scarves
     if (ScarfWidth==0)
-      ScarfWidth =100; %ms
+      ScarfWidth =100; 
     end
   end
-  fprintf('Scarf width = %d ms \n',ScarfWidth)
+  fprintf('Scarf width = %d %s \n',ScarfWidth , scarfUnit)
 
   %Loop for each scarf and identify the spine axis of the scarf
   alph = deg2rad(stats.Orientation); %Angle between ellipse main axis axis and X axis

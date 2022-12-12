@@ -223,12 +223,12 @@ function [DoseOrig, DoseFileName] = getHighResDose(Plan, outputPath , handles , 
 
   %Save the interpolated CT on disk
   %The IEC gantry axis of the beamlet is aligned with the Y axis of this high resolution Ct scan
-  if (~exist(fullfile(outputPath,'CEF_beam'),'dir'))
+  if (~exist(fullfile(outputPath,'CEF_beam'),'dir') && Plan.SaveHighResCT)
     %The folder to save the CT does not exist. Create it
     mkdir (fullfile(outputPath,'CEF_beam'))
   end
-  if (~exist(DoseFullFileName))
-    %The dose file does not already exist. Save the high resolution CT
+  if (~exist(DoseFullFileName) && Plan.SaveHighResCT)
+    %The dose file does not already exist. Save the high resolution CT if we were asked to save it
     save_Image(CTintrp , infoCTinterp , fullfile(outputPath,'CEF_beam','CT_with_CEF'),'dcm');
   else
     %The output folder exists. Skip saving the CT
@@ -274,7 +274,13 @@ function [DoseOrig, DoseFileName] = getHighResDose(Plan, outputPath , handles , 
   % Compute the dose map if no dose file alreadyt exists
   if (~exist(DoseFullFileName))
     %The output folder does not exist. Compute the high resolution dose
-    handlesHR = ComputeFinalDose(Plan2, handlesHR , DoseFileName);
+    if Plan.SaveHighResDoseMap
+      %The user wants the high resolution dose in IEC gatnry at dcm format
+      handlesHR = ComputeFinalDose(Plan2, handlesHR , DoseFileName);
+    else
+      %The user does not want to save the high resolution dose map in IEC gantry
+      handlesHR = ComputeFinalDose(Plan2, handlesHR );
+    end
     [Dose , DoseInfo ] = Get_reggui_data(handlesHR,'dose_final_miropt');
                     %Get the image from handlesHR.myData. This is the idx-th element with |handlesHR.myData.name{idx} = 'dose_final_miropt'|
                     %This is an image at the resolution of the scoring grid defined in |CEFDoseGrid|
@@ -285,14 +291,14 @@ function [DoseOrig, DoseFileName] = getHighResDose(Plan, outputPath , handles , 
     [Dose , DoseInfo ] = load_Image(DosePath,DoseFileName,'dcm',0);
   end
 
-  %Cleanup temporary file if required
-  if ~Plan.SaveHighResDoseMap
-    %If the user does not want to keep the high res dose map in the refernece frame of the beamlet
-    %then delete it
-    fileName = fullfile(DosePath,[DoseFileName,'.dcm']);
-    fprintf('Deleting %s \n',fileName)
-    delete (fileName)
-  end
+  %Cleanup temporary file if required %NB CT not saved, so no need to delete it
+  % if ~Plan.SaveHighResDoseMap
+  %   %If the user does not want to keep the high res dose map in the refernece frame of the beamlet
+  %   %then delete it
+  %   fileName = fullfile(DosePath,[DoseFileName,'.dcm']);
+  %   fprintf('Deleting %s \n',fileName)
+  %   delete (fileName)
+  % end
 
   %Rotate the dose map to be aligned with the IEC gantry again
   Dose = flipdim(Dose,2);

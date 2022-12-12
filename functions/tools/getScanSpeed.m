@@ -80,7 +80,7 @@ else
 
     %No scanAlgo available. Use same scan speed in X and Y
     fprintf('Getting default scan speed \n')
-    Vx = param.ScanSpeed ./1000; %ms/s
+    Vx = param.ScanSpeed ./1000; %m/s
     Vy = param.ScanSpeed ./1000;
 end
 

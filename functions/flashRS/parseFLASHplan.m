@@ -243,7 +243,7 @@ for b = 1:NbBeams
             water = materialDescription('water');
             [~, ~, SPRrs] =  getMaterialSPR(Plan.Beams(b).RSinfo.RangeShifterMaterial, Plan.ScannerDirectory); %CEM relative stopping power
             WET_RS = Plan.Beams(b).RSinfo.RSslabThickness .* SPRrs;  %Water equivalent thickness (mm) of the range shifter
-            Plan.Beams(b).RSinfo.RangeShifterWET = WET_RS; %Range shifter WET in mm
+            Plan.Beams(b).RSinfo.RangeShifterWET = sum(WET_RS); %Range shifter WET in mm
           else
             %the range shifter WET is in the plan. Just copy it
             Plan.Beams(b).RSinfo.RangeShifterWET = double(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1.RangeShifterWaterEquivalentThickness); %Range shifter WET in mm
