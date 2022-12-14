@@ -14,7 +14,7 @@
 %
 % |PosCent| -_SCALAR VECTOR_- |PosCent = [x,y]| Position (mm) of the centre of the PBS spot
 %
-% |SpotData| - _STRUCTURE_ - The information about the PBS spot. See function |getSpotFromBDL|
+% |SpotDataNOZL| - _STRUCTURE_ - The information about the PBS spot as saved in the BDL. See function |getSpotFromBDL|. These are the Courant Snyder beam parameter in the plane of the nozzle exit.
 %
 % |Zg| -_SCALAR_- Z coordinate (mm) (in the IEC gantry CS) of the plane in which the spot is to be drwan
 %                 Z is positive between isocentre and nozzle. Z is negative downstream to isocentre
@@ -29,15 +29,20 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [FluenceMap , Fmax ] = getSpotFluence(PtsG , PosCent ,  SpotData , Zg)
+function [FluenceMap , Fmax ] = getSpotFluence(PtsG , PosCent ,  SpotDataNOZL , Zg)
 
-  sigX1 = CourantSnyder(SpotData.SpotSize1x , SpotData.Divergence1x , SpotData.Correlation1x , SpotData.iso2Nozzle - Zg);
-  sigY1 = CourantSnyder(SpotData.SpotSize1y , SpotData.Divergence1y , SpotData.Correlation1y , SpotData.iso2Nozzle - Zg);
-  sigX2 = CourantSnyder(SpotData.SpotSize2x , SpotData.Divergence2x , SpotData.Correlation2x , SpotData.iso2Nozzle - Zg);
-  sigY2 = CourantSnyder(SpotData.SpotSize2y , SpotData.Divergence2y , SpotData.Correlation2y , SpotData.iso2Nozzle - Zg);
+  %In the BDL, the Courant Snyder parameters are sepcified in the plane of nozzle exit
+  % Recompute the parameters in the plane of isocenter
+  SpotDataISO = CS_spot_noz2iso(SpotDataNOZL);
+
+  %Use Courant Snyder equation to compute beam parameter in plane Zg. The spot parameter are specified in isocenter plane.
+  sigX1 = CourantSnyder(SpotDataISO.SpotSize1x , SpotDataISO.Divergence1x , SpotDataISO.Correlation1x , Zg);
+  sigY1 = CourantSnyder(SpotDataISO.SpotSize1y , SpotDataISO.Divergence1y , SpotDataISO.Correlation1y , Zg);
+  sigX2 = CourantSnyder(SpotDataISO.SpotSize2x , SpotDataISO.Divergence2x , SpotDataISO.Correlation2x , Zg);
+  sigY2 = CourantSnyder(SpotDataISO.SpotSize2y , SpotDataISO.Divergence2y , SpotDataISO.Correlation2y , Zg);
 
   %Compute spot profile from the sum of the 2 Gaussian defined in BDL
-  FluenceMap = biNorm(PtsG , SpotData.Weight1 .* 2 .* pi .* sigX1 .* sigY1,  PosCent , sigX1 , sigY1 , 0 , SpotData.SpotTilt) ...
-          + biNorm(PtsG , SpotData.Weight2 .* 2 .* pi .* sigX2 .* sigY2,  PosCent , sigX2 , sigY2 , 0 , SpotData.SpotTilt);
+  FluenceMap = biNorm(PtsG , SpotDataISO.Weight1 .* 2 .* pi .* sigX1 .* sigY1,  PosCent , sigX1 , sigY1 , 0 , SpotDataISO.SpotTilt) ...
+          + biNorm(PtsG , SpotDataISO.Weight2 .* 2 .* pi .* sigX2 .* sigY2,  PosCent , sigX2 , sigY2 , 0 , SpotDataISO.SpotTilt);
   Fmax  = max(FluenceMap,[],'all'); %Find the highest dose
 end
