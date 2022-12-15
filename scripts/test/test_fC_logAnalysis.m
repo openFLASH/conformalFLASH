@@ -1,6 +1,6 @@
 clear
 close all
 
-JSONfileName = 'D:\programs\openREGGUI\flashTPS\scripts\test\fC_logAnalysis.json'
+JSONfileName = 'D:\programs\github\openFLASH\conformalFLASH\scripts\test\fC_logAnalysis.json'
 
 [handles, Plan] = fC_logAnalysis(JSONfileName)

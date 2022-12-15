@@ -59,17 +59,6 @@ function [handles, PlanMono ] = getRS_doses(Plan, handles)
   PlanMono.Scenario4D(1).RandomScenario(PlanMono.rr_nominal).RangeScenario(PlanMono.rs_nominal).P = sparse(PlanMono.DoseGrid.nvoxels , NbBeamlets); %|Pij(vox,spot)|. Create  zeros sparse matrix
   w = plan2weight(PlanMono); %The beamlet weight in the monolayer plan. This weight is the sum over all fractions
 
-  %Create a REGGUI handle for the dose
-  handles2 = struct;
-  handles2.path = PlanMono.output_path;
-  handles2 = Initialize_reggui_handles(handles2); % Initialize the handles structure
-  handles2 = Import_image(fullfile(Plan.output_path,'Outputs','ct_CEM'),'ct_CEM_0001.dcm','dcm','ct',handles2); %Load the CT scan to get the proper image sizes
-                  %After loading the CT scan, the pixel size and origin of the CS are set to match the one from the CT scan
-  handles2.auto_mode=true;
-      %If the MCsquare dose map was tallied on a larger grid than the high res CT, then the dose map saved on disk  has the spatial resolution of |CEFDoseGrid|
-      %If handles2.auto_mode=true, and handlesHR.spatialpropsettled = true then Import_image.m will resample the low resolution dose map into the spatial resolution of the hi-res CT scan
-
-
   %Load the dose map computed by MCsquare by computeDoseWithCEF and
   %build the dose influence matrix
   b=1; %FLASH plan have one single beam
@@ -87,10 +76,13 @@ function [handles, PlanMono ] = getRS_doses(Plan, handles)
 
       switch Plan.SaveDoseBeamlets
         case 'dcm'
-            handles2 = Import_image(DosePath, DoseFileName ,'dcm','MCsquare_Dose',handles2); %Load the dose map
-            Dose = Get_reggui_data(handles2,'MCsquare_Dose');
+            handles = Import_image(DosePath, DoseFileName ,'dcm','MCsquare_Dose',handles); %Load the dose map
+            Dose = Get_reggui_data(handles,'MCsquare_Dose');
                           %The dose map is oriented on the same grid as the original CT scan
                           %The Matlab importer has rescaled the dose map on the same grid as the CT scan
+                          %If the MCsquare dose map was tallied on a larger grid than the high res CT, then the dose map saved on disk  has the spatial resolution of |CEFDoseGrid|
+                          %If handles.auto_mode=true, and handles.spatialpropsettled = true then Import_image.m will resample the low resolution dose map into the spatial resolution of the hi-res CT scan
+
 
         case 'sparse'
             data = load(fullfile(DosePath , [DoseFileName '.mat']));
@@ -107,7 +99,7 @@ function [handles, PlanMono ] = getRS_doses(Plan, handles)
 
       switch Plan.SaveDoseBeamlets
         case 'dcm'
-          handles2 = Remove_image('MCsquare_Dose', handles2); %Remove the spot dose map from local handles. We will load a new dose map with the smae name for the next spot
+          handles = Remove_image('MCsquare_Dose', handles); %Remove the spot dose map from local handles. We will load a new dose map with the smae name for the next spot
       end
 
   end % for spt

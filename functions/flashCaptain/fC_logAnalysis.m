@@ -52,7 +52,13 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
   %Load irradiation logs
   %---------------------
   [record_dir,record_file] = fileparts2(config.files.RecordName);
-  handles = Import_tx_records(record_dir,record_file,'iba','record',handles,'plan',config.files.AggregatePaintings)
+  handles = Import_tx_records(record_dir,record_file,'iba','record',handles,'plan',config.files.AggregatePaintings);
+
+% tmp = Get_reggui_data(handles,'record')
+% tmp{1}
+% tmp{1}.spots
+% tmp{1}.spots.weight
+% pause
 
   %Compare plan and treatment record
   %Save in JSON file the spot position and MU differences
@@ -67,7 +73,6 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
   BeamProp.CEFDoseGrid = {1, 1, 1}; % Size (mm) of final dose scoring grid. Compute the final dose through CEF on a different grid than the high-res
   BeamProp.FLAGOptimiseSpotOrder = false; %Do not optimise trajectory. Use the one read from logs
   BeamProp.FLAGcheckSpotOrdering = false; %Check that spot ordering in plan matches scanAlgo output
-
   CEMprop.makeSTL = false;
 
 

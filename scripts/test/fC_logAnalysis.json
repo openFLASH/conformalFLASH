@@ -1,7 +1,7 @@
 {
  "files" : {
-   "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/Rhombus_600.dcm",
-   "RecordName" : "D:/programs/openREGGUI/REGGUI_userdata/test_data/QA Testing material/LogFolder/01_LAT/20160729_112220_561.PBS.2.6.zip",
+   "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/UPENN/2022_12_13_RhombusLogs/Rhombus_600_CW90.dcm",
+   "RecordName" : "D:/programs/openREGGUI/REGGUI_userdata/UPENN/2022_12_13_RhombusLogs/20221210_164224_252.PBS.2.7.zip",
    "rtstructFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Rombus-Plan-11B-flash/Rombus_Plan_11B_flash_rtstruct.dcm",
    "CTname" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/Spiral_WaterPhantom/reggui_CT2/reggui_CT2_0001.dcm",
    "AggregatePaintings" : 0,
