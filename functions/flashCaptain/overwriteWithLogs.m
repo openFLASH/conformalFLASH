@@ -40,12 +40,6 @@ function Plan = overwriteWithLogs(Plan, spots)
   %Identify the beam in |Plan.Beams| with a name matching |spots.name|
   idxBeam = find(strcmp([Plan.Beams(:).name] , spots.name));
 
-figure(20)
-plot(Plan.Beams(idxBeam).Layers.SpotPositions(:,1),Plan.Beams(idxBeam).Layers.SpotPositions(:,2),'ob')
-for idx = 1:numel(Plan.Beams(idxBeam).Layers.SpotWeights)
-  text(Plan.Beams(idxBeam).Layers.SpotPositions(idx,1),Plan.Beams(idxBeam).Layers.SpotPositions(idx,2),cellstr(num2str(round(Plan.Beams(idxBeam).Layers.SpotWeights(idx)))))
-end
-
   %Update the spot info in |Plan.Beams|
   Plan.Beams(idxBeam).Layers.Energy = spots.spots(1).energy;
   Plan.Beams(idxBeam).Layers.nominalSpotPosition = spots.spots(1).xy;
@@ -53,16 +47,5 @@ end
   Plan.Beams(idxBeam).Layers.SpotWeights = spots.spots(1).weight';
   Plan.Beams(idxBeam).Layers.time = spots.spots(1).time;
   Plan.Beams(idxBeam).Layers.duration = spots.spots(1).duration;
-
-figure(20)
-hold on
-plot(Plan.Beams(idxBeam).Layers.SpotPositions(:,1),Plan.Beams(idxBeam).Layers.SpotPositions(:,2),'+r')
-for idx = 1:numel(Plan.Beams(idxBeam).Layers.SpotWeights)
-  text(Plan.Beams(idxBeam).Layers.SpotPositions(idx,1),Plan.Beams(idxBeam).Layers.SpotPositions(idx,2),cellstr(num2str(round(Plan.Beams(idxBeam).Layers.SpotWeights(idx)))))
-end
-xlabel('Xg (mm)')
-ylabel('Yg (mm)')
-grid on
-pause
 
 end

@@ -131,9 +131,6 @@ fprintf('Adding aperture to high resolution CT\n')
 [Plan , handles ] = setApertureInCT(handles , Plan , Plan.CTname); %Add an apertrue block in the CT scan
 [handles , Plan , ROI] = updateROI(handles , Plan , ROI); %Update the ROI mask used to load the dose influence matrices
 
-% Export_image('CTwithAperture',fullfile(Plan.output_path,'Outputs','ct_CEM'),'dcm',handles); %This is the CT scan that will be used as a starting point for the CEF
-% Export_contour(usedROI,'ct',fullfile(Plan.output_path,'Outputs','ct_CEM','rtstructs_withAperture.dcm'),handles);
-
 %Compute the optimum spot trajectory
 %----------------------------------
 if BeamProp.FLAGOptimiseSpotOrder

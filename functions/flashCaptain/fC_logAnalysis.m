@@ -54,12 +54,6 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
   [record_dir,record_file] = fileparts2(config.files.RecordName);
   handles = Import_tx_records(record_dir,record_file,'iba','record',handles,'plan',config.files.AggregatePaintings);
 
-% tmp = Get_reggui_data(handles,'record')
-% tmp{1}
-% tmp{1}.spots
-% tmp{1}.spots.weight
-% pause
-
   %Compare plan and treatment record
   %Save in JSON file the spot position and MU differences
   %-------------------------------------------------------
