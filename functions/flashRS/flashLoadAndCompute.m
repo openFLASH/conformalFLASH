@@ -106,7 +106,6 @@ if ~isempty(spots)
   Plan = overwriteWithLogs(Plan, spots);
 end
 
-
 if (~exist(fullfile(Plan.output_path,'Outputs'),'dir'))
   mkdir (fullfile(Plan.output_path,'Outputs'))
 end
