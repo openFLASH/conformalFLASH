@@ -40,6 +40,9 @@ function Plan = overwriteWithLogs(Plan, spots)
   %Identify the beam in |Plan.Beams| with a name matching |spots.name|
   idxBeam = find(strcmp([Plan.Beams(:).name] , spots.name));
 
+% figure(20)
+% plot(Plan.Beams(idxBeam).Layers.nominalSpotPosition(:,1),Plan.Beams(idxBeam).Layers.nominalSpotPosition(:,2),'ob')
+
   %Update the spot info in |Plan.Beams|
   Plan.Beams(idxBeam).Layers.Energy = spots.spots(1).energy;
   Plan.Beams(idxBeam).Layers.nominalSpotPosition = spots.spots(1).xy;
@@ -47,5 +50,11 @@ function Plan = overwriteWithLogs(Plan, spots)
   Plan.Beams(idxBeam).Layers.SpotWeights = spots.spots(1).weight';
   Plan.Beams(idxBeam).Layers.time = spots.spots(1).time;
   Plan.Beams(idxBeam).Layers.duration = spots.spots(1).duration;
+
+% figure(20)
+% hold on
+% plot(Plan.Beams(idxBeam).Layers.nominalSpotPosition(:,1),Plan.Beams(idxBeam).Layers.nominalSpotPosition(:,2),'+r')
+% pause
+
 
 end
