@@ -156,16 +156,16 @@ else
 
     if isfield(Plan.Beams(b).Layers ,'time') && isfield(Plan.Beams(b).Layers ,'duration')
       %Spot timing provided from log. We will use the logs
-      Plan.SpotTrajectoryInfo.beam{b}.TimePerSpot = Plan.Beams(b).Layers.duration;
+      Plan.SpotTrajectoryInfo.beam{b}.TimePerSpot = Plan.Beams(b).Layers.duration; %|TimePerSpot(s)| Duration (ms) of the s-th spot
       deltaT = diff(Plan.Beams(b).Layers.time); %time difference between spots
       deltaT = deltaT - Plan.Beams(b).Layers.duration(2:end);
-      Plan.SpotTrajectoryInfo.beam{b}.dT = [0; deltaT];
-      Plan.SpotTrajectoryInfo.TimingMode = 'Record';
+      Plan.SpotTrajectoryInfo.beam{b}.dT = [0; deltaT]; %|dT(st)| Sweep (ms) to move from the s-1-th spot to the s-th spot
+      Plan.SpotTrajectoryInfo.TimingMode = 'Record'; %The spot timing is recovered from logs
 
     else
       %No spot timing provided. We will compute the trajectory using the simple model or scanAlgo
       Plan.SpotTrajectoryInfo.beam{b}.Nmaps = getTopologicalMaps(sobpPosition{b} , Plan.BDL , Plan.Beams(b).spotSigma(b) , scanAlgoGW); %Get the inital topological map;
-      Plan.SpotTrajectoryInfo.TimingMode = 'Model';
+      Plan.SpotTrajectoryInfo.TimingMode = 'Model'; %The spot timing is from a model
     end
 
     if Plan.showGraph
