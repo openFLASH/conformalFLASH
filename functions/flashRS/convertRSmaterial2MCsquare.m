@@ -7,7 +7,7 @@ clear
 close all
 
 materialsPath = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\Output_scanner_calib\Materials' %Output folder where to save the material files
-scannerPath = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\Output_scanner_calib\Scanners\Oncentra MasterPlan' %Output folder where to save the scanner calibration files
+scannerPath = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\Output_scanner_calib\Scanners\Oncentra_MasterPlan' %Output folder where to save the scanner calibration files
 RSMaterialFile = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\scanner\material.txt' %File from Rasytation with the material composition
 HU2densityconversion = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\scanner\HU-density.txt' %HU to density table as defiend in the Raystation.
 

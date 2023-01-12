@@ -99,10 +99,8 @@ w_RF = zeros(Nspots,N_layer);
 %MCsquare compute the weight in MU. However, the link between MU and proton charge is a function of the proton energy
 %We want to compute the step size based on number of protons
 Plan.Beams.Layers = Beams.Layers; %Create a fake plan to call the function
-[regguiRoot,~,~] = fileparts(which('reggui.m'));
-BDLpath = fullfile(regguiRoot, 'plugins','openMCsquare', 'lib', 'BDL', BDL);
 Layers0 = Plan.Beams.Layers; %The original weight
-Plan = weight2charge(Plan, BDLpath , T_max); %convert the weight from the energy of the l-th layer to the **maximum** energy
+Plan = weight2charge(Plan, BDL , T_max); %convert the weight from the energy of the l-th layer to the **maximum** energy
 Layers = Plan.Beams.Layers; %The weight are renormalised at max energy.
 
 for k_layer = 1:N_layer

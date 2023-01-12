@@ -11,7 +11,7 @@
 %
 %% Input arguments
 % |snoutType| - _STRING_ - Type of the FLASH accessory holder for which the parameter are requested. The options are:
-%         * 'flash-UN80' : universal nozzle with a 80x80mm field size
+%         * 'FLASH_SNOUT' : universal nozzle with a 80x80mm field size
 %
 %% Output arguments
 %
@@ -32,8 +32,8 @@
 
 function snout = getParamSnout(snoutType)
   switch snoutType
-  case 'flash-UN80'
-    snout.snoutType = 'flash-UN80';
+  case 'FLASH_SNOUT'
+    snout.snoutType = 'FLASH_SNOUT';
     snout.RangeShifterType = 'BINARY'; % These are slabs. So its binary: slabs in or out
     snout.RSslabThickness = sort([4 , 8 , 12 , 16]); %mm Thickness of the individual slabs of the range shifter
     snout.RangeShifterOffset = [194.5 , 177.5 , 160.5 , 143.5 , 126.5 , 109.5 , 92.5 , 75.5 , 58.5 , 41.5]; % mm

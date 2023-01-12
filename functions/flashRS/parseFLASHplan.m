@@ -207,10 +207,10 @@ for b = 1:NbBeams
     %Get snout information
     %---------------------
     Plan.Beams(b).SnoutID = monoPlan.IonBeamSequence.(itemBeam).SnoutSequence.Item_1.SnoutID;
-    if ~strcmp(Plan.Beams(b).SnoutID , 'flash-UN80')
+    if ~strcmp(Plan.Beams(b).SnoutID , 'FLASH_SNOUT')
       fprintf('SnoutID in the plan : %s \n',Plan.Beams(b).SnoutID)
       warning('This is not a FLASH snout. Overwriting snout ID')
-      Plan.Beams(b).SnoutID = 'flash-UN80';
+      Plan.Beams(b).SnoutID = 'FLASH_SNOUT';
     end
     %The plan defines the snout position on the UPSTREAM side of the aperture block
     Plan.Beams(b).SnoutPosition = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.SnoutPosition;

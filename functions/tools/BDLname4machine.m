@@ -24,8 +24,7 @@
 function BDLname = BDLname4machine(MachineName)
 
   %Get the folder containing the BDLs
-  [regguiRoot,~,~] = fileparts(which('reggui.m'));
-  BDLpath = fullfile(regguiRoot, 'plugins','openMCsquare', 'lib', 'BDL');
+  [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
   clist = dir(BDLpath); %List of all the BDL files
 
   NbIdentified = 0; %Number of BDL containing the machine name |MachineName|

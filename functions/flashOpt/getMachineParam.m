@@ -44,14 +44,18 @@ function param = getMachineParam(BDL)
 
   if ~strcmp(BDLdata.BDL , BDL)
       %This is the first time the function is called with this BDL name
+
+      %get the BDL full path
+      [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
+      BDLfullPath = fullfile(BDLpath,BDL);
+
       %Load BDL from disk
-      [~ , sadX , sadY] = get_sad(BDL);
+      [~ , sadX , sadY] = get_sad(BDLfullPath);
       param.VDSA = [sadX , sadY];  %mm source to axis distance for the 2 scanning magnets
       [param.MachineType , param.MachineName] = getMachineFromBDL(BDL);
 
-      [regguiRoot,~,~] = fileparts(which('reggui.m'));
-      BDLpath = fullfile(regguiRoot, 'plugins','openMCsquare', 'lib', 'BDL', BDL);
-      BDLdata.data = load_BDL(BDLpath);
+
+      BDLdata.data = load_BDL(BDLfullPath);
       param.MAXenergy = max(BDLdata.data.NominalEnergy);  %MeV Beam energy of deepest layer. Defines the beam line transmisssion for MAXcurrent in nozzle
 
       BDLdata.param = param;
@@ -77,7 +81,7 @@ function param = getMachineParam(BDL)
             % The delivery of a PBS spot requires at least 5 cycle. ScanAlgo reduce the spot current to be sure to deliver the spot in 5 cycles
 
         %Parameters of the FLASH accessory holder
-        param.snout = getParamSnout('flash-UN80');
+        param.snout = getParamSnout('FLASH_SNOUT');
 
     case 'PROTEUSone'
         param.MAXcurrent = 1; %uA
@@ -86,7 +90,7 @@ function param = getMachineParam(BDL)
         param.ScanSpeed = 8000; %Approximate scanning speed (mm/s) to move from one spot location to another spot location
 
         %Parameters of the FLASH accessory holder
-        param.snout = getParamSnout('flash-UN80');
+        param.snout = getParamSnout('FLASH_SNOUT');
 
     otherwise
       MachineType

@@ -61,7 +61,7 @@ Plan:
     addPrinterErrors : false  # Type of error to introduce: false , 'dilate' , 'erode' , 'TallSlim','rough'
     ApertureBlock : 1         # 0 = do not use an aperture for this beam 1 = use an aperture for the beam
     AirGap : 0               # Air gap (mm) between skin and aperture block
-    SnoutID : flash-UN80      # Snout type
+    SnoutID : FLASH_SNOUT      # Snout type
     RSinfo:
       RangeShifterID: RS_Block
   TargetROI: ct_PTV               # name for target ROI

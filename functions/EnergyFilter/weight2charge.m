@@ -28,10 +28,12 @@
 
 function plan = weight2charge(plan, bdl, newEnergy)
 
-	T = textread(bdl,'%s','delimiter','\n');
+	[pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
+	BDLfullPath = fullfile(BDLpath,bdl);
+	T = textread(BDLfullPath,'%s','delimiter','\n');
   T{length(T)+1} = -1;
   mask_header = find(~cellfun(@isempty,strfind(T(1:length(T)-1),'NominalEnergy')));
-  BDL_parameters = importdata(bdl, ' ', mask_header);
+  BDL_parameters = importdata(BDLfullPath, ' ', mask_header);
   BDL_e = BDL_parameters.data(:, 1);
   BDL_mu = BDL_parameters.data(:, 4);
 

@@ -1,5 +1,5 @@
 %% getMaterialSPR_G4
-% Retrieve the material stopping wpoer from the MCsqaure material library
+% Retrieve the material stopping pwoer from the MCsqaure material library
 %
 %% Syntax
 % |[SPR, SP, Density, RelElecDensity] = getMaterialSPR_G4(material , E)|

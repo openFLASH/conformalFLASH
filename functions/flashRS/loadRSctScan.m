@@ -44,7 +44,7 @@ handles = Import_image(CTdirectory,[CTfileName EXT],1,CTimageName,handles);
 
 %Read the scanner model from the plan in order to identify the correct scanner calibration folder for MCsquare
 if isfield(info.OriginalHeader , 'ManufacturerModelName')
-  Plan.ScannerDirectory = info.OriginalHeader.ManufacturerModelName;
+  Plan.ScannerDirectory = remove_bad_chars(info.OriginalHeader.ManufacturerModelName);
 else
   warning('(008,1090) ManufacturerModelName undefined in CT scan')
   Plan.ScannerDirectory = 'default';
@@ -52,8 +52,8 @@ else
 end
 
 %Check that the scanner directory exists.
-[regguiRoot,~,~] = fileparts(which('reggui.m'));
-if (~exist(fullfile(regguiRoot, 'plugins','openMCsquare', 'lib', 'Scanners', Plan.ScannerDirectory),'dir'))
+[pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
+if (~exist(fullfile(ScannersPath, Plan.ScannerDirectory),'dir'))
   %TODO This should be an error and the program should stop here in a well configured system
   warning('(008,1090) ManufacturerModelName references an unknown scanner')
   fprintf('Folder for CT scanner calibration : %s \n', Plan.ScannerDirectory);

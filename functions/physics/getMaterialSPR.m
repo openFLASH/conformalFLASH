@@ -33,8 +33,8 @@
 
 function [HU, Density, SPR, SP, RelElecDensity] =  getMaterialSPR(material, ScannerDirectory)
 
-  [regguiRoot,~,~] = fileparts(which('reggui.m'));
-  HUmaterialPath = fullfile(regguiRoot, 'plugins','openMCsquare', 'lib', 'Scanners', ScannerDirectory,'HU_Material_Conversion.txt');
+  [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
+  HUmaterialPath = fullfile(ScannersPath, ScannerDirectory,'HU_Material_Conversion.txt');
 
   [HUm, materialID , descr] = MC2_import_scanner_file(HUmaterialPath); %Read link between HU and material ID
   [HUct, Densitiesct, SPRct, SPct, RelElecDensityct] = Compute_SPR_data(ScannerDirectory); %Read link between HU and physical properties
