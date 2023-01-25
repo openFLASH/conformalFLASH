@@ -227,7 +227,7 @@ for b = 1:NbBeams
           Plan.Beams(b).RSinfo.NbSlabs = numel(find(Plan.Beams(b).RSinfo.RSslabThickness));
           Plan.Beams(b).RSinfo.SlabOffset = snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - snout.RangeShifterOffset(Plan.Beams(b).RSinfo.NbSlabs) ; %Offset between the last slab and i-th slab
           fprintf('Range shifter thickness : %f mm \n', Plan.Beams(b).RSinfo.RSslabThickness)
-          fprintf('Number of slabs : %d mm \n', Plan.Beams(b).RSinfo.NbSlabs)
+          fprintf('Number of slabs : %d \n', Plan.Beams(b).RSinfo.NbSlabs)
 
           dwstRS2Aper = snout.RangeShifterOffset(Plan.Beams(b).RSinfo.NbSlabs) - Plan.Beams(b).RSinfo.RSslabThickness(end); %distance (mm) from upstream aperture surface to downstream RS surface
           Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance = Plan.Beams(b).SnoutPosition + dwstRS2Aper;
