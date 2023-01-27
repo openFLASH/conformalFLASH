@@ -225,11 +225,11 @@ for b = 1:NbBeams
           snout = getParamSnout(Plan.Beams(b).SnoutID);
           Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.AccessoryCode));
           Plan.Beams(b).RSinfo.NbSlabs = numel(find(Plan.Beams(b).RSinfo.RSslabThickness));
-          Plan.Beams(b).RSinfo.SlabOffset = snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - snout.RangeShifterOffset(Plan.Beams(b).RSinfo.NbSlabs) ; %Offset between the last slab and i-th slab
+          Plan.Beams(b).RSinfo.SlabOffset = snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - snout.RangeShifterOffset(1) + Plan.Beams(b).RSinfo.RSslabThickness(1) ; %Offset from |IsocenterToRangeShifterDistance| and the upstream side of the i-th slab
           fprintf('Range shifter thickness : %f mm \n', Plan.Beams(b).RSinfo.RSslabThickness)
           fprintf('Number of slabs : %d \n', Plan.Beams(b).RSinfo.NbSlabs)
 
-          dwstRS2Aper = snout.RangeShifterOffset(Plan.Beams(b).RSinfo.NbSlabs) - Plan.Beams(b).RSinfo.RSslabThickness(end); %distance (mm) from upstream aperture surface to downstream RS surface
+          dwstRS2Aper = snout.RangeShifterOffset(1) - Plan.Beams(b).RSinfo.RSslabThickness(1); %distance (mm) from upstream aperture surface to downstream RS surface
           Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance = Plan.Beams(b).SnoutPosition + dwstRS2Aper;
           Plan.Beams(b).RSinfo.RangeShifterSetting = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1.RangeShifterSetting;
           Plan.Beams(b).RSinfo.RangeShifterMaterial = snout.RangeShifterMaterial;

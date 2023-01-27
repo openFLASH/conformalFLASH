@@ -66,10 +66,10 @@ end
 
         %Define the position des range shifter slabs from the snout configuration
         param = getMachineParam(Plan.BDL); %GEt information about geometry of FLASH snout
-        Plan.Beams(b).RSinfo.SlabOffset = param.snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - param.snout.RangeShifterOffset(Plan.Beams(b).RSinfo.NbSlabs) ; %Offset between the last slab and i-th slab
+        Plan.Beams(b).RSinfo.SlabOffset = param.snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - param.snout.RangeShifterOffset(1) +  Plan.Beams(b).RSinfo.RSslabThickness(1); %Offset from |IsocenterToRangeShifterDistance| and the upstream side of the i-th slab
 
         %Compute isocentre to range shifter distance
-        Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance = getIsocenterToRangeShifterDistance(Plan.Beams(b) , Plan.ScannerDirectory , Plan.BDL);
+        Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance = getIsocenterToRangeShifterDistance(Plan.Beams(b) );
         fprintf('Isocenter To downstream side of Range Shifter : %3.2f mm\n',Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance)
       else
         fprintf('There is no range shifter slab \n')
