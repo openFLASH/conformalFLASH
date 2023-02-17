@@ -36,9 +36,10 @@ function snout = getParamSnout(snoutType)
     snout.snoutType = 'FLASH_SNOUT';
     snout.RangeShifterType = 'BINARY'; % These are slabs. So its binary: slabs in or out
     snout.RSslabThickness = sort([4 , 8 , 12 , 16]); %mm Thickness of the individual slabs of the range shifter
-    snout.RangeShifterOffset = [194.5 , 177.5 , 160.5 , 143.5 , 126.5 , 109.5 , 92.5 , 75.5 , 58.5 , 41.5]; % mm
-                      %RangeShifterOffset(i) : Distance (mm) from upstream aperture surface to the upstream surface of the i-th slab of range shifter
-                      % The numbering start from the upstream slab. 1 is close to proton source. N is close to patient
+    snout.RangeShifterOffset = [194.5 , 177.5 , 160.5 , 143.5 , 126.5 , 109.5 , 92.5 , 75.5 , 58.5 , 41.5]; % mm The numbering start from the upstream slab. 1 is close to proton source. N is close to patient
+    snout.RangeShifterOffset = flipdim(snout.RangeShifterOffset,2); %The slab are inserted from the aperture towards the source
+                      %RangeShifterOffset(i) : Distance (mm) from upstream aperture surface (= snout position) to the upstream surface of the i-th slab of range shifter
+
     snout.CEMOffset = 312.5; %Distance (mm) from upstream aperture surface to upstream surface of the CEF. This includes the 7mm thickness of the CEM base.
     snout.CEMmaxHeight = 95; % Maximum height (mm) of the CEF to fit in the holder
     snout.CEMmaxRadius = 109./2; % Maximum radius (mm) of the CEM to fit in the holder

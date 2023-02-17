@@ -88,11 +88,10 @@ function [Plan , handles] = setRangeShifterinCT(handles , Plan , CTname , minSiz
             for slab = Plan.Beams(b).RSinfo.NbSlabs : -1 : 1
                 fprintf('Slab # %d \n',slab)
                 for step = PixelSize:PixelSize./2:Plan.Beams(b).RSinfo.RSslabThickness(slab)
-                  Zg = Plan.Beams.RSinfo.IsocenterToRangeShifterDistance + Plan.Beams(b).RSinfo.RSslabThickness(Plan.Beams(b).RSinfo.NbSlabs) + ... %distance isocentre to upstream side of RS slab
-                        Plan.Beams(b).RSinfo.SlabOffset(slab)  + ... %Jump to the upstream side of the slab number |slab|
+                  Zg = Plan.Beams.RSinfo.IsocenterToRangeShifterDistance +  ... %Donwstream side of slab close to isocenter
+                        Plan.Beams(b).RSinfo.SlabOffset(slab)  + ... %distance from downstream side of 1st slab to upstream side of |slab|
                         - step ; %Add a layer to the slab from upstream to downstream surface
                                       %Z in IEC gantry at which this layer of CEF is located
-                                      % Plan.Beams.RSinfo.IsocenterToRangeShifterDistance defines the DOWNSTREAM surface. The other slices of the slab are at small Zg distance. Hence + step
                   Ars = [Ap , ones(size(Ap,1),1).* Zg , ones(size(Ap,1),1)]; %Coordinate of the voxels of the slab of the range shifter
                   [CT , ImagePositionPatient] = insertDeviceInCT(CT , Ars , HUrangeshifter , Plan.Beams(b) , handles.spacing , ImagePositionPatient , HUair);
                 end % for step

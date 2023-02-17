@@ -28,7 +28,7 @@
 %
 %% Input arguments
 % |gggg| -_STRING_- Hexadecimal number of the private DICOM group (gggg)
-% |PrivCreatDataElTg| -_STRING_- Hexadecimal number of the block |00dd| of the Private Creator element defined in the DICOM dictionary
+% |PrivCreatDataElTg| -_STRING_- Hexadecimal number of the second number of the tag (00dd) that we are searching
 % |PrivCreatDataElVal| -_STRING_- Value stored in the Private Creator element to identify the private block we are tracking
 % |dcminfo| -_STRUCTURE_- Structure created by the DICOM importer with the content of the DICOM file.
 % |FieldName| -_STRING_- Name of the private tag, as defined in the DICOM dictionary, for which we want the value
@@ -50,7 +50,7 @@ function value = getPrivateTag(gggg , PrivCreatDataElTg , PrivCreatDataElVal  , 
   value = [];
 
   if isfield(dcminfo,FieldName)
-    %The private block has the same block range as defined in the dictionary
+    %The private block has the same block range as defined in the MIROPT DICOM dictionary
     %The standard Matlab DICOM importer has already properly converted the fields
     %Just read the value of the field from the structure
     value = getfield(dcminfo , FieldName);
@@ -91,7 +91,7 @@ function value = getPrivateTag(gggg , PrivCreatDataElTg , PrivCreatDataElVal  , 
     return
   end
 
-  [tag , repr] = getFieldTags(upper(gggg) ,  upper(PrivCreatDataElTg) , FieldName ); %Get the tag of the field with name |FieldName|
+  [tag , repr] = getFieldTags(upper(gggg) ,  PrivCreatDataElVal , FieldName ); %Get the tag of the field with name |FieldName|
                       %In the dictionary, the hexadecimal number use upper case
 
   PrivFieldName = ['Private_' gggg '_' ResvBlckNb tag(3:end)];
@@ -118,25 +118,32 @@ end
 
 %--------------------------------------
 % Search the DICOM dictionary for the block number of a private tag specified by
-% its group number, the range of value in the block and its field name.
+% the value stored in the Private Creator element |PrivCreatDataElVal|
 %
 % INPUT
 % |gggg| -_STRING_- Hexadecimal number of the private DICOM group (gggg)
-% |PrivCreatDataElTg| -_STRING_- Hexadecimal number of the block |00dd| of the Private Creator element defined in the DICOM dictionary
+% |PrivCreatDataElVal| -_STRING_- Value stored in the Private Creator element to identify the private block we are tracking
 % |FieldName| -_STRING_- Name of the private tag, as defined in the DICOM dictionary, for which we want the value
 %
 % OUTPUT
 % |tag| -_STRING_- Block number |dd??| of the field |FieldName|
 % |repr| -_STRING_- Value representation of the field
 %--------------------------------------
-function [tag , repr] = getFieldTags(gggg , PrivCreatDataElTg  , FieldName )
+function [tag , repr] = getFieldTags(gggg , PrivCreatDataElVal  , FieldName )
 
   fn=cell(1,4);
   [fn{:}]=textread(dicomdict('get'),repmat('%s',1,4),'delimiter','\t','commentstyle','shell');
 
-  string = [gggg , ',' , PrivCreatDataElTg(3:4)];
+  %Find the value reserved for our private block in the DICOM dictionary
+  string =remove_bad_chars(PrivCreatDataElVal);
+  IndexTag = find(cellfun(@(s) ~isempty(strfind(s,string)), fn{3})); %Index of the tag with name |PrivCreatDataElVal| in the DICOM dictionary
+  privateBlock = fn{1}{IndexTag};
+  privateBlock = privateBlock(9:10); %This is the value |00dd| reserved for the private block |PrivCreatDataElVal| in the DICOM dictionary
+
+  string = [gggg , ',' , privateBlock]; %In the DICOM file, we now search for tag with this string in their number
+
   ListInPrvBlck = cellfun(@(s) ~isempty(strfind(s,string)), fn{1}); %List of field names in the private block
-  ListWithName = cellfun(@(s) ~isempty(strfind(s,FieldName)), fn{3}); %List of field names matcing the request
+  ListWithName = cellfun(@(s) ~isempty(strfind(s,FieldName)), fn{3}); %List of field names matching the request
   IndexTag = find(ListInPrvBlck .* ListWithName); %Index of the field with a matching name and belonging to the private block
 
   names = split(fn{1}(IndexTag),',');

@@ -39,7 +39,7 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
     Plan.ComputeCEMdose = false;  % TRUE = compute the dose distribution through the hedgehog, range shifter and aperture
     Plan.SaveHighResDoseMap = false; % Do not save the dose map at CEFDoseGrid resolution in the IEC gantry CS
     Plan.SaveDoseBeamlets = 'dcm'; % save the dose of each beamlet in the reference frame of the CT with aperture: dcm (DICOM format) , sparse (sparse matrix) , false (not saved)
-    Plan.SaveHighResCT = false; %Do not save the high resolution CT for each beamlet in the reference frame of the beamlet
+    Plan.SaveHighResCT = true; %Do not save the high resolution CT for each beamlet in the reference frame of the beamlet
     Plan.CEFDoseGrid  = {1, 1, 1}; % Size (mm) of final dose scoring grid. Compute the final dose through CEF on a different grid than the high-res
 
 

@@ -1,9 +1,9 @@
 %% computeDoseWithCEF
 % Compute the dose distribution using MCsquare using a plan with a single beam and a single energy layer
 % and a conformal energy modulator.
-% The planning CT scan is re-interpolated on a pixel grid with small pixel size.
+% The planning CT scan is re-interpolated on a pixel grid with small pixel size in order to properly model the CEM.
 % The dose is tallied on a grid with resolution |Plan.CEFDoseGrid|.
-% The dose map is then re-interpolated on the grid of the planning CT scan
+% The dose map is saved with the resolution |Plan.CEFDoseGrid| or the resolution of the iniital CT scan (if |Plan.CEFDoseGrid| is absent)
 %
 % The intermediate high resolution dose map and high resolution CT scan are optionally saved.
 % The final dose map is saved in a DICOM file in the folder |outputPath| and a DICOM plan is saved in the folder to which the dose map are referenced
@@ -66,13 +66,6 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
     createDICOMPlan(Plan,Plan.CTinfo,outputPath,dictionary)
 
 
-    %Create a fake handle to save the dose maps
-    handles2 = struct;
-    handles2.path = outputPath;
-    handles2 = Initialize_reggui_handles(handles2); % Initialize the handles structure
-    handles2.spacing = handles.spacing;
-    handles2.origin = handles.origin;
-
      if ~FLAGdosePerSpot
         %The interpolated pixels are large. Compute the dose in the whole volume in one go
         DoseOrig = getHighResDose(Plan, outputPath, handles , PTV, CTName);
@@ -83,22 +76,30 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
         NbBeamlets = numel(PlanMono.Beams.Layers(1).SpotWeights); %Number of PBS spots in plan with energy monolayer
 
         sCT = handles.size;
-        DoseOrig = zeros(sCT(1),sCT(2),sCT(3)); %Create an empty dose map in which the dose from each bemalet will be saved
+
+        if (isfield(Plan, 'CEFDoseGrid') && all(cell2mat(Plan.CEFDoseGrid)))
+          %The dose map is scored on a resolution different than the Ct scan
+          sDose = ceil(sCT .* handles.spacing ./ cell2mat(Plan.CEFDoseGrid)'); %Compute the number of pixels at dose map resolution to fill the volume of original CT
+          DoseOrig = zeros(sDose(1),sDose(2),sDose(3)); %Create an empty dose map in which the dose from each bemalet will be saved
+
+        else
+          %The dose map is scored on the same resolution as the Ct scan
+          Plan.CEFDoseGrid = {handles.spacing(1) , handles.spacing(2) , handles.spacing(3)};
+          DoseOrig = zeros(sCT(1),sCT(2),sCT(3)); %Create an empty dose map in which the dose from each bemalet will be saved
+          sDose = sCT;
+        end
 
         for spt = 1:NbBeamlets
             SptPos = PlanMono.Beams.Layers(1).SpotPositions(spt,:);
             fprintf('Computing dose for PBS spots %d of %d at [%f mm, %f mm] \n',spt,NbBeamlets,SptPos(1),SptPos(2))
 
-            if (isfield(Plan, 'CEFDoseGrid') && all(cell2mat(Plan.CEFDoseGrid)))
-                fprintf('Computing final dose with a coarser grid on high-res CT of PBS spot \n');
-                % Set coarse grid for dose calculation.
-                Plan.Independent_scoring_grid = 1; % Enable a different scoring grid than the base CT for the dose calculation
-                Plan.Scoring_voxel_spacing = cell2mat(Plan.CEFDoseGrid); % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
-                format = ['Dose scoring grid: ' repmat(' %1.0f',1,numel(Plan.Scoring_voxel_spacing)) '\n'];
-                fprintf(format,Plan.Scoring_voxel_spacing);
-            end
+            % Set coarse grid for dose calculation.
+            Plan.Independent_scoring_grid = 1; % Enable a different scoring grid than the base CT for the dose calculation
+            Plan.Scoring_voxel_spacing = cell2mat(Plan.CEFDoseGrid); % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
+            format = ['Dose scoring grid: ' repmat(' %1.0f',1,numel(Plan.Scoring_voxel_spacing)) '\n'];
+            fprintf(format,Plan.Scoring_voxel_spacing);
 
-            [doseBeamlet, DoseFileName]= getHighResDose(Plan, outputPath, handles, PTV, CTName, spt, SptPos); %Add the dose of each spot to the global high resolution dose map
+            [doseBeamlet, DoseFileName , handlesDose]= getHighResDose(Plan, outputPath, handles, PTV, CTName, spt, SptPos , sDose); %Add the dose of each spot to the global high resolution dose map
             DoseOrig = DoseOrig + doseBeamlet;
 
             %If required, save the dose map of each beamlet in the reference frame of the orignial CT scan
@@ -110,7 +111,7 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
                   mkdir (DosePath)
                 end
                 planFullPath = fullfile(outputPath,Plan.FileName);
-                handles2 = save2Disk(handles2, doseBeamlet , Plan.DoseGrid.size , Plan.CTinfo , DoseFileName , DosePath , planFullPath, 'RTDOSE'); %Save the beamlet
+                save2Disk(handlesDose, doseBeamlet , Plan.Scoring_voxel_spacing , Plan.CTinfo , DoseFileName , DosePath , planFullPath, 'RTDOSE'); %Save the beamlet
 
               case 'sparse'
                   if (~exist(DosePath ,'dir'))
@@ -125,9 +126,10 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
 
         end
     end
+
     %Save dose map in original grid
     planFullPath = fullfile(outputPath,Plan.FileName);
-    handles2 = save2Disk(handles2, DoseOrig , Plan.DoseGrid.size , Plan.CTinfo , 'Dose_withCEF' , fullfile(outputPath,'CEF_beam') , planFullPath , 'RTDOSE');
+    handlesDose = save2Disk(handlesDose, DoseOrig , Plan.Scoring_voxel_spacing , Plan.CTinfo , 'Dose_withCEF' , fullfile(outputPath,'CEF_beam') , planFullPath , 'RTDOSE');
 
     %Copy the output file to the 'Output' folder
     movefile (fullfile(outputPath,'CEF_beam', 'Dose_withCEF.dcm' ) , fullfile(outputPath,'Dose_withCEF.dcm'));
@@ -140,13 +142,15 @@ end
 %
 % |Plan| -_STRUCTURE_- Structure defining a multi energy layer PBS plan
 %
-% |CTname| -_STRING_- Name of the CT image in handles.images
-%
 % |outputPath| -_STRING_- Path to the folder where the DICOM file with the mono-layer plan will be saved
 %
 % |handles| -_STRUCTURE_- REggui data handle. The CT scan is stored in |handles| in the image with name |Plan.CTname|.
 %
 % |PTV| - _SCALAR MATRIX_ - Mask defining the position of the PTV |PTV(x,y,z)=1| if the voxel is inside the PTV
+%
+% |CTname| -_STRING_- Name of the CT image in handles.images
+%
+% |spt| -_SCALAR_- Index of the spot to process. This is used to define the filename for the spot dose map
 %
 % |SptPos| -_SCALAR VECTOR_- [x,y] coordinate (mm) of the single PBS spot for which the dose map is to be computed
 %
@@ -155,9 +159,11 @@ end
 % |DoseOrig| -_SCALAR MATRIX_- DoseOrig(x,y,z) Dose map in the same matrix size as the input CT scan
 %
 % |DoseFileName| -_STRING_- File name of the high resolution dose map saved on disk
+%
+% |handlesDose| -_STRUCTURE_- Handles with the image properties of the dose map in the CS of the original CT and with the spatial resolution  of the dose map
 %===========================================================
 
-function [DoseOrig, DoseFileName] = getHighResDose(Plan, outputPath , handles , PTV , CTName, spt , SptPos)
+function [DoseOrig, DoseFileName , handlesDose] = getHighResDose(Plan, outputPath , handles , PTV , CTName, spt , SptPos, sDose)
 
   if nargin < 7
     WholeField = true;
@@ -271,7 +277,7 @@ function [DoseOrig, DoseFileName] = getHighResDose(Plan, outputPath , handles , 
       Plan2.Scoring_voxel_spacing = Plan.Scoring_voxel_spacing; % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
   end
 
-  % Compute the dose map if no dose file alreadyt exists
+  % Compute the dose map if no dose file already exists
   if (~exist(DoseFullFileName))
     %The output folder does not exist. Compute the high resolution dose
     if Plan.SaveHighResDoseMap
@@ -284,38 +290,38 @@ function [DoseOrig, DoseFileName] = getHighResDose(Plan, outputPath , handles , 
     [Dose , DoseInfo ] = Get_reggui_data(handlesHR,'dose_final_miropt');
                     %Get the image from handlesHR.myData. This is the idx-th element with |handlesHR.myData.name{idx} = 'dose_final_miropt'|
                     %This is an image at the resolution of the scoring grid defined in |CEFDoseGrid|
-                    %It has not been resample at the resolution of the HR CT scan.
+                    %It has not been resampled at the resolution of the HR CT scan.
   else
     %The output folder exists. Skip dose computation. Simply relaod the file
     fprintf('File %s .dcm already exists. Skipping dose computation \n' , DoseFileName)
     [Dose , DoseInfo ] = load_Image(DosePath,DoseFileName,'dcm',0);
   end
 
-  %Cleanup temporary file if required %NB CT not saved, so no need to delete it
-  % if ~Plan.SaveHighResDoseMap
-  %   %If the user does not want to keep the high res dose map in the refernece frame of the beamlet
-  %   %then delete it
-  %   fileName = fullfile(DosePath,[DoseFileName,'.dcm']);
-  %   fprintf('Deleting %s \n',fileName)
-  %   delete (fileName)
-  % end
-
   %Rotate the dose map to be aligned with the IEC gantry again
   Dose = flipdim(Dose,2);
   Dose = permute(Dose,[1,3,2]);
 
+  %Define the image properties for the dose map in the IEC gantry CS
   DoseHR.size = size(Dose);
   origZ = -DoseInfo.ImagePositionPatient(2) - DoseInfo.Spacing(2) .* (DoseHR.size(3) - 1);
   DoseHR.origin = [DoseInfo.ImagePositionPatient(1) , DoseInfo.ImagePositionPatient(3) , origZ ]'; %Second index is minus (because flipped) Zg
   DoseHR.isocenter = [handlesHR.isocenter(1) , handlesHR.isocenter(3) , handlesHR.isocenter(2)]; %permuted the CT scan
   DoseHR.spacing = [ DoseInfo.Spacing(1) , DoseInfo.Spacing(3) , DoseInfo.Spacing(2)]'; %permutation has no effect here: all elements are identical
 
-  %Compute the coordinate of all pixels of the original CT
+  %Compute the coordinate of all pixels of the full dose map
   %The DoseOrig dose map is aligned with the axes of the original DICOM CT
-  [oCTdcmX, oCTdcmY , oCTdcmZ , X , Y , Z] = getCTaxes(handles.origin , handles.spacing , handles.size , Plan.Beams.isocenter); %Create coordinate system of original CT, centered on original isocenter
+  [oCTdcmX, oCTdcmY , oCTdcmZ , X , Y , Z] = getCTaxes(handles.origin , DoseHR.spacing , sDose , Plan.Beams.isocenter); %Create coordinate system of original CT, centered on original isocenter
+
+  %Create a fake handle for the dse map in the original CT CS
+  handlesDose = struct;
+  handlesDose.path = outputPath;
+  handlesDose = Initialize_reggui_handles(handlesDose); % Initialize the handles structure
+  handlesDose.spacing = DoseHR.spacing;
+  handlesDose.origin = handles.origin;
+  handlesDose.size = sDose;
 
   A = [X(:), Y(:), Z(:)];
-  A = [A , ones(numel(X),1)]; %Coordinate of all voxels of original CT expressed in DICOM CS
+  A = [A , ones(numel(X),1)]; %Coordinate of all voxels of full dose map in DICOM CS
   Beam2 = Plan.Beams;
   Beam2.isocenter = [0,0,0];
   oCTgntr = DICOM2gantry(A' , Beam2); %Coordinate of all voxels of the original CT scan, expressed in IEC gantry. Rotate arouind isocenter at [0,0,0], using gantry angle =0, PPS=0
@@ -325,7 +331,7 @@ function [DoseOrig, DoseFileName] = getHighResDose(Plan, outputPath , handles , 
   [iCTgntX, iCTgntY , iCTgntZ ] = getCTaxes(DoseHR.origin , DoseHR.spacing , DoseHR.size , DoseHR.isocenter);
 
   %Interpolate the dose map into the original CT scan
-  DoseOrig = interpolateCT(Dose, iCTgntX, iCTgntY , iCTgntZ , oCTgntr(1,:) , oCTgntr(2,:) , oCTgntr(3,:) , 0 , handles.size , handles.spacing , 'linear'); %The dose in the orignal grid
+  DoseOrig = interpolateCT(Dose, iCTgntX, iCTgntY , iCTgntZ , oCTgntr(1,:) , oCTgntr(2,:) , oCTgntr(3,:) , 0 , sDose , DoseHR.spacing , 'linear'); %The dose in the orignal grid
 
 end
 
