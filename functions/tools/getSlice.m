@@ -41,9 +41,11 @@ function DoseMap = getSlice(PtsG , GantryAngle , table_angle , ImagePositionPati
     Beam.GantryAngle = GantryAngle;  %| -_SCALAR_- Gantry Angle (deg)
     Beam.PatientSupportAngle = table_angle; %| -_SCALAR_- Couch Angle (deg)
     Beam.isocenter = isocenter; %| -_SCALAR VECTOR_- [x,y,z] Coordiantes (mm) of the isocentre in the planning CT scan
-    [~ , PTsDICOM] = IECgantry2CTindex(PtsG, Beam , pxlSize , ImagePositionPatient , size(DoseSpot));
-    if ~isempty(PTsDICOM)
-      DoseMap = interp3( DoseSpot , PTsDICOM(:,2),PTsDICOM(:,1),PTsDICOM(:,3),'linear',0); %Note that X is the second index and Y is the first index in interp3
+
+    [~ , X,Y,Z] = IECgantry2CTindex(PtsG, Beam , pxlSize , ImagePositionPatient , size(DoseSpot),2);
+
+    if ~isempty(X)
+      DoseMap = interp3( DoseSpot , Y',X',Z','linear',0); %Note that X is the second index and Y is the first index in interp3
     else
       DoseMap = [];
     end

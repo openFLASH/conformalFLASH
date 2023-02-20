@@ -11,6 +11,7 @@
 %% Description
 % |Axyz = DICOM2PXLindex(P , Spacing , ImagePositionPatient)| Compute indices when |P| is expressed in a coordinate system with origin at origin of DICOM CS
 %
+% |[~ , X, Y , Z]= DICOM2PXLindex([] , Spacing , ImagePositionPatient , isInteger, X , Y , Z)| Compute the indices when coodinates are expressed as separate X,Y,Z vecotr. This call is  4 * faster.
 %
 %% Input arguments
 % |P| -_SCALAR MATRIX_- |A(i,:) = [x,y,z]| The coordinate of the i-th voxel in DICOM IEC
@@ -41,7 +42,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [Axyz , X, Y , Z]= DICOM2PXLindex(P , Spacing , ImagePositionPatient , isInteger, X , Y , Z)
+function [Axyz , X, Y , Z ]= DICOM2PXLindex(P , Spacing , ImagePositionPatient , isInteger, X , Y , Z )
 
   if nargin < 4
     isInteger = true;
@@ -50,6 +51,7 @@ function [Axyz , X, Y , Z]= DICOM2PXLindex(P , Spacing , ImagePositionPatient , 
   if isInteger
     %Round the pixel index to the closest integer
     if ~isempty(P)
+        %NB: The computation of Axyz is 4* slower than the computation of [X,Y,Z]
         %NB +1 : the indexing in Matlab starts at 1. The pixel at origin is at index (1,1,1) and not (0,0,0)
         Axyz(:,1) = 1 + round((P(:,1) - ImagePositionPatient(1)) ./ Spacing(1));
         Axyz(:,2) = 1 + round((P(:,2) - ImagePositionPatient(2)) ./ Spacing(2));
@@ -58,6 +60,7 @@ function [Axyz , X, Y , Z]= DICOM2PXLindex(P , Spacing , ImagePositionPatient , 
         Y = [];
         Z = [];
     else
+        %NB: This computation is much faster
         X = 1 + round((X - ImagePositionPatient(1)) ./ Spacing(1));
         Y = 1 + round((Y - ImagePositionPatient(2)) ./ Spacing(2));
         Z = 1 + round((Z - ImagePositionPatient(3)) ./ Spacing(3));

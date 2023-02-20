@@ -45,7 +45,7 @@ function [handles , Plan , ROI] = updateROI(handles , Plan , ROI)
 
       % Convert to 1D sparse mask with z inverse format (to be consistent
       % with beamlets format)
-      temp = flipdim(ROI(i).mask3D.value,3);
+      temp = flip(ROI(i).mask3D.value,3);
       ROI(i).mask1D = sparse(logical(double(temp(:))));
       ROI(i).nvoxels = sum(ROI(i).mask1D);
       ROI(i).voxelsID = find(ROI(i).mask1D);

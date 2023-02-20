@@ -51,7 +51,7 @@ function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPi
 % We therefore need to flip the second dimension of the matrix
 
   ElvMap = reshape(ElvMap , nrPixelsX , nrPixelsY);
-  ElvMap = flipdim(ElvMap , 2); %In DICOM, the row start at +Y and run towrds -Y. We need to flip the second dimension
+  ElvMap = flip(ElvMap , 2); %In DICOM, the row start at +Y and run towrds -Y. We need to flip the second dimension
 
   CEMThicknessData = ElvMap; % mm Elevation map
   maxEl = max(ElvMap,[],'all'); %Maximum height of the elevation map

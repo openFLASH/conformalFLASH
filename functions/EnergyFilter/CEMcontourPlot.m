@@ -83,8 +83,8 @@ function CEMcontourPlot(fig , Xvec, Yvec, CEFelevation , BlockData , VDSA , Isoc
   drawnow
 
   figure(fig+2)
-  tmp = flipdim(CEFelevation',1);
-  tmp = flipdim(tmp,1);
+  tmp = flip(CEFelevation',1);
+  tmp = flip(tmp,1);
   h = bar3(Yvec , tmp , 1 , 'y');
   %Set the correct scale for X axis
   Xdat=get(h,'XData');

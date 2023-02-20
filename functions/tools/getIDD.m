@@ -44,6 +44,7 @@ function [IDD , Zg] = getIDD(Xg , Yg, GantryAngle , table_angle, ImagePositionPa
   for idxZg = 1:numel(Zg)
     PtsG = [Xg(:) , Yg(:) , Zg(idxZg) .* ones(NbPts,1) ];
     DoseMap = getSlice(PtsG , GantryAngle , table_angle , ImagePositionPatient , isocenter , pxlSize , DoseSpot);
+
     if ~isempty(DoseMap)
       IDD(idxZg) = sum(DoseMap,'all');
     else

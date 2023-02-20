@@ -9,11 +9,16 @@
 % Update all the images in |handles| with the updated CT size
 %
 %% Syntax
-% |[CTintrp , ImagePositionPatientINTER , isocenterINTER , spacingINTER] = setCEMinCT(Beam , CT , PTV ,  Spacing , ImagePositionPatient)|
+% |[Plan , handles ] = setCEMinCT(handles , Plan , CTname )|
 %
+% |[Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , maxField )|
+%
+% |[Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , maxField , HUcem )|
+%
+% |[Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , maxField , HUcem , HUair)|
 %
 %% Description
-% |[CTintrp , ImagePositionPatientINTER , isocenterINTER , spacingINTER] = setCEMinCT(Beam , CT , PTV ,  Spacing , ImagePositionPatient)| Description
+% |[Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , maxField , HUcem , HUair)| Description
 %
 %
 %% Input arguments
@@ -43,6 +48,9 @@
 %
 % |maxField| -_SCALAR VECTOR_- [OPTIONAL, only needed if part of the CEM is to be used] [X, Y] Coordinate (mm, in IEC gantry) of [+x,+y] the corner of the field
 %
+% |HUcem| -_SCALAR_- [OPTIONAL. If absent, read from disk] Hounsfield unitof the  CEM to insert in the CT scan
+%
+% |HUair| -_SCALAR_- [OPTIONAL. If absent, read from disk] Hounsfield unit of air air to insert in CT scan
 %
 %% Output arguments
 %
@@ -53,18 +61,22 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , maxField)
+function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , maxField , HUcem , HUair)
 
   if nargin < 4
     minField = [];
     maxField = [];
   end
 
+  if nargin < 6
+    HUcem = getMaterialSPR(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
+  end
+  if nargin < 7
+    HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to air in the material file
+  end
+
   CT = Get_reggui_data(handles, CTname ,'images'); %Update the CT scan with the aperture block in handles
   ImagePositionPatient = handles.origin;
-
-  HUcem = getMaterialSPR(Plan.Spike.MaterialID , Plan.ScannerDirectory) + 1 ; %Hounsfield unit associated to CEM in the material file
-  HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
 
 
   for b = 1: size(Plan.Beams,2) %Loop for each beam
@@ -80,9 +92,6 @@ function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , max
 
     %Add the CEM in the CT scan
     %------------------------------------
-    % ModulatorOrigin defines the UPSTREAM surface of the CEM. The CEM extends, from |ModulatorOrigin|, towards the NEGATIVE direction of the Zg axis
-    % getCTaxes.m returns coordinates from |ModulatorOrigin| and towards the POSITIVE direction of the Zg axis
-    % We must move the origin to the DOWNSTREAM side of the CEM
     switch Plan.Beams(b).RangeModulator.ModulatorMountingPosition
       case 'SOURCE_SIDE'
         %The Z_cem is pointing in the same direction as the Zg
@@ -90,12 +99,13 @@ function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , max
 
       case  'PATIENT_SIDE'
         %The Z_cem is pointing opposite to the Zg
-        CEM = flipdim(CEM,3); %flip the matrix to have it ordered in increasing Zg
+        CEM = flip(CEM,3); %flip the matrix to have it ordered in increasing Zg
         Origin = Plan.Beams(b).RangeModulator.ModulatorOrigin + [0,0, Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance - (size(CEM,3)-1) .* Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(3)];
             %the origin of the 3D image is now at the tip of the CEM
     end
 
 
+    %Get the coordinates of the voxels of the CEM in the IEC gantry CS
     Acem = getDICOMcoord(CEM, Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing , Origin , [0,0,0]);
     Acem = Acem';
     Acem = Acem(:,1:3);

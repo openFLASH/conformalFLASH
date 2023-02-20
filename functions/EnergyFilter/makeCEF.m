@@ -95,27 +95,25 @@ for b = 1:numel(Plan.Beams)
       RangeCompensator = [];
     end
 
-    stepZ = Plan.Spike.intrpCTpxlSize./ 2 ; %Height resolution of CEF mask.
+    stepZ = Plan.Spike.intrpCTpxlSize; %Height resolution of CEF mask.
     Z_cem = -2:stepZ:maxZCEF+2; %The elevation (mm) of the CEF slices. Go to negative numbers to define a border for STL
       %Allow for space on both side of the CEF so that the isosurface will generate a closed STL object
       %|Z_cem=0| at the base of CEM. |Z_cem| increases when moving up in the CEM
 
     % Try first guess step
-    stepXY = Plan.Spike.intrpCTpxlSize./ 2; %Lateral resolution of CEF mask.
-        %The resolution of the mask should be higher than the resolution of the high resolution CT scan
-        %otherwise there may be sampling issue leading to missing slices of CEf or range shifter in the
-        %interpolated CT scan. This leads to overshooting in the odse distribution
+    stepXY = Plan.Spike.intrpCTpxlSize; %Lateral resolution of CEF mask.
+      %Define a mask with the same resolution as the hig resolution Ct scan to avoid aliasing problems
 
     [maxR0 , ~ , nrSides , GridLayout ] = getConvGridParam(Plan , b);
     maxR = maxR0 .* 1.5; %Make the spike grid sufficiently large to avoid clipping
-    border = 10; %mm  Add a 1cm (10mm) border around the spikes in order for the base to be less likely to bend
+    border = 10; %mm  Add a 10mm border around the spikes in order for the base to be less likely to bend
     wallThick = 1; %mm Thickness of the surrounding wall
     maxBlock = maxCentre + [maxR ,  maxR] +  border .* 2 + wallThick; %mm
     minBlock = minCentre - [maxR ,  maxR] - (border .* 2 + wallThick); %mm
 
     % adjust number of steps to be an integer
-    nrSteps = round(maxBlock ./ (2.*stepXY)) .*2 + 1; %Make sure this is an odd number so that the matrix copying is symetrical
-    stepXY = maxBlock ./ nrSteps;
+    nrSteps = round(maxBlock ./ (2 .* stepXY)) .*2 + 1; %Make sure this is an odd number so that the matrix copying is symetrical
+    stepXY = round(maxBlock ./ nrSteps , 1); %voxel size at 0.1mm resolution
 
     %Define the dimensions of the Conformal Energy modulator
     Xvec = minBlock(1) : stepXY(1) : maxBlock(1);
@@ -331,6 +329,10 @@ end
       case  'PATIENT_SIDE'
         %the CEM poitns towards the patient. The flat base is fixed on the 'PATIENT_SIDE' of the modulator tray
         ModulatorMountingPosition = 'PATIENT_SIDE'; %The modulator is pointing towards the patient.
+      otherwise
+        Plan.Spike.SpikeOrientation
+        error('Unknown Plan.Spike.SpikeOrientation')
+
     end
 
     %Check that the total height of the CEF will fit in the FLASH snout

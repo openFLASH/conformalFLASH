@@ -142,7 +142,7 @@ function ROI = createROI(ROIname, ROImask , handles)
 
     % Convert to 1D sparse mask with z inverse format (to be consistent
     % with beamlets format)
-    temp = flipdim(ROI.mask3D.value,3);
+    temp = flip(ROI.mask3D.value,3);
     ROI.mask1D = sparse(logical(double(temp(:))));
 
   end

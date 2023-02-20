@@ -58,7 +58,7 @@ function handles = save2Disk(handles , Imatrix , imgsize , CTinfo , imgName , ou
   if reshapeFLAG
     fprintf('Reshaping and flipping the Y axis \n')
     Imatrixa = reshape(full(Imatrix),imgsize);
-    Imatrixa = flipdim(Imatrixa,3); %The Zaxis (patient) is inverted when created by the Pij matrices. The Pij matrice create a left handed CS
+    Imatrixa = flip(Imatrixa,3); %The Zaxis (patient) is inverted when created by the Pij matrices. The Pij matrice create a left handed CS
   else
     Imatrixa = full(Imatrix);
   end

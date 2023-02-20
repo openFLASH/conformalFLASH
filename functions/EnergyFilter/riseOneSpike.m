@@ -135,9 +135,9 @@ param.radius = max(Plan.Beams(b).RidgeFilter(SpikeIdx).a_max);
         [a_min , a_max , h_step ] = clip2SpikeResolution(RidgeFilter.a_max , RidgeFilter.a_min , RidgeFilter.h_step , min([dX,dY]));
         if(prod(diff(a_max)<0))
           %Radii are in increasing order. Flip these vectors. They must be sorted in decreasing order
-          a_min = flipdim(a_min,1);
-          a_max  = flipdim(a_max,1);
-          h_step  = flipdim(h_step,1);
+          a_min = flip(a_min,1);
+          a_max  = flip(a_max,1);
+          h_step  = flip(h_step,1);
         end
 
         % Sort the steps from maximum radius to minimum radius

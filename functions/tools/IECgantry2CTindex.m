@@ -4,11 +4,11 @@
 % If some of the requested voxels are outside of the CT scan, the function returns empty outputs
 %
 %% Syntax
-% |[Aidx , Axyz] = IECgantry2CTindex(A, Beam , Spacing , ImagePositionPatient , sizeCT)|
+% |[Aidx , X , Y , Z]  = IECgantry2CTindex(A, Beam , Spacing , ImagePositionPatient , sizeCT , warn)|
 %
 %
 %% Description
-% |[Aidx , Axyz] = IECgantry2CTindex(A, Beam , Spacing , ImagePositionPatient , sizeCT)| Description
+% |[Aidx , X , Y , Z]  = IECgantry2CTindex(A, Beam , Spacing , ImagePositionPatient , sizeCT , warn)| Description
 %
 %
 %% Input arguments
@@ -34,13 +34,18 @@
 %
 % |Aidx| -_SCLAR VECTOR_- |Aidx(i)| Linear index of the i-th voxel in the CT scan
 %
-% |Axyz| -_SCALAR MATRIX_- |Axyz(i,:) = [xi , yi , zi]| The pixel indices along each axis of the CT scan for the i-th pixel
+% |X| -_SCALAR VECTOR_- |X(i)|  The X coordinate (pixel index) of the i-th voxel in DICOM IEC
+%
+% |Y| -_SCALAR VECTOR_- |Y(i)| The Y coordinate (pixel index) of the i-th voxel in DICOM IEC
+%
+% |Z| -_SCALAR VECTOR_- |Z(i)| The Z coordinate (pixel index) of the i-th voxel in DICOM IEC
 %
 %
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [Aidx , Axyz] = IECgantry2CTindex(A, Beam , Spacing , ImagePositionPatient , sizeCT , warn)
+
+function [Aidx , X , Y , Z]  = IECgantry2CTindex(A, Beam , Spacing , ImagePositionPatient , sizeCT , warn)
 
   if nargin < 6
     warn = 0;
@@ -48,32 +53,40 @@ function [Aidx , Axyz] = IECgantry2CTindex(A, Beam , Spacing , ImagePositionPati
 
   M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle,Beam.isocenter); %Rotate around isocentre
   Adcm = inv(M) * A' ; %Convert coordinates from IEC gantry into DICOM CS. Origin is at isocentre
-  Axyz = DICOM2PXLindex(Adcm' , Spacing , ImagePositionPatient); %Shift the origin of the CS from isocentre to |ImagePositionPatient| and then convert to pixel index
+  %Axyz  = DICOM2PXLindex(Adcm' , Spacing , ImagePositionPatient ); %Shift the origin of the CS from isocentre to |ImagePositionPatient| and then convert to pixel index
+
+  [~ , X , Y , Z]  = DICOM2PXLindex([] , Spacing , ImagePositionPatient , true , Adcm(1,:) , Adcm(2,:) , Adcm(3,:)); %Shift the origin of the CS from isocentre to |ImagePositionPatient| and then convert to pixel index
 
   %Check that the requested indices are within the provided CT scan
-  if (sum(min(Axyz,[],1) < 1) | sum((sizeCT - max(Axyz,[],1)) < 0) )
+  if ( sum([min(X),min(Y),min(Z)] < 1) | sum( (sizeCT - [max(X),max(Y),max(Z)] ) < 0) )
     switch warn
       case 0
-        %return empty output
-        Axyz = [];
+        %silently return empty output
         Aidx = [];
+        X = [];
+        Y = [];
+        Z = [];
       case 1
-        %return empty output
-        Axyz = [];
+        %return empty output and display warning
         Aidx = [];
+        X = [];
+        Y = [];
+        Z = [];
 
-        min(Axyz,[],1)
-        max(Axyz,[],1)
+        min([X,Y,Z],[],1)
+        max([X,Y,Z],[],1)
         sizeCT
         warning('Some of the coordinates are outside of the CT scan')
       case 2
         %return empty Aidx
         Aidx = [];
       end
-      
+
     return
   end
 
-  Aidx = sub2ind(sizeCT,Axyz(:,1),Axyz(:,2),Axyz(:,3));
+  %Aidx = sub2ind(sizeCT,Axyz(:,1),Axyz(:,2),Axyz(:,3));
+  Aidx = sub2ind(sizeCT,X,Y,Z);
+
 
 end

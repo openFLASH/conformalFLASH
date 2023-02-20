@@ -152,7 +152,7 @@ end
 function r = dR2R(dr , Rtot)
   dr = abs(dr); %only positive distance
   dr = dr ./ sum(dr,'all'); %Normalise the delta so that each width is expressed as a fraction of the base width
-  r = Rtot .* flipdim(cumsum(flipdim(dr,2)),2); %Determine the proportion of each steps
+  r = Rtot .* flip(cumsum(flip(dr,2)),2); %Determine the proportion of each steps
 end
 
 %=============================

@@ -596,7 +596,7 @@ if (t == GLB_wBackUp_counter*GLB_wBackUp_Niter)
         d = GLB_backUp.scenarioDose(s_nominal).D(logical(ROI(Plan.TargetROI_ID).mask1D));
         int_bins = min(d):0.005:max(d); %bin centers
         int_hist = hist(d,int_bins); % in the future we have to take into account the relative volume of each voxel (SEE plotQvhGeneral in DPBNmodule)
-        DVH = 100/sum(int_hist)*flipdim(cumsum(flipdim((int_hist'),1)),1);
+        DVH = 100/sum(int_hist)*flip(cumsum(flip((int_hist'),1)),1);
         h = plot(int_bins',DVH,  'g-');
         drawnow;
     end

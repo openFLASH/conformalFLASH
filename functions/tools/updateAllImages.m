@@ -39,7 +39,6 @@ function [handles , Plan] = updateAllImages(handles , Plan , CT , NewOrigin ,  H
   NewSize = size(CT);
 
   %Resize all images in handles to fit new image format
-
   if (sum(handles.origin - NewOrigin) | sum(handles.origin - NewSize))
     %If the CT size was updated, resize all images in handles
     handles = resizeAllHandles(handles , NewOrigin , NewSize , HUvoid);
@@ -74,8 +73,10 @@ function handles = resizeAllHandles(handles , NewOrigin , NewSize , HUvoid)
     for i = 2:numel(handles.images.name)
 
       if sum(size(handles.images.data{i}) - NewSize)
-         values = unique(handles.images.data{i});
-         if (min(values)==0 & max(values) == 1)
+         %values = unique(handles.images.data{i});
+         [mini,maxi] = bounds(handles.images.data{i},'all');
+         %if (min(values)==0 & max(values) == 1)
+         if (mini==0 & maxi == 1)
            %This is a binary mask. Fill with zeros
            handles.images.data{i} = enlargeCT(handles.images.data{i} , handles.origin , NewOrigin , handles.spacing , NewSize , 0);
          else

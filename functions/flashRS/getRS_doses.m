@@ -91,7 +91,7 @@ function [handles, PlanMono ] = getRS_doses(Plan, handles)
 
       Dose = Dose ./ (w(spt) .* PlanMono.fractions); %Normalise the dose for w=1 and for 1 fraction
                   %In SpotWeightsOptimization at line 85, the weight are divided by the number of fractions.
-      temp = flipdim(Dose,3);
+      temp = flip(Dose,3);
       dose1D = temp(:); %spare matrix with the dose influence of the spot spt
       dose1D = sparse(double(full(PlanMono.OptROIVoxels_nominal) .* dose1D)); %Apply the mask to force to zero the voxels outside of the RT struct of interrest. This saves memory
               %the .* product should use full matrices. Product .* with sparse matrices seems buggy in Matlab

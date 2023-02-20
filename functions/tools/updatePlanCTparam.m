@@ -25,7 +25,7 @@
 
 function Plan  = updatePlanCTparam(handles , Plan  )
 
-  CT = Get_reggui_data(handles,Plan.CTname,'images'); %Update the CT scan with the aperture block in handles
+  CT = Get_reggui_data(handles,Plan.CTname,'images');
   Plan.DoseGrid.size = size(CT);
   Plan.DoseGrid.resolution = handles.spacing ; % mm
   Plan.DoseGrid.nvoxels = prod(Plan.DoseGrid.size);

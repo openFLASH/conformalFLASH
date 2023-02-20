@@ -30,7 +30,7 @@
 %     * |Beam.RangeModulator.IsocenterToRangeModulatorDistance| -_SCALAR_- Distance (mm) from isocentre to the base of the CEM.
 %     * |Beam.RangeModulator.Modulator3DPixelSpacing| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix
 %
-% |PixelSize| -_SCALAR_- The size (mm) of the re-interpolated CT scan
+% |PixelSize| -_SCALAR VECTOR_- The [x,y,z] pixel size (mm) of the re-interpolated CT scan
 %
 % |HUair| - _SCALAR VECTOR_ - If the CT must be expanded, the new voxels are filled with |HUair|
 
@@ -51,7 +51,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(handles , lrCTname , hrCTname , PTV , Beam , PixelSize , HUair , minField , maxField , CTinfo)
+function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(handles , lrCTname , hrCTname , PTV , Beam , PixelSize , HUair , minField , maxField , Zdistal , CTinfo)
 
   DepthExtension = 50; % mm Extend the computation to this depth beyond PTV distal surface
 
@@ -74,25 +74,18 @@ function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(ha
       maxCEF = Beam.RangeModulator.IsocenterToRangeModulatorDistance;
   end
 
-
-  %Compute max depth in IEC gantry
-  Bdcm = getDICOMcoord(PTV , Spacing , ImagePositionPatient , Beam.isocenter);
-  M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle);
-  Bbev = M * Bdcm; %Coordinate of the voxels of the body in IC gantry
-  Zdistal = min(Bbev(3,:)) - DepthExtension; %Position on beam axis of the distal surface of PTV + additional depth
-
   %Define the coordinate of the voxels in the IEC gantry CS for the interpolated Ct scan
-  iCTgntX = minField(1) : PixelSize : maxField(1) ; %Coordinate axes of the interpolated CT expressed in IEC gantry CS
-  iCTgntY = minField(2) : PixelSize : maxField(2) ;
-  iCTgntZ = double(Zdistal : PixelSize : maxCEF + 10 .* PixelSize);
+  iCTgntX = minField(1) : PixelSize(1) : maxField(1) ; %Coordinate axes of the interpolated CT expressed in IEC gantry CS
+  iCTgntY = minField(2) : PixelSize(2) : maxField(2) ;
+  iCTgntZ = double(Zdistal : PixelSize(3) : maxCEF + 10 .* PixelSize(3));
 
   %Compute the coordinate of the voxels of the interpolated CT scan in the DICOM cs
   %Origin of the interpolated DICOM CS is at the isocentre
   [Y , X , Z] = meshgrid( iCTgntY , iCTgntX , iCTgntZ);     %meshgrid uses index order Xct(j,i,k) where CT(i,j,k). We must swap the X and Y axis to get the index ordering correctly linked with CT
-  A = [X(:), Y(:), Z(:)];
-  A = [A , ones(numel(X),1)]; %Coordinate of all voxels of the interpolated CT scan, expressed in IEC gantry
+  A = [X(:), Y(:), Z(:) , ones(numel(X),1)]; %Coordinate of all voxels of the interpolated CT scan, expressed in IEC gantry
+
   BeamINTER = Beam;
-  BeamINTER.isocenter = [0,0,0]'; %The rotations took place around the isocentre and the first pixel is equal to the corner of the block which is also centered on isocentre %define position of isocentre in interpolated CT scan
+  BeamINTER.isocenter = [0,0,0]'; %The isocenter is at the origin of the coordinate system of the high res CT scan and the Z axis is aligned with the Z IEC  gantry CS
   iCTdcm = gantry2DICOM(A' , BeamINTER); %Coordinate of all voxels of interpolated CT expressed in DICOM CS
 
   %Compute the coordinate of the original CT in the DICOM CS
@@ -102,13 +95,12 @@ function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(ha
   %and which is sufficiently extended so as to include aperture and ridge filter
   %The origin of the 2CT scans is at isocentre
   %The pixels axes are paralell to the IEC gantry CS
-  CTintrp = interpolateCT(CT, oCTdcmX, oCTdcmY, oCTdcmZ , iCTdcm(1,:), iCTdcm(2,:), iCTdcm(3,:) , HUair , [numel(iCTgntX) , numel(iCTgntY) , numel(iCTgntZ)] , [PixelSize , PixelSize , PixelSize]);
+  CTintrp = interpolateCT(CT, oCTdcmX, oCTdcmY, oCTdcmZ , iCTdcm(1,:), iCTdcm(2,:), iCTdcm(3,:) , HUair , [numel(iCTgntX) , numel(iCTgntY) , numel(iCTgntZ)] );
 
   %Rotate the interpolated CT so that its the Zg axis points towards the Ydicom axis
   %In this way, we will shoot with a virtual gantry at 0° into the interpolated CT
   CTintrp = permute(CTintrp,[1,3,2]);
-  CTintrp = flipdim(CTintrp,2);
-
+  CTintrp = flip(CTintrp,2); %NB: flip (C code) is faster than flipdim (.m).
 
   %Recompute the orign and spacing of the re-interpolated CT scan
   handlesHR = struct;
@@ -116,9 +108,9 @@ function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(ha
   handlesHR.dataPath = handles.dataPath;
   handlesHR = Initialize_reggui_handles(handlesHR); % Initialize the handles structure
   handlesHR.origin = [iCTgntX(1) , -max(iCTgntZ) , iCTgntY(1) ]'; %Second index is minus (because flipped) Zg
-  handlesHR.spacing = [PixelSize , PixelSize , PixelSize]'; %permutation has no effect here: all elements are identical
+  handlesHR.spacing = [PixelSize(1) , PixelSize(3) , PixelSize(2)]' ;
   handlesHR.size = size(CTintrp);
-  handlesHR.isocenter = BeamINTER.isocenter;
+  handlesHR.isocenter = BeamINTER.isocenter; %The beam isocenter is at the origin of the CT scan
   handlesHR.isocenter = [handlesHR.isocenter(1) , handlesHR.isocenter(3) , handlesHR.isocenter(2)]; %permuted the CT scan
   handlesHR.spatialpropsettled = true; %This flag is set to force the re-interpolation of the dose map when loading it
 
@@ -139,12 +131,9 @@ end
 % Convert point coordonate from IEC gantry to DICOM CS
 %========================
 function Adcm = gantry2DICOM(A , Beam)
-    M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle);
-    Adcm = inv(M) * A ;
 
-    %Coordinate of voxels in DICOM CS (original CT)
-    Adcm(1,:) = Adcm(1,:)  + Beam.isocenter(1);
-    Adcm(2,:) = Adcm(2,:)  + Beam.isocenter(2);
-    Adcm(3,:) = Adcm(3,:)  + Beam.isocenter(3);
+    M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle);
+    Adcm = inv(M) * A ; %Coordinate of voxels in DICOM CS (original CT)
+    %The rotations took place around the isocentre which is at origin of the coordinate system of CT scan
 
 end

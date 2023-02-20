@@ -183,8 +183,8 @@ function integral = gaussSpotIntegral(apothem, spotSigma, nrSides)
           x_polygon = x_polygon .* spotSigma.Sx ./ spotSigma.Sy;
         end
         y_polygon = sqrt(abs(Ay.^2 .* (1 - (x_polygon./Ax).^2)));
-        x_polygon = [x_polygon , flipdim(x_polygon,2)]; %Positive root
-        y_polygon = [y_polygon , flipdim(-y_polygon,2)]; %negative root
+        x_polygon = [x_polygon , flip(x_polygon,2)]; %Positive root
+        y_polygon = [y_polygon , flip(-y_polygon,2)]; %negative root
     end
 
     %gaussFunk = @(x,y) 1/(2*pi()*spotSigma.^2) .*exp(-((x.^2 + y.^2)./(2*spotSigma.^2))); % Integrant gauss function. Normalization (x.^2 + y.^2)/(2*sigma^2) ? Amplitude -> ? 1/(2*pi()*spotSigma.^2)

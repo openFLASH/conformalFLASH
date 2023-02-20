@@ -33,13 +33,12 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
     %MCsqaure properties
     %-------------------
     Plan.BeamletsBy = 'MCsquare'; %Algorithm used to compute the beamlets: Monte Carlo ('MCsquare') or Pencil Beam ('FoCa')
-    Plan.protonsFullDose = 5e7; % Number of protons in the full target. Default 1e7
+    Plan.protonsFullDose = 5e6; % Number of protons in the full target. Default 1e7
     Plan.protonsHighResDose = 5e4; %TODO Number of protons in the dose in high resolution CT
 
-    Plan.ComputeCEMdose = false;  % TRUE = compute the dose distribution through the hedgehog, range shifter and aperture
     Plan.SaveHighResDoseMap = false; % Do not save the dose map at CEFDoseGrid resolution in the IEC gantry CS
     Plan.SaveDoseBeamlets = 'dcm'; % save the dose of each beamlet in the reference frame of the CT with aperture: dcm (DICOM format) , sparse (sparse matrix) , false (not saved)
-    Plan.SaveHighResCT = true; %Do not save the high resolution CT for each beamlet in the reference frame of the beamlet
+    Plan.SaveHighResCT = false; %Do not save the high resolution CT for each beamlet in the reference frame of the beamlet
     Plan.CEFDoseGrid  = {1, 1, 1}; % Size (mm) of final dose scoring grid. Compute the final dose through CEF on a different grid than the high-res
 
 

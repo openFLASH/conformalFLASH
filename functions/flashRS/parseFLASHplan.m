@@ -283,29 +283,22 @@ for b = 1:NbBeams
         nrPixelsX = double(getPrivateTag('300D' , '0014' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorColumns'));
 
         ModulatorPixelSpacing =  getPrivateTag('300D' , '0015' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorPixelSpacing'); %pixel spacing in the plane of the CEM
-        ModulatorPixelSpacing = flipdim(ModulatorPixelSpacing,2); %Stored in DICOM as [Y,X]
+        ModulatorPixelSpacing = flip(ModulatorPixelSpacing,2); %Stored in DICOM as [Y,X]
         fprintf('CEM pixel size : (%3.1f , %3.1f) mm \n',ModulatorPixelSpacing(1),ModulatorPixelSpacing(2))
 
         %Define Z resolution: this is the smallest dZ step between two terrace of the tower
         dZ = double(min(diff(unique(getPrivateTag('300D' , '0010' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData') )))); %Smallest Z step in the elevation map
         Modulator3DPixelSpacing = round(double([ModulatorPixelSpacing' , dZ]),1); %| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix in the plane of the CEM
 
-        %Find a cubic voxel size that is the greatest common division of all dimension of a paralellipidec voxel
-        % pxlSize = unique(Modulator3DPixelSpacing).*10;  %Remove redundant sizes
-        % p = pxlSize(1);
-        % for k = 2:length(pxlSize)
-        %   p = gcd(p,pxlSize(k));
-        % end
-        %Plan.Spike.intrpCTpxlSize = p./10; %This is the greatest common divisor of the dimension of the paralellipiedic voxel
-        Plan.Spike.intrpCTpxlSize =0.2 ; %mm TODO
-
         if(Modulator3DPixelSpacing(1) ~= Modulator3DPixelSpacing(2))
           error('Pixels of the elevation map are not square')
         end
+        Plan.Beams.RangeModulator.Modulator3DPixelSpacing = Modulator3DPixelSpacing;
 
         %Convert the 3D elevation map from DICOM file into a 3D mask.
         %elvMap2mask takes care of the flip of the Y axis
-        [CEM3Dmask1 , CEMThicknessData] = elvMap2mask(double( getPrivateTag('300D' , '0020' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorThicknessData') ) , nrPixelsX , nrPixelsY , Modulator3DPixelSpacing(1:2), Plan.Spike.intrpCTpxlSize);
+        [CEM3Dmask1 , CEMThicknessData] = elvMap2mask(double( getPrivateTag('300D' , '0020' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorThicknessData') ) , nrPixelsX , nrPixelsY , Modulator3DPixelSpacing(1:2), Modulator3DPixelSpacing(3));
+
         ModulatorPosition = getPrivateTag('300D' , '0016' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorPosition') ;
         Plan.Beams(b).RangeModulator.ModulatorOrigin = [ModulatorPosition' , 0]; %| -_SCALAR VECTOR_- Physical coordinate [x,y,z] the voxel |CompensatorThicknessData(1,1)| and |hedgehog3D(1,1,1)| for beam b  in the plane of the CEF.
         Plan.Beams(b).RangeModulator.ModulatorOrigin(2) = Plan.Beams(b).RangeModulator.ModulatorOrigin(2) - (nrPixelsY-1) .* Modulator3DPixelSpacing(2); %We will flip the Y axis, so change sign of origin
@@ -324,9 +317,7 @@ for b = 1:NbBeams
         CEM3Dmask = zeros(size(CEM3Dmask1,1),size(CEM3Dmask1,2),size(CEM3Dmask1,3)+2);
         CEM3Dmask(:,:,2:end-1) = CEM3Dmask1;
         CEM3Dmask1 = [] ; %clear memory
-        Plan.Beams(b).RangeModulator.ModulatorOrigin(3) = Plan.Beams(b).RangeModulator.ModulatorOrigin(3) - Plan.Spike.intrpCTpxlSize; %There is one extra layer of zeros
-
-        Plan.Beams.RangeModulator.Modulator3DPixelSpacing = [Plan.Spike.intrpCTpxlSize,Plan.Spike.intrpCTpxlSize,Plan.Spike.intrpCTpxlSize]; %The mask and elevation map are interpolated at high resolution
+        Plan.Beams(b).RangeModulator.ModulatorOrigin(3) = Plan.Beams(b).RangeModulator.ModulatorOrigin(3) - Modulator3DPixelSpacing(3); %There is one extra layer of zeros      
         Plan.Beams(b).RangeModulator.CEMThicknessData = CEMThicknessData;  %| -_SCALAR MATRIX_- |CompensatorThicknessData(x,y)| Thickness (mm) of the CEF pixel at position (x;y) in the IEC beam Limiting device CS
         Plan.Beams(b).RangeModulator.CEM3Dmask = CEM3Dmask; % | -_SCALAR MATRIX_- 3D mask of the CEF. |CEM3Dmask(x,y,z)=1| if the voxel at location (x,y,z)  in the plane of the CEF for beam b belongs to the CEF.
                                                 %      Z=0 at the base of CEF. Z increase in the smae way as Zg if the spike point toward the proton source

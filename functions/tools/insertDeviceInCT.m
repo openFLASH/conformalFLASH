@@ -43,19 +43,18 @@ function [CT , ImagePositionPatient] = insertDeviceInCT(CT , Adevice, HUdevice ,
 
   Aidx = [];
   while isempty(Aidx)
-    [Aidx , Axyz]= IECgantry2CTindex(Adevice, Beam , Spacing , ImagePositionPatient , size(CT) , 2); %Find pixels indices in the CT scan coordinate system
+    [Aidx , X , Y , Z]  = IECgantry2CTindex(Adevice, Beam , Spacing , ImagePositionPatient , size(CT) , 2); %Find pixels indices in the CT scan coordinate system
 
     if isempty(Aidx)
       %The CT is too small to fit the aperture. Make the CT larger
       fprintf('CT too small to fit object. Expanding CT \n')
-      minA = min(min(Axyz,[],1) , [1,1,1] ); %The smallest index
-      maxA = max(max(Axyz,[],1) , size(CT)); %The largest index
+      minA = min([min(X),min(Y),min(Z)] , [1,1,1] ); %The smallest index
+      maxA = max([max(X),max(Y),max(Z)] , size(CT)); %The largest index
       sCT2 = maxA - minA + 1; % The minimum size of the CT
       ImagePositionPatientOLD =  ImagePositionPatient;
       ImagePositionPatient = ImagePositionPatient - abs(minA -1)' .* Spacing;
       CT2 = enlargeCT(CT , ImagePositionPatientOLD , ImagePositionPatient , Spacing , sCT2 , HUair);
       CT = CT2; %This is the expanded CT
-
     end
   end
 

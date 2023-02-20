@@ -39,7 +39,7 @@ dose = zeros(DoseGridSize);
 D = Pij * w' ; %dose contribution of all Bragg peaks contributing to the beamlet into the whole ROI
 dose(1:prod(DoseGridSize))= D;
 
-dose = flipdim(dose,3); %The Zaxis (patient) is inverted when created by the Pij matrices. This is a left handed CS where the Z-axis is inverted with respect to the DICOM patient CS
+dose = flip(dose,3); %The Zaxis (patient) is inverted when created by the Pij matrices. This is a left handed CS where the Z-axis is inverted with respect to the DICOM patient CS
 %Flip the Z axis to get the DICOM patient CS
 
 end

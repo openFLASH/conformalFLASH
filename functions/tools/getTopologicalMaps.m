@@ -87,10 +87,10 @@ if (NbSpots > 1)
 
       %Get the sweep time from scanAlgo
       Tsweep1 = getScanalgoTiming(list , param.MAXenergy , scanAlgoGW , [] , false); %Timing for  motion A -> B
-      list = flipdim(list,1);
+      list = flip(list,1);
       Tsweep2 = getScanalgoTiming(list , param.MAXenergy , scanAlgoGW , [] , false); %Timing for  motion B -> A
       Tsweep2 = Tsweep2(2:end);
-      Tsweep2 = flipdim(Tsweep2,1);
+      Tsweep2 = flip(Tsweep2,1);
       Tsweep2 = [0 ; Tsweep2];
 
       idx = 1;

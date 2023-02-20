@@ -30,6 +30,12 @@
 
 function saveSpotTiming(fileName , spotSequence , spot , Tstart , Tend)
 
+  folder = fileparts(fileName);
+  if (~exist(folder,'dir'))
+    %The folder does not exist. Create it
+    mkdir (folder)
+  end
+
   fid = fopen(fileName , 'w');
 
   fprintf(fid, 'Spot Nb , X(mm) , Y(mm) , Tstart (ms) , Tend (ms)\n');
