@@ -138,7 +138,7 @@ function [DoseOrigCT, DoseFileName , handlesDose] = getFullHighResDosemap(Plan ,
   NbBeamlets = numel(Plan.Beams.Layers(1).SpotWeights); %Number of PBS spots in plan with energy monolayer
 
   % Set coarse grid for dose calculation.
-  [Plan , iCTgntX , iCTgntY , iCTgntZ, Zdistal , minField , maxField, sDoseIECg] = getHRdoseGridInfo(Plan , handles , PTV);
+  [Plan , iCTgntX , iCTgntY , iCTgntZ, Zdistal ] = getHRdoseGridInfo(Plan , handles , PTV);
   DoseIECg = zeros(numel(iCTgntX) , numel(iCTgntY) , numel(iCTgntZ) ); %Create an empty dose map in which the dose from each bemalet will be saved
 
   for spt = 1:NbBeamlets
@@ -148,6 +148,7 @@ function [DoseOrigCT, DoseFileName , handlesDose] = getFullHighResDosemap(Plan ,
       %Define a field size that match the pixel position of the CEM
       %This will avoid the alising problems when accumulating the dose
       minField = alignFieldWithCEM(SptPos - FieldSize , Plan.Beams.RangeModulator);
+      maxField = SptPos + FieldSize;
       Zdistal = getClosePixel(iCTgntZ , Zdistal);
 
       fprintf('Computing dose for PBS spots %d of %d at [%f mm, %f mm] \n',spt,NbBeamlets,SptPos(1),SptPos(2))
@@ -277,7 +278,6 @@ end
     %Insert the CEM into the high resolution CT scan
     % Define min and max field so that we do not expand the CT scan in the Xg and Yg direction to fit the CEM
     hrCTName = 'highResCTbev';
-
 
     %check that the field position is aligned with the pixel resolution and origin of CEM
     a = (minField - Plan.Beams.RangeModulator.ModulatorOrigin(1:2)) ./ Plan.Beams.RangeModulator.Modulator3DPixelSpacing(1:2);

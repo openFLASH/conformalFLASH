@@ -104,7 +104,6 @@ function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , max
             %the origin of the 3D image is now at the tip of the CEM
     end
 
-
     %Get the coordinates of the voxels of the CEM in the IEC gantry CS
     Acem = getDICOMcoord(CEM, Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing , Origin , [0,0,0]);
     Acem = Acem';

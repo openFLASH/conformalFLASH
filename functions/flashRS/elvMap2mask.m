@@ -17,9 +17,8 @@
 %
 % |nrPixelsY| - _SCALAR_ - Number of pixels along the Y-IEC axis in |ElvMap|
 %
-% |pixelSize| -_SCALAR VECTOR_- [x,y] size (mm) of the pixels in |ElvMap|
+% |pixelSize| -_SCALAR VECTOR_- [x,y,z] size (mm) of the pixels in |ElvMap|
 %
-% |intrpCTpxlSize| -_SCALAR_- Resolution (mm) in the thickness of the deosited layer by the 3D printer
 %
 %% Output arguments
 %
@@ -32,7 +31,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , pixelSize , intrpCTpxlSize)
+function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , pixelSize )
 
 % DICOM order the pixels row by row. The row are paralell to the X axis (IEC gantry).
 % The first row is at +Y. The last row is at -Y
@@ -62,15 +61,8 @@ function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPi
   X = X .* pixelSize(1);
   Y = Y .* pixelSize(2);
 
-  Pxlfac = pixelSize ./ intrpCTpxlSize; %One input pixel is divided in multiple smaller pixels
-  Xq = 1:nrPixelsX .* Pxlfac(1);
-  Yq = 1:nrPixelsY .* Pxlfac(2);
-  [Ym , Xm] = meshgrid(Yq .* intrpCTpxlSize , Xq .* intrpCTpxlSize);
-  Vq = interp2(Y , X , ElvMap , Ym , Xm , 'nearest'); %Elevation map interpolated on a higher resolution grid
-
-
-  [~ , ~ , VertDist] = meshgrid( Yq , Xq , 0:intrpCTpxlSize:maxEl); %meshgrid inversion the 1st and second index
-  ElvMap3D = repmat(Vq , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
+  [~ , ~ , VertDist] = meshgrid( Y , X , 0:pixelSize(3):maxEl); %meshgrid inversion the 1st and second index
+  ElvMap3D = repmat(ElvMap , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
   CEM3Dmask = (VertDist <= ElvMap3D); %Convert the 3D elevationation mapo into a 3D binary mask
 
 end
