@@ -494,7 +494,7 @@ function [iCTgntX , iCTgntY , iCTgntZ , Zdistal] =  getDoseMapCoordInIECg(Beam ,
   %Make the dose map a bit larger to be sire to fit all bemalets
   iCTgntX = (minField(1) - 15 .* PixelSizeIECg(1) )      : PixelSizeIECg(1) : (maxField(1) + 15 .* PixelSizeIECg(1));
   iCTgntY = (minField(2) - 15 .* PixelSizeIECg(2) )      : PixelSizeIECg(2) : (maxField(2) + 15 .* PixelSizeIECg(2));
-  iCTgntZ = double( (Zdistal - 15 .* PixelSizeIECg(3) )  : PixelSizeIECg(3) : maxCEF + 15 .* PixelSizeIECg(3));
+  iCTgntZ = double( (Zdistal - 15 .* PixelSizeIECg(3) )  : PixelSizeIECg(3) : maxCEF + 30 .* PixelSizeIECg(3));
 
 end
 
