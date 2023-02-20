@@ -282,9 +282,10 @@ end
     %check that the field position is aligned with the pixel resolution and origin of CEM
     a = (minField - Plan.Beams.RangeModulator.ModulatorOrigin(1:2)) ./ Plan.Beams.RangeModulator.Modulator3DPixelSpacing(1:2);
     b = round( (minField - Plan.Beams.RangeModulator.ModulatorOrigin(1:2)) ./ Plan.Beams.RangeModulator.Modulator3DPixelSpacing(1:2) );
-    if (a ~= b)
+    if (max(abs(a - b)) > 1e-4)
       a
       b
+      a-b
       error('Small field not aligned with CEM grid')
     end
 
