@@ -284,16 +284,11 @@ for b = 1:NbBeams
 
         ModulatorPixelSpacing =  getPrivateTag('300D' , '0015' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorPixelSpacing'); %pixel spacing in the plane of the CEM
         ModulatorPixelSpacing = flip(ModulatorPixelSpacing,2); %Stored in DICOM as [Y,X]
-        fprintf('CEM pixel size : (%3.1f , %3.1f) mm \n',ModulatorPixelSpacing(1),ModulatorPixelSpacing(2))
 
         %Define Z resolution: this is the smallest dZ step between two terraces of the tower
         dZ = double(min(diff(unique(getPrivateTag('300D' , '0010' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData') )))); %Smallest Z step in the elevation map
-        if dZ > 1
-          %If the height between teraces is large, create CEM mask at 1mm resolution in Z
-          %to avoid degrading the CT scan because of the Z resolution of the CEM
-          dZ = 1;
-        end
         Modulator3DPixelSpacing = round(double([ModulatorPixelSpacing' , dZ]),1); %| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix in the plane of the CEM
+        fprintf('CEM pixel size : ( %3.1f , %3.1f , %3.1f ) mm \n',Modulator3DPixelSpacing(1),Modulator3DPixelSpacing(2),Modulator3DPixelSpacing(3))
 
         if(Modulator3DPixelSpacing(1) ~= Modulator3DPixelSpacing(2))
           error('Pixels of the elevation map are not square')

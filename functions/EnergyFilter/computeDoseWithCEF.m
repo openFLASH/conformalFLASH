@@ -49,11 +49,15 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
     g_HUcem =  getMaterialSPR(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
         %The g_HUair and g_HUcem are now stored in a global varialbe that is accessible by the sub-function getHighResDose
 
+    %Make some sanity check on the treatment plan
     if numel(Plan.Beams) > 1
       error('computeDoseWithCEF requires plans with single beam')
     end
     if (numel(Plan.Beams.Layers) ~= 1)
       error('computeDoseWithCEF requires plans with single energy layer')
+    end
+    if ~isfield(Plan, 'CEFDoseGrid')
+      error('Plan.CEFDoseGrid missing : dose map resolution is undefined')
     end
 
     if ~isfield(Plan , 'SaveDoseBeamlets')
@@ -78,15 +82,15 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
     fprintf('Adding Range shifter to low resolution CT \n')
     [Plan , handles ] = setRangeShifterinCT(handles , Plan , CTName);
 
-     if ~FLAGdosePerSpot
-        %The interpolated pixels are large. Compute the dose in the whole volume in one go
+    if ~FLAGdosePerSpot
+        % Compute the dose in the whole volume in one go
         [Plan , ~ , ~ , ~ , Zdistal ,minField , maxField, sDoseIECg] = getHRdoseGridInfo(Plan , handles , PTV);
         [DoseIECg , DoseFileName , handlesDoseIECg] = getHighResDose(Plan, outputPath , handles , PTV , CTName , 0 , minField , maxField , Zdistal , true);
         [iCTgntX , iCTgntY , iCTgntZ ] = getCTaxes(handlesDoseIECg.origin , handlesDoseIECg.spacing , handlesDoseIECg.size , [0,0,0]); %Cooridnates of dose map aligned with IEC gantry
         [DoseOrig , handlesDose]  = doseIECg2DICOMcs(DoseIECg , outputPath , handlesDoseIECg , handles , Plan, iCTgntX, iCTgntY , iCTgntZ); %Dose map aligned to orignal Ct with resolution of |Plan.CEFDoseGrid|
 
      else
-        %The voxels are small. Compute the dose in one beamlet at a time
+        % Compute the dose in one beamlet at a time
         fprintf('Computing high resolution dose map one spot at a time \n')
         [DoseOrig, DoseFileName , handlesDose] = getFullHighResDosemap(Plan , handles , PTV , outputPath, CTName);
 
@@ -148,13 +152,13 @@ function [DoseOrigCT, DoseFileName , handlesDose] = getFullHighResDosemap(Plan ,
       %Define a field size that match the pixel position of the CEM
       %This will avoid the alising problems when accumulating the dose
       minField = alignFieldWithCEM(SptPos - FieldSize , Plan.Beams.RangeModulator);
-      maxField = SptPos + FieldSize;
+      maxField = SptPos + FieldSize; %The maxfield will be automatically aligned with the CEM pixel when calling minField:step:maxfield
       Zdistal = getClosePixel(iCTgntZ , Zdistal);
 
       fprintf('Computing dose for PBS spots %d of %d at [%f mm, %f mm] \n',spt,NbBeamlets,SptPos(1),SptPos(2))
       [doseBeamlet, DoseFileName , handlesDoseIECg] = getHighResDose(Plan, outputPath, handles, PTV, CTName, spt, minField , maxField , Zdistal , false); %Add the dose of each spot to the global high resolution dose map
 
-      %Align the parital dose map on the pixel of the full dose map
+      %Align the partial dose map on the pixel of the full dose map
       [~ , IndexStart(1)] = getClosePixel(iCTgntX , handlesDoseIECg.origin(1));
       [~ , IndexStart(2)] = getClosePixel(iCTgntY , handlesDoseIECg.origin(2));
       [~ , IndexStart(3)] = getClosePixel(iCTgntZ , handlesDoseIECg.origin(3));
@@ -265,12 +269,9 @@ end
     %Define the name of the output dose file
     if WholeField
         DoseFileName = 'dose_HighRes';
-    elseif (isfield(Plan, 'CEFDoseGrid') && all(cell2mat(Plan.CEFDoseGrid)))
-        SptPos = Plan.Beams.Layers(1).SpotPositions(spt,:);
-        DoseFileName = ['dose_UserGrid_spt' , num2str(spt) , '_spt_X_',num2str(round(SptPos(1))),'_Y_',num2str(round(SptPos(2)))];
     else
         SptPos = Plan.Beams.Layers(1).SpotPositions(spt,:);
-        DoseFileName = ['dose_HighRes_spt' , num2str(spt) , '_spt_X_',num2str(round(SptPos(1))),'_Y_',num2str(round(SptPos(2)))];
+        DoseFileName = ['dose_UserGrid_spt' , num2str(spt) , '_spt_X_',num2str(round(SptPos(1))),'_Y_',num2str(round(SptPos(2)))];
     end
     DosePath = fullfile(outputPath,'CEF_beam','Outputs');
     DoseFullFileName = fullfile(DosePath,[DoseFileName,'.dcm']);
@@ -279,7 +280,7 @@ end
     % Define min and max field so that we do not expand the CT scan in the Xg and Yg direction to fit the CEM
     hrCTName = 'highResCTbev';
 
-    %check that the field position is aligned with the pixel resolution and origin of CEM
+    %Check that the field position is aligned with the pixel resolution and origin of CEM
     a = (minField - Plan.Beams.RangeModulator.ModulatorOrigin(1:2)) ./ Plan.Beams.RangeModulator.Modulator3DPixelSpacing(1:2);
     b = round( (minField - Plan.Beams.RangeModulator.ModulatorOrigin(1:2)) ./ Plan.Beams.RangeModulator.Modulator3DPixelSpacing(1:2) );
     if (max(abs(a - b)) > 1e-4)
@@ -293,7 +294,15 @@ end
     %The IEC gantry is aligned with the Y axis of the CT scan
     %the spatial resolution of the Ct is the same as CEM to avoid aliasing problems when inserting CEM in high res CT
     fprintf('Interpolating high resolution CT \n')
-    [handlesHR , BeamHR ] = createHighResCT(handles , CTName , hrCTName , PTV, Plan.Beams , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , g_HUair , minField , maxField , Zdistal , Plan.CTinfo);
+    CTresolution = Plan.Beams.RangeModulator.Modulator3DPixelSpacing;
+    DoseMapResolution = Plan.Scoring_voxel_spacing;
+    if CTresolution(3) > DoseMapResolution(3)
+      %The dose map has smaller Z dimension than CEM
+      %Use the dose map resolution for the high resolution CT
+      CTresolution(3) = DoseMapResolution(3);
+    end
+    fprintf('Interpolating CT with pixels [%f , %f , %f ] mm \n', CTresolution(1) , CTresolution(2) , CTresolution(3))
+    [handlesHR , BeamHR ] = createHighResCT(handles , CTName , hrCTName , PTV, Plan.Beams , CTresolution , g_HUair , minField , maxField , Zdistal , Plan.CTinfo);
     PlanHR.Beams = BeamHR;
     PlanHR = copyFields(PlanHR , Plan); %Overwrite the YAML parameter in the reloaded |Plan|
     PlanHR.CTname =  hrCTName;
@@ -345,13 +354,10 @@ end
     Plan2.CTinfo = PlanMono.CTinfo;
 
     %Compute the dose using MCsquare on the high resolution CT scan
-    if (isfield(Plan, 'CEFDoseGrid') && all(cell2mat(Plan.CEFDoseGrid)))
-        %Define the MCsquare parameter to do the dose scoring on a different pixel size than the high resolution CT scan
-        fprintf('----Dose scoring grid---- \n')
-        Plan2.Independent_scoring_grid = Plan.Independent_scoring_grid; % Enable a different scoring grid than the base CT for the dose calculation
-        Plan2.resampleScoringGrid = Plan.resampleScoringGrid;
-        Plan2.Scoring_voxel_spacing = Plan.Scoring_voxel_spacing; % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
-    end
+    %Define the MCsquare parameter to do the dose scoring on a different pixel size than the high resolution CT scan
+    Plan2.Independent_scoring_grid = Plan.Independent_scoring_grid; % Enable a different scoring grid than the base CT for the dose calculation
+    Plan2.resampleScoringGrid = Plan.resampleScoringGrid;
+    Plan2.Scoring_voxel_spacing = Plan.Scoring_voxel_spacing; % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
 
     % Compute the dose map if no dose file already exists
     if (~exist(DoseFullFileName))
@@ -470,6 +476,7 @@ end
 function [iCTgntX , iCTgntY , iCTgntZ , Zdistal] =  getDoseMapCoordInIECg(Beam , PTV , Spacing , ImagePositionPatient , minField , maxField ,  PixelSizeIECg)
 
   DepthExtension = 50; % mm Extend the computation to this depth beyond PTV distal surface
+            %The extension must be sufficiently far to include the distal fall off
 
   %Get the maximum Zg extension of the CEM
   %This will defined one of the maximum extension of the interpolated CT scan
