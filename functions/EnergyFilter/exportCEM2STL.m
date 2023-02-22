@@ -79,7 +79,7 @@ function exportCEM2STL(CEMThicknessData, pixelSize , origin , AccessoryCode , fi
         header = header(1:80); %Header must be less than 80 characters in STL stnadard
     end
     
-    filepath = fileparts(filename);commi
+    filepath = fileparts(filename);
     if (~exist(filepath,'dir'))
         %The folder to save the CT does not exist. Create it
         mkdir (filepath)
