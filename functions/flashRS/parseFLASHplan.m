@@ -329,17 +329,18 @@ for b = 1:NbBeams
         Y = Y .* ModulatorPixelSpacing(2) + Plan.Beams(b).RangeModulator.ModulatorOrigin(2);
         CEMcontourPlot(50 , X , Y, CEMThicknessData , Plan.Beams(b).BlockData, Plan.Beams(b).VDSA , Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance);
 
-      if isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1, 'RangeModulatorSettingsSequence')
-        if isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeModulatorSettingsSequence.Item_1 , 'IsocenterToRangeModulatorDistance')
-            if round(double(Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance),1) ~= round(double(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeModulatorSettingsSequence.Item_1.IsocenterToRangeModulatorDistance),1)
-              fprintf('Isocenter to Modulator Tray Distance from snout position        : %f mm \n', round(double(Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance),1))
-              fprintf('Isocenter to Modulator Tray Distance from DICOM tag (300D,1012) : %f mm \n', round(double(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeModulatorSettingsSequence.Item_1.IsocenterToRangeModulatorDistance),1))
-              warning('CEM position inconsistent with FLASH snout')
+
+        if isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1, 'RangeModulatorSettingsSequence')
+            if isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeModulatorSettingsSequence.Item_1 , 'IsocenterToRangeModulatorDistance')
+                if round(double(Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance),1) ~= round(double(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeModulatorSettingsSequence.Item_1.IsocenterToRangeModulatorDistance),1)
+                  fprintf('Isocenter to Modulator Tray Distance from snout position        : %f mm \n', round(double(Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance),1))
+                  fprintf('Isocenter to Modulator Tray Distance from DICOM tag (300D,1012) : %f mm \n', round(double(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeModulatorSettingsSequence.Item_1.IsocenterToRangeModulatorDistance),1))
+                  warning('CEM position inconsistent with FLASH snout')
+                end
+            else
+                warning('DICOM tag (300D,1012) Isocenter to Modulator TrayDistance is missing')
             end
-        else
-          warning('DICOM tag (300D,1012) Isocenter to Modulator TrayDistance is missing')
         end
-      end
   end
 
   Plan.Beams(b).spotSigma = 10;%mm It is only used to determine neighbourgh spots. The exact value is not too critical

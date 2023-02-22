@@ -35,35 +35,58 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function exportCEM2STL(CEF3dMask , pixelSize , origin , AccessoryCode , filename)
-
-      intrpCTpxlSize = min(pixelSize);
-
-      fprintf('Computing surface triangles \n')
-      %FV = surf2solid(double(Xbl ), double(Ybl ), CEFelevation , 'ELEVATION',0); %Create vertexes on triangular grid
-      FV = isosurface(CEF3dMask , 0.5,'noshare','verbose'); %Compute the vertices in index coordinates
-      FV.vertices(:,1) =  FV.vertices(:,1) .* pixelSize(1) - origin(1); %Convert from index coordinates into physics coordinates
-      FV.vertices(:,2) =  FV.vertices(:,2) .* pixelSize(2) - origin(2);
-      FV.vertices(:,3) =  FV.vertices(:,3) .* pixelSize(3);
-      fprintf('Done \n')
+function exportCEM2STL(CEMThicknessData, pixelSize , origin , AccessoryCode , filename)
 
 
-      fprintf('Saving STL file to %s \n',filename);
-      NbDigit = ceil(-log10(intrpCTpxlSize));
-      PhysSize = round(size(CEF3dMask) .* pixelSize , NbDigit); %mm length of the hedgehog;
-      header = [AccessoryCode , '-- Unit : mm X=',num2str(PhysSize(1)),'mm Y=',num2str(PhysSize(2)),'mm Z=',num2str(PhysSize(3)),'mm'];
-      if (numel(header) > 80)
+    fprintf('Computing surface triangles \n')
+    %FV = surf2solid(double(Xbl ), double(Ybl ), CEFelevation , 'ELEVATION',0); %Create vertexes on triangular grid
+
+    intrpCTpxlSize = 0.2;
+    nrPixelsX = size(CEMThicknessData,1);
+    nrPixelsY = size(CEMThicknessData,2);
+    maxEl = max(CEMThicknessData,[],'all'); %Maximum height of the elevation map
+
+    X = 1:nrPixelsX;
+    Y = 1:nrPixelsY;
+    X = X .* pixelSize(1);
+    Y = Y .* pixelSize(2);
+    
+    Pxlfac = pixelSize ./ intrpCTpxlSize; %One input pixel is divided in multiple smaller pixels
+    Xq = 1:nrPixelsX .* Pxlfac(1);
+    Yq = 1:nrPixelsY .* Pxlfac(2);
+    [Ym , Xm] = meshgrid(Yq .* intrpCTpxlSize , Xq .* intrpCTpxlSize);
+    Vq = interp2(Y , X , CEMThicknessData , Ym , Xm , 'nearest'); %Elevation map interpolated on a higher resolution grid
+    
+    [~ , ~ , VertDist] = meshgrid( Yq , Xq , 0:intrpCTpxlSize:maxEl); %meshgrid inversion the 1st and second index
+    ElvMap3D = repmat(Vq , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
+    CEM3dmask = (VertDist <= ElvMap3D); %Convert the 3D elevationation mapo into a 3D binary mask
+
+    CEM3Dmask_full = zeros(size(CEM3dmask,1),size(CEM3dmask,2),size(CEM3dmask,3)+2);
+    CEM3Dmask_full(:,:,2:end-1) = CEM3dmask;
+
+    FV = isosurface(CEM3Dmask_full , 0.5,'noshare','verbose'); %Compute the vertices in index coordinates
+    FV.vertices(:,1) =  FV.vertices(:,1) .* pixelSize(1)./Pxlfac(1) - origin(1); %Convert from index coordinates into physics coordinates
+    FV.vertices(:,2) =  FV.vertices(:,2) .* pixelSize(2)./Pxlfac(2) - origin(2);
+    FV.vertices(:,3) =  FV.vertices(:,3) .* pixelSize(3)./Pxlfac(3);
+    fprintf('Done \n')
+    
+       
+    fprintf('Saving STL file to %s \n',filename);
+    NbDigit = ceil(-log10(intrpCTpxlSize));
+    PhysSize = round(size(CEM3Dmask_full) .* pixelSize , NbDigit); %mm length of the hedgehog;
+    header = [AccessoryCode , '-- Unit : mm X=',num2str(PhysSize(1)),'mm Y=',num2str(PhysSize(2)),'mm Z=',num2str(PhysSize(3)),'mm'];
+    if (numel(header) > 80)
         header = header(1:80); %Header must be less than 80 characters in STL stnadard
-      end
-
-      filepath = fileparts(filename);
-      if (~exist(filepath,'dir'))
+    end
+    
+    filepath = fileparts(filename);
+    if (~exist(filepath,'dir'))
         %The folder to save the CT does not exist. Create it
         mkdir (filepath)
-      end
-      stlwrite(filename, FV.faces , FV.vertices , 'TITLE' , header); %Create the STL file
-      fprintf('Done \n')
-
+    end
+    stlwrite(filename, FV.faces , FV.vertices , 'TITLE' , header); %Create the STL file
+    fprintf('Done \n')
+    
     %Export ridge filter structural coordinates to text file
     % coordFilename = [fullfile(pathName,Plan.Beams(b).RangeModulator.AccessoryCode) '.i'];
     % fprintf('Saving structural coordinates to .txt file at %s \n', coordFilename)

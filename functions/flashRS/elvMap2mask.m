@@ -33,38 +33,37 @@
 
 function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , pixelSize )
 
-% DICOM order the pixels row by row. The row are paralell to the X axis (IEC gantry).
-% The first row is at +Y. The last row is at -Y
-% Within one row, the pixels are ordered from -x to +X
-%
-%                         ^ +Y
-% ---1----------------->   |
-% ---2----------------->   | -----> +X
-% ---3----------------->   |
-% ---4----------------->   |
-%
-% The elemnets are therefore ordered [A(:,N) , A(:,N-1) , A(:,N-2), ....]
-% where the first index is X (row) and the second index is Y (column)
-%
-% On the other hand, in Matlab, "reshape" assumes that the elements are ordered [A(:,1) , A(:,2) , ....]
-% We therefore need to flip the second dimension of the matrix
+    % DICOM order the pixels row by row. The row are paralell to the X axis (IEC gantry).
+    % The first row is at +Y. The last row is at -Y
+    % Within one row, the pixels are ordered from -x to +X
+    %
+    %                         ^ +Y
+    % ---1----------------->   |
+    % ---2----------------->   | -----> +X
+    % ---3----------------->   |
+    % ---4----------------->   |
+    %
+    % The elemnets are therefore ordered [A(:,N) , A(:,N-1) , A(:,N-2), ....]
+    % where the first index is X (row) and the second index is Y (column)
+    %
+    % On the other hand, in Matlab, "reshape" assumes that the elements are ordered [A(:,1) , A(:,2) , ....]
+    % We therefore need to flip the second dimension of the matrix
 
-  ElvMap = reshape(ElvMap , nrPixelsX , nrPixelsY);
-  ElvMap = flip(ElvMap , 2); %In DICOM, the row start at +Y and run towrds -Y. We need to flip the second dimension
-
-  CEMThicknessData = ElvMap; % mm Elevation map
-  maxEl = max(ElvMap,[],'all'); %Maximum height of the elevation map
-
-  %Create an interpolation grid at the resolution of intrpCTpxlSize
-  X = 1:nrPixelsX;
-  Y = 1:nrPixelsY;
-  X = X .* pixelSize(1);
-  Y = Y .* pixelSize(2);
-
-  [~ , ~ , VertDist] = meshgrid( Y , X , 0:pixelSize(3):maxEl); %meshgrid inversion the 1st and second index
-  ElvMap3D = repmat(ElvMap , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
-  CEM3Dmask = (VertDist <= ElvMap3D); %Convert the 3D elevationation mapo into a 3D binary mask
-
+    ElvMap = reshape(ElvMap , nrPixelsX , nrPixelsY);
+    ElvMap = flip(ElvMap , 2); %In DICOM, the row start at +Y and run towrds -Y. We need to flip the second dimension
+    
+    CEMThicknessData = ElvMap; % mm Elevation map
+    maxEl = max(ElvMap,[],'all'); %Maximum height of the elevation map
+    
+    %Create an interpolation grid at the resolution of intrpCTpxlSize
+    X = 1:nrPixelsX;
+    Y = 1:nrPixelsY;
+    X = X .* pixelSize(1);
+    Y = Y .* pixelSize(2);
+    
+    [~ , ~ , VertDist] = meshgrid( Y , X , 0:pixelSize(3):maxEl); %meshgrid inversion the 1st and second index
+    ElvMap3D = repmat(ElvMap , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
+    CEM3Dmask = (VertDist <= ElvMap3D); %Convert the 3D elevationation mapo into a 3D binary mask
 end
 
 %Ordering of the element between matrices and vector

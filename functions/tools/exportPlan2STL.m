@@ -44,5 +44,5 @@ function exportPlan2STL(plan_filename)
     Plan.Beams.RangeModulator.CEM3Dmask(:,end,:) = 0; %Remove the resin below the base of the CEF
     
     stl_filename = fullfile(plan_filepath, [plan_name '.stl']);
-    exportCEM2STL(Plan.Beams.RangeModulator.CEM3Dmask  , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , Plan.Beams.RangeModulator.ModulatorOrigin , Plan.Beams.RangeModulator.AccessoryCode , stl_filename)
+    exportCEM2STL(Plan.Beams.RangeModulator.CEMThicknessData, Plan.Beams.RangeModulator.Modulator3DPixelSpacing , Plan.Beams.RangeModulator.ModulatorOrigin , Plan.Beams.RangeModulator.AccessoryCode , stl_filename)
 end
