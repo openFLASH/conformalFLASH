@@ -33,7 +33,7 @@
 % so objects always import correctly, unless you override the units. Alas, this is not the case for STL files.
 %
 %% Contributors
-% Authors : R. Labarbe (open.reggui@gmail.com)
+% Authors :R. Labarbe, L. Hotoiu (open.reggui@gmail.com)
 
 function exportCEM2STL(CEMThicknessData, pixelSize , origin , AccessoryCode , filename)
 
@@ -79,7 +79,7 @@ function exportCEM2STL(CEMThicknessData, pixelSize , origin , AccessoryCode , fi
         header = header(1:80); %Header must be less than 80 characters in STL stnadard
     end
     
-    filepath = fileparts(filename);
+    filepath = fileparts(filename);commi
     if (~exist(filepath,'dir'))
         %The folder to save the CT does not exist. Create it
         mkdir (filepath)
