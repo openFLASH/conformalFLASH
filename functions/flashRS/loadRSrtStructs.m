@@ -58,11 +58,11 @@ Plan.TargetROI = [Plan.CTname '_' remove_bad_chars(RTstruct.TargetROI)];
 Plan.TargetROI_ID = numel(strName) - 1;
 Plan.ExternalROI_ID = numel(strName);
 
-Plan.DoseGrid.size = handles.size;
+Plan.DoseGrid.size = handles.size';
 nvoxels = prod(handles.size);
 Plan.OptROIVoxels_nominal = false(nvoxels,1); % initialize to zeros
 Plan.OptROIVoxels_robust = false(nvoxels,1); % initialize to zeros
-ROItotalMask = zeros(Plan.DoseGrid.size'); %Create a structure which is the sum of all ROI
+ROItotalMask = zeros(Plan.DoseGrid.size); %Create a structure which is the sum of all ROI
 
 %Create the ROI structure
 for i = 1:numel(strName)
@@ -132,7 +132,7 @@ end
 
 
 %---------------------------
-% add the ROI to thje list of ROIs
+% add the ROI to the list of ROIs
 %-----------------------------
 function ROI = createROI(ROIname, ROImask , handles)
 

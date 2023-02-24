@@ -33,6 +33,7 @@
 
 function [handles , Plan , ROI] = updateROI(handles , Plan , ROI)
 
+  Plan.DoseGrid.size = handles.size';
   nvoxels = prod(handles.size);
   Plan.OptROIVoxels_nominal = false(nvoxels,1); % initialize to zeros
   Plan.OptROIVoxels_robust = false(nvoxels,1); % initialize to zeros

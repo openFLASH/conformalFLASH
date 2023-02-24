@@ -6,11 +6,11 @@
 % The high res CT is rotated the interpolated CT so that its the Zg axis points towards the Ydicom axis
 %
 %% Syntax
-% |[handlesHR , BeamHR ] = createHighResCT(handles , lrCTname , hrCTname , PTV, Beam , PixelSize , HUair , minField , maxField , CTinfo)|
+% |[handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(handles , lrCTname , hrCTname , Beam , PixelSize , HUair , minField , maxField , Zdistal , CTinfo)|
 %
 %
 %% Description
-% |[handlesHR , BeamHR ] = createHighResCT(handles , lrCTname , hrCTname , PTV, Beam , PixelSize , HUair , minField , maxField , CTinfo)| Description
+% |[handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(handles , lrCTname , hrCTname , Beam , PixelSize , HUair , minField , maxField , Zdistal , CTinfo)| Description
 %
 %
 %% Input arguments
@@ -20,8 +20,6 @@
 % |lrCTname| -_STRING_- Name of the low resolution CT image in handles.images
 %
 % |hrCTname| -_STRING_- Name of the high resolution CT image to be saved in handles.images
-%
-% |PTV| - _SCALAR MATRIX_ - Mask defining the position of the PTV |PTV(x,y,z)=1| if the voxel is inside the PTV
 %
 % |Beam| -_STRUCTURES_- Information about the beam
 %     * |Beam.RangeModulator.CEM3Dmask| -_SCALAR MATRIX_- 3D mask of the CEM. |CEM3Dmask(x,y,z)=1| if the voxel at location (x,y,z)  in the plane of the CEM for beam b belongs to the CEM.
@@ -38,6 +36,8 @@
 %
 % |maxField| -_SCALAR VECTOR_- [OPTIONAL, only needed if part of the CEM is to be used] [X, Y] Coordinate (mm, in IEC gantry) of [+x,+y] the corner of the field
 %
+% |Zdistal| -_SCLAR_-  Z Coordinate (mm) in the IEC gantry CS of the deepest plane in which the dose is to be computed
+%
 % |CTinfo| -_STRUCTURE_- DICOM header of the CT scan, to be added to the image in |handles|
 %
 %
@@ -51,9 +51,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(handles , lrCTname , hrCTname , PTV , Beam , PixelSize , HUair , minField , maxField , Zdistal , CTinfo)
-
-  DepthExtension = 50; % mm Extend the computation to this depth beyond PTV distal surface
+function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(handles , lrCTname , hrCTname , Beam , PixelSize , HUair , minField , maxField , Zdistal , CTinfo)
 
   CT = Get_reggui_data(handles, lrCTname); %Update the CT scan with the aperture block in handles
   Spacing = handles.spacing;

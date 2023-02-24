@@ -9,22 +9,24 @@
 % The final dose map is saved in a DICOM file in the folder |outputPath| and a DICOM plan is saved in the folder to which the dose map are referenced
 %
 %% Syntax
-% |computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePerSpot)|
+% |computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)|
+%
+% |Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)|
 %
 %
 %% Description
-% |computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePerSpot)| Description
+% |computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)| Compute dose maps and save them to disk
+%
+% |Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)| Compute and save dose map and return the dose influence matrix
 %
 %
 %% Input arguments
 %
-% |Plan| -_STRUCTURE_- Structure defining a multi energy layer PBS plan
+% |Plan| -_STRUCTURE_- Structure defining a mono energy layer PBS plan
 %
 % |outputPath| -_STRING_- Path to the output folder where the DICOM file of the dose map and the mono-layer plan will be saved
 %
 % |handles| -_STRUCTURE_- REggui data handle. The CT scan is stored in |handles| in the image with name |Plan.CTname|.
-%
-% |PTV| - _SCALAR MATRIX_ - Mask defining the position of the PTV |PTV(x,y,z)=1| if the voxel is inside the PTV
 %
 % |CTname| -_STRING_- Name of the CT image in handles.images
 %
@@ -33,14 +35,13 @@
 %
 %% Output arguments
 %
-% None
+% |Pij| -_SCALAR MATRIX_- [OPTIONAL] dose influence matrix: |Pij(vox,spot)| The dose contribution to voxel |vox| of the spot number |spot|
 %
 %
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePerSpot)
-
+function Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)
 
     global g_HUair;
     global g_HUcem; %Define HU as a global variable that will be visible inside the function getHighResDose
@@ -50,6 +51,7 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
         %The g_HUair and g_HUcem are now stored in a global varialbe that is accessible by the sub-function getHighResDose
 
     %Make some sanity check on the treatment plan
+    %TODO deal with plan with setup beams
     if numel(Plan.Beams) > 1
       error('computeDoseWithCEF requires plans with single beam')
     end
@@ -58,6 +60,15 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
     end
     if ~isfield(Plan, 'CEFDoseGrid')
       error('Plan.CEFDoseGrid missing : dose map resolution is undefined')
+    end
+
+    if nargout > 0
+      %We need to compute and return the dose influence matrix
+      PijFlag = true;
+      FLAGdosePerSpot = true; %If we want the Pij matrix, we need to compute the dose per spot
+    else
+      %Do not waste time computing the dose influence matrix
+      PijFlag = false ;
     end
 
     if ~isfield(Plan , 'SaveDoseBeamlets')
@@ -77,22 +88,38 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
     dictionary = fullfile(regguiPath ,'plugins','openMIROpt','functions','io','dicom-dict.txt');
     createDICOMPlan(Plan,Plan.CTinfo,outputPath,dictionary)
 
+    %GEt the deepest Zg at which the dose should be computed
+    PTV = Get_reggui_data(handles , Plan.TargetROI); % |PTV| - _SCALAR MATRIX_ - Mask defining the position of the PTV |PTV(x,y,z)=1| if the voxel is inside the PTV
+                                                    % Get the mask of the PTV before we add any accessories in the beam path
+    Zdistal = getZdistal(PTV , handles.spacing , handles.origin , Plan.Beams); % |Zdistal| -_SCLAR_-  Z Coordinate (mm) in the IEC gantry CS of the deepest plane in which the dose is to be computed
+
+    %REcord the parameters of the original CT scan
+    hCT.size = handles.size; %Make first a copy of the size of the original CT scan. We want the dose map to match this size
+    hCT.origin = handles.origin;
+    hCT.spacing = handles.spacing;
+
     %Insert the range shifter in the high resolution CT
     %The insertion is done in the low resolution CT to avoid wasting time re-inserting the range shifter in all high reoslution beamlets
     fprintf('Adding Range shifter to low resolution CT \n')
     [Plan , handles ] = setRangeShifterinCT(handles , Plan , CTName);
+          %The dimensions of the images in handles is now larger than the original CT scan
+          %because the range shifter has been added to the CT
 
     if ~FLAGdosePerSpot
         % Compute the dose in the whole volume in one go
-        [Plan , ~ , ~ , ~ , Zdistal ,minField , maxField, sDoseIECg] = getHRdoseGridInfo(Plan , handles , PTV);
-        [DoseIECg , DoseFileName , handlesDoseIECg] = getHighResDose(Plan, outputPath , handles , PTV , CTName , 0 , minField , maxField , Zdistal , true);
-        [iCTgntX , iCTgntY , iCTgntZ ] = getCTaxes(handlesDoseIECg.origin , handlesDoseIECg.spacing , handlesDoseIECg.size , [0,0,0]); %Cooridnates of dose map aligned with IEC gantry
-        [DoseOrig , handlesDose]  = doseIECg2DICOMcs(DoseIECg , outputPath , handlesDoseIECg , handles , Plan, iCTgntX, iCTgntY , iCTgntZ); %Dose map aligned to orignal Ct with resolution of |Plan.CEFDoseGrid|
+        [Plan , ~ , ~ , ~ , minField , maxField] = getHRdoseGridInfo(Plan , handles, Zdistal);
+        [DoseIECg , DoseFileName , handlesDoseIECg] = getHighResDose(Plan, outputPath , handles , CTName , 0 , minField , maxField , Zdistal , true);
+        [iDoseGntX , iDoseGntY , iDoseGntZ ] = getCTaxes(handlesDoseIECg.origin , handlesDoseIECg.spacing , handlesDoseIECg.size , [0,0,0]); %Cooridnates of dose map aligned with IEC gantry
+
+        hD.spacing = handlesDoseIECg.spacing; %The final dose map will have the spatial resolution of |Plan.CEFDoseGrid|
+        hD.origin = hCT.origin;
+        hD.size = ceil(hCT.size .* hCT.spacing ./ handlesDoseIECg.spacing); %Compute the number of pixels at dose map resolution to fill the volume of original CT
+        [DoseOrig , handlesDose]  = doseIECg2DICOMcs(DoseIECg  , handlesDoseIECg , hD , Plan , outputPath); %Dose map aligned to orignal Ct with resolution of |Plan.CEFDoseGrid|
 
      else
         % Compute the dose in one beamlet at a time
         fprintf('Computing high resolution dose map one spot at a time \n')
-        [DoseOrig, DoseFileName , handlesDose] = getFullHighResDosemap(Plan , handles , PTV , outputPath, CTName);
+        [DoseOrig, DoseFileName , handlesDose, Pij] = getFullHighResDosemap(Plan , handles , Zdistal , outputPath, CTName , PijFlag , hCT);
 
     end
 
@@ -108,20 +135,34 @@ function computeDoseWithCEF(Plan, outputPath, handles, PTV, CTName , FLAGdosePer
 
 %-----------------------------------------------
 %Define the parameters of the high resolution dose map
+%
+% OUTPUT
+% |iDoseGntX| -_SCALAR VECTOR_- |iDoseGntX(i)| X coordinate (mm) in IEC gantry CS of the i-th voxel of the DOSE MAP
+% |iDoseGntY| -_SCALAR VECTOR_- |iDoseGntY(i)| Y coordinate (mm) in IEC gantry CS of the i-th voxel of the DOSE MAP
+% |iDoseGntZ| -_SCALAR VECTOR_- |iDoseGntZ(i)| Z coordinate (mm) in IEC gantry CS of the i-th voxel of the DOSE MAP
+% |minField| -_SCALAR VECTOR_- [x,y,z] coordinate (mm) in the IEC gantry CS of the first corner of the field where the dose is to be computed. Must be aligned with a pixel of the CEM
+% |maxField| -_SCALAR VECTOR_- [x,y,z] coordinate (mm) in the IEC gantry CS of the last corner of the field where the dose is to be computed.
+% |hD| -_STRUCTURE_- Dimensions of the high resolution dose map
+%     * |hD.size| -_SCALAR VECTOR_- [Nx,Ny,Nz] Number of voxels of the |DoseDCMcs|
+%     * |hD.origin| -_SCALAR VECTOR_- [x,y,z] Coordinate (mm) of the first pixel of the |DoseDCMcs| in the original CT CS
+%     * |hD.spacing|-_SCALAR VECTOR_- [dx,dy,dz] Physical size (mm) of the voxels of |DoseDCMcs|
+% |Plan| -_STRUCTURE_- Structure defining a mono energy layer PBS plan
 %-----------------------------------------------
-function [Plan , iCTgntX , iCTgntY , iCTgntZ, Zdistal , minField , maxField, sDoseIECg] = getHRdoseGridInfo(Plan , handles , PTV)
+function [Plan , iDoseGntX , iDoseGntY , iDoseGntZ, minField , maxField, hD] = getHRdoseGridInfo(Plan , handles, Zdistal)
 
   % Set coarse grid for dose calculation.
   Plan.Independent_scoring_grid = 1; % Enable a different scoring grid than the base CT for the dose calculation
   Plan.resampleScoringGrid = false; %Do not resample the dose map. Leave it on the coarse scoring grid
   Plan.Scoring_voxel_spacing = cell2mat(Plan.CEFDoseGrid); % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
-  format = ['Dose scoring grid: ' repmat(' %1.0f',1,numel(Plan.Scoring_voxel_spacing)) '\n'];
-  fprintf(format,Plan.Scoring_voxel_spacing);
+  fprintf('Dose scoring grid: [%f , %f , %f ] mm \n',Plan.Scoring_voxel_spacing(1),Plan.Scoring_voxel_spacing(2),Plan.Scoring_voxel_spacing(3));
 
   %Create a dose map at the resolution |Plan.Scoring_voxel_spacing|
   [minField , maxField] = getMaxBEVsize(Plan.Beams);
-  [iCTgntX , iCTgntY , iCTgntZ, Zdistal] =  getDoseMapCoordInIECg(Plan.Beams , PTV , handles.spacing , handles.origin , minField , maxField ,  Plan.Scoring_voxel_spacing);
-  sDoseIECg = [numel(iCTgntX) , numel(iCTgntY) , numel(iCTgntZ)];
+  [iDoseGntX , iDoseGntY , iDoseGntZ] =  getDoseMapCoordInIECg(Plan.Beams , Zdistal , handles.spacing , handles.origin , minField , maxField ,  Plan.Scoring_voxel_spacing);
+
+  hD.size = [numel(iDoseGntX) , numel(iDoseGntY) , numel(iDoseGntZ)];
+  hD.origin = [iDoseGntX(1) , iDoseGntY(1) , iDoseGntZ(1)];
+  hD.spacing = Plan.Scoring_voxel_spacing;
 
 end
 
@@ -134,16 +175,50 @@ end
 %
 % The function return a dose map with a aspatial resolution of |Plan.Scoring_voxel_spacing|
 % and aligned wit the coordinate axes of the original CT scan
+%
+% INPUT
+% |Plan| -_STRUCTURE_- Structure defining a multi energy layer PBS plan
+%
+% |handles| -_STRUCTURE_- REggui data handle. The CT scan is stored in |handles| in the image with name |Plan.CTname|.
+%
+% |Zdistal| -_SCLAR_-  Z Coordinate (mm) in the IEC gantry CS of the deepest plane in which the dose is to be computed
+%
+% |outputPath| -_STRING_- Path to the folder where the DICOM file with the mono-layer plan will be saved
+%
+% |CTname| -_STRING_- Name of the CT image in handles.images
+%
+% |PijFlag| -_BOOL_- true = compute and return the dose influence matrix
+%
+% |hCT| -_STRUCTURE_- dimension of the original CT scan
+%     * |hCT.size| -_SCALAR VECTOR_- [Nx,Ny,Nz] Number of voxels
+%     * |hCT.origin| -_SCALAR VECTOR_- [x,y,z] Coordinate (mm) of the first pixel
+%     * |hCT.spacing|-_SCALAR VECTOR_- [dx,dy,dz] Physical size (mm) of the voxels
 %================================================
-function [DoseOrigCT, DoseFileName , handlesDose] = getFullHighResDosemap(Plan , handles , PTV, outputPath , CTName)
+function [DoseOrigCT, DoseFileName , handlesDose , Pij] = getFullHighResDosemap(Plan , handles , Zdistal, outputPath , CTName , PijFlag, hCT)
 
   FieldSize = 40; % mm This radius must be larger than the spot radius at the distal surface of PTV. Otherwise the lattice structure will be visible in the dose map
 
   NbBeamlets = numel(Plan.Beams.Layers(1).SpotWeights); %Number of PBS spots in plan with energy monolayer
 
   % Set coarse grid for dose calculation.
-  [Plan , iCTgntX , iCTgntY , iCTgntZ, Zdistal ] = getHRdoseGridInfo(Plan , handles , PTV);
-  DoseIECg = zeros(numel(iCTgntX) , numel(iCTgntY) , numel(iCTgntZ) ); %Create an empty dose map in which the dose from each bemalet will be saved
+  [Plan , iDoseGntX , iDoseGntY , iDoseGntZ , ~ , ~ , hDoseIECg] = getHRdoseGridInfo(Plan , handles, Zdistal);
+  DoseIECg = zeros(numel(iDoseGntX) , numel(iDoseGntY) , numel(iDoseGntZ) ); %Create an empty dose map in which the dose from each bemalet will be saved
+  if PijFlag
+    %If we need to compute the dose influence matrix, prepare an empty sparse matrix
+    [Pij , w] = preparePij(Plan , hCT);
+  else
+    %No one will use Pij. It can be empty
+    Pij = [];
+  end
+
+  %Check whether we need to save beamlet dose map in the original CT CS
+  switch Plan.SaveDoseBeamlets
+      case {'dcm' , 'sparse'}
+        saveBeamlets = true;
+      otherwise
+        %We do not want to save the beamlets. Do not waste time reinterpoalting dose map in oriiginal CT scan CS
+        saveBeamlets = false;
+  end
 
   for spt = 1:NbBeamlets
 
@@ -153,21 +228,31 @@ function [DoseOrigCT, DoseFileName , handlesDose] = getFullHighResDosemap(Plan ,
       %This will avoid the alising problems when accumulating the dose
       minField = alignFieldWithCEM(SptPos - FieldSize , Plan.Beams.RangeModulator);
       maxField = SptPos + FieldSize; %The maxfield will be automatically aligned with the CEM pixel when calling minField:step:maxfield
-      Zdistal = getClosePixel(iCTgntZ , Zdistal);
+      Zdistal = getClosePixel(iDoseGntZ , Zdistal);
 
       fprintf('Computing dose for PBS spots %d of %d at [%f mm, %f mm] \n',spt,NbBeamlets,SptPos(1),SptPos(2))
-      [doseBeamlet, DoseFileName , handlesDoseIECg] = getHighResDose(Plan, outputPath, handles, PTV, CTName, spt, minField , maxField , Zdistal , false); %Add the dose of each spot to the global high resolution dose map
+      [doseSpt, DoseFileName , hDoseSpt] = getHighResDose(Plan, outputPath, handles, CTName, spt, minField , maxField , Zdistal , false); %Add the dose of each spot to the global high resolution dose map
 
       %Align the partial dose map on the pixel of the full dose map
-      [~ , IndexStart(1)] = getClosePixel(iCTgntX , handlesDoseIECg.origin(1));
-      [~ , IndexStart(2)] = getClosePixel(iCTgntY , handlesDoseIECg.origin(2));
-      [~ , IndexStart(3)] = getClosePixel(iCTgntZ , handlesDoseIECg.origin(3));
+      [~ , IndexStart(1)] = getClosePixel(iDoseGntX , hDoseSpt.origin(1));
+      [~ , IndexStart(2)] = getClosePixel(iDoseGntY , hDoseSpt.origin(2));
+      [~ , IndexStart(3)] = getClosePixel(iDoseGntZ , hDoseSpt.origin(3));
 
-      DoseIECg(IndexStart(1):IndexStart(1)+handlesDoseIECg.size(1)-1 , IndexStart(2):IndexStart(2)+handlesDoseIECg.size(2)-1 , IndexStart(3):IndexStart(3)+handlesDoseIECg.size(3)-1) = ...
-                         DoseIECg(IndexStart(1):IndexStart(1)+handlesDoseIECg.size(1)-1 , IndexStart(2):IndexStart(2)+handlesDoseIECg.size(2)-1 , IndexStart(3):IndexStart(3)+handlesDoseIECg.size(3)-1) + doseBeamlet;
+      DoseIECg(IndexStart(1):IndexStart(1)+hDoseSpt.size(1)-1 , IndexStart(2):IndexStart(2)+hDoseSpt.size(2)-1 , IndexStart(3):IndexStart(3)+hDoseSpt.size(3)-1) = ...
+                         DoseIECg(IndexStart(1):IndexStart(1)+hDoseSpt.size(1)-1 , IndexStart(2):IndexStart(2)+hDoseSpt.size(2)-1 , IndexStart(3):IndexStart(3)+hDoseSpt.size(3)-1) + doseSpt;
 
+      if PijFlag | saveBeamlets
+        %Reinterpolate the dose map (in IECg) into the CS of the original CT scan
+        % The final dose map will have the resolution of the original CT scan
+        [DoseSptDCMcs, hDoseDCM] = doseIECg2DICOMcs(doseSpt , hDoseSpt , hCT , Plan , outputPath);
+      end
 
-      %If required, save the dose map of each beamlet in the reference frame of the orignial CT scan
+      if PijFlag
+        %Add this beamlet to the dose influence matrix
+        Pij = addBeamlet2Pij(Pij , spt , DoseSptDCMcs , Plan , w);
+      end
+
+      %If required, save the dose map of each beamlet in the reference frame of the original CT scan
       DosePath = fullfile(outputPath,'CEF_beam','Outputs','SpotDoseInCT');
       switch Plan.SaveDoseBeamlets
         case 'dcm'
@@ -176,14 +261,14 @@ function [DoseOrigCT, DoseFileName , handlesDose] = getFullHighResDosemap(Plan ,
             mkdir (DosePath)
           end
           planFullPath = fullfile(outputPath,Plan.FileName);
-          save2Disk(handlesDoseIECg, doseBeamlet , handlesDoseIECg.size , Plan.CTinfo , DoseFileName , DosePath , planFullPath, 'RTDOSE'); %Save the beamlet
+          save2Disk(hDoseDCM, DoseSptDCMcs , hDoseDCM.size , Plan.CTinfo , DoseFileName , DosePath , planFullPath, 'RTDOSE'); %Save the beamlet
 
         case 'sparse'
             if (~exist(DosePath ,'dir'))
               %The folder to save the CT does not exist. Create it
               mkdir (DosePath )
             end
-            save(fullfile(DosePath , [DoseFileName '.mat']) , 'doseBeamlet')
+            save(fullfile(DosePath , [DoseFileName '.mat']) , 'DoseSptDCMcs')
 
          otherwise
             %Do not save anything
@@ -191,24 +276,40 @@ function [DoseOrigCT, DoseFileName , handlesDose] = getFullHighResDosemap(Plan ,
 
   end %end for spt
 
-  [DoseOrigCT, handlesDose] = doseIECg2DICOMcs(DoseIECg , outputPath , handlesDoseIECg , handles , Plan, iCTgntX, iCTgntY , iCTgntZ);
-
+  %Rotate the full dose map to make axes paralell to original CT scan
+  hD.spacing = hDoseIECg.spacing; %The final dose map will have the spatial resolution of |Plan.CEFDoseGrid|
+  hD.origin = hCT.origin;
+  hD.size = ceil(hCT.size .* hCT.spacing ./ hDoseIECg.spacing); %Compute the number of pixels at dose map resolution to fill the volume of original CT
+  [DoseOrigCT, handlesDose] = doseIECg2DICOMcs(DoseIECg  , hDoseIECg , hD , Plan , outputPath);
 
 end
 
 %------------------------------------------
 %REsample the dose map with pixels aligned on the IEC gantry CS
 % to a dose map aligned on the DICOM CS
+%
+% INPUT
+% |DoseIECg| -_SCALAR MATRIX_- DoseIECg(x,y,z) Dose (Gy) at the pixel [x,y,z]. Matrix axes are aligned with IEC gantry CS
+% |handlesDoseIECg| -_STRUCTURE_- REGGUI handle defining the spacing, origin and size of the |DoseIECg| matrix
+% |hD| -_STRUCTURE_- dimensions of the output dose |DoseDCMcs|
+%     * |hD.size| -_SCALAR VECTOR_- [Nx,Ny,Nz] Number of voxels of the |DoseDCMcs|
+%     * |hD.origin| -_SCALAR VECTOR_- [x,y,z] Coordinate (mm) of the first pixel of the |DoseDCMcs| in the original CT CS
+%     * |hD.spacing|-_SCALAR VECTOR_- [dx,dy,dz] Physical size (mm) of the voxels of |DoseDCMcs|
+% |Plan| -_STRUCTURE_- Structure defining a mono energy layer PBS plan
+% |outputPath| -_STRING_- Path to the output folder where the DICOM file of the dose map and the mono-layer plan will be saved
+%
+% OUTPUT
+% |DoseDCMcs| -_SCALAR MATRIX_- DoseDCMcs(x,y,z) Dose (Gy) at the pixel [x,y,z]. Matrix axes are aligned with the DICOM CS of the CT scan
 %------------------------------------------
-function [DoseOrigCT, handlesDose] = doseIECg2DICOMcs(DoseIECg , outputPath , handlesDoseIECg , handles , Plan, iCTgntX, iCTgntY , iCTgntZ)
+function [DoseDCMcs, handlesDose] = doseIECg2DICOMcs(DoseIECg , handlesDoseIECg , hD , Plan , outputPath)
 
   %Create a fake handle for the dose map in the original CT CS
   handlesDose = struct;
   handlesDose.path = outputPath;
   handlesDose = Initialize_reggui_handles(handlesDose); % Initialize the handles structure
-  handlesDose.spacing = handlesDoseIECg.spacing;
-  handlesDose.origin = handles.origin;
-  handlesDose.size = ceil(handles.size .* handles.spacing ./ handlesDoseIECg.spacing); %Compute the number of pixels at dose map resolution to fill the volume of original CT
+  handlesDose.spacing = hD.spacing;
+  handlesDose.origin = hD.origin;
+  handlesDose.size = hD.size ;
 
   %Compute the coordinate of all pixels of the full dose map
   %The DoseOrig dose map is aligned with the axes of the original DICOM CT
@@ -216,10 +317,15 @@ function [DoseOrigCT, handlesDose] = doseIECg2DICOMcs(DoseIECg , outputPath , ha
   A = [X(:), Y(:), Z(:)];
   A = [A , ones(numel(X),1)]; %Coordinate of all voxels of full dose map in DICOM CS
   Beam2 = Plan.Beams;
+  Beam2.isocenter = [0,0,0]; %The oCTdcm CS has its orgin at isocenter. We need to reset the isocenter to the origin of the CS.
   oCTgntr = DICOM2gantry(A' , Beam2); %Coordinate of all voxels of the original CT scan, expressed in IEC gantry. Rotate arouind isocenter at [0,0,0], using gantry angle =0, PPS=0
 
+  %Cooridnates of dose map aligned with IEC gantry
+  % The |DoseIECg| has its origin at  the isocenter. So isocenter = [0,0,0]
+  [iDoseGntX , iDoseGntY , iDoseGntZ ] = getCTaxes(handlesDoseIECg.origin , handlesDoseIECg.spacing , handlesDoseIECg.size , [0,0,0]);
+
   %Interpolate the dose map into the original CT scan
-  DoseOrigCT = interpolateCT(DoseIECg, iCTgntX, iCTgntY , iCTgntZ , oCTgntr(1,:) , oCTgntr(2,:) , oCTgntr(3,:) , 0 , handlesDose.size  , 'linear'); %The dose in the orignal grid
+  DoseDCMcs = interpolateCT(DoseIECg, iDoseGntX, iDoseGntY , iDoseGntZ , oCTgntr(1,:) , oCTgntr(2,:) , oCTgntr(3,:) , 0 , handlesDose.size  , 'linear'); %The dose in the orignal grid
 
 end
 
@@ -236,8 +342,6 @@ end
   % |outputPath| -_STRING_- Path to the folder where the DICOM file with the mono-layer plan will be saved
   %
   % |handles| -_STRUCTURE_- REggui data handle. The CT scan is stored in |handles| in the image with name |Plan.CTname|.
-  %
-  % |PTV| - _SCALAR MATRIX_ - Mask defining the position of the PTV |PTV(x,y,z)=1| if the voxel is inside the PTV
   %
   % |CTname| -_STRING_- Name of the CT image in handles.images
   %
@@ -260,8 +364,7 @@ end
   % |DoseHR| -_STRUCTURE_- Handles with the image properties of the dose map at the resolution |scoring_voxel_spacing| and in the IEC gantry CS
   %===========================================================
 
-  function [Dose, DoseFileName , DoseHR] = getHighResDose(Plan, outputPath , handles , PTV , CTName , spt , minField , maxField , Zdistal , WholeField)
-
+  function [Dose, DoseFileName , DoseHR] = getHighResDose(Plan, outputPath , handles , CTName , spt , minField , maxField , Zdistal , WholeField)
 
     global g_HUair;
     global g_HUcem; %Define HU as a global variable that will be visible inside the function getHighResDose
@@ -301,8 +404,9 @@ end
       %Use the dose map resolution for the high resolution CT
       CTresolution(3) = DoseMapResolution(3);
     end
+
     fprintf('Interpolating CT with pixels [%f , %f , %f ] mm \n', CTresolution(1) , CTresolution(2) , CTresolution(3))
-    [handlesHR , BeamHR ] = createHighResCT(handles , CTName , hrCTName , PTV, Plan.Beams , CTresolution , g_HUair , minField , maxField , Zdistal , Plan.CTinfo);
+    [handlesHR , BeamHR ] = createHighResCT(handles , CTName , hrCTName , Plan.Beams , CTresolution , g_HUair , minField , maxField , Zdistal , Plan.CTinfo);
     PlanHR.Beams = BeamHR;
     PlanHR = copyFields(PlanHR , Plan); %Overwrite the YAML parameter in the reloaded |Plan|
     PlanHR.CTname =  hrCTName;
@@ -310,7 +414,7 @@ end
 
     %Add the CEM into the high resolution CT
     fprintf('Adding CEM to high resolution CT\n')
-    [PlanHR , handlesHR ] = setCEMinCT(handlesHR , PlanHR , hrCTName , minField , maxField, g_HUcem , g_HUair);
+    [PlanHR , handlesHR ] = setCEMinCT(handlesHR , PlanHR , hrCTName ,  minField , maxField, g_HUcem , g_HUair);
 
     %Save the interpolated CT on disk
     %The IEC gantry axis of the beamlet is aligned with the Y axis of this high resolution Ct scan
@@ -472,11 +576,11 @@ end
 %================================================
 % Get the pixel coordinates of the dose map in IEC CS
 % The first pixel of the dose map is algined with the pixels of the CEM
+%
+% INPUT
+% |Zdistal| -_SCLAR_-  Z Coordinate (mm) in the IEC gantry CS of the deepest plane in which the dose is to be computed
 %================================================
-function [iCTgntX , iCTgntY , iCTgntZ , Zdistal] =  getDoseMapCoordInIECg(Beam , PTV , Spacing , ImagePositionPatient , minField , maxField ,  PixelSizeIECg)
-
-  DepthExtension = 50; % mm Extend the computation to this depth beyond PTV distal surface
-            %The extension must be sufficiently far to include the distal fall off
+function [iDoseGntX , iDoseGntY , iDoseGntZ ] =  getDoseMapCoordInIECg(Beam , Zdistal , Spacing , ImagePositionPatient , minField , maxField ,  PixelSizeIECg)
 
   %Get the maximum Zg extension of the CEM
   %This will defined one of the maximum extension of the interpolated CT scan
@@ -493,16 +597,11 @@ function [iCTgntX , iCTgntY , iCTgntZ , Zdistal] =  getDoseMapCoordInIECg(Beam ,
       maxCEF = Beam.RangeModulator.IsocenterToRangeModulatorDistance;
   end
 
-  Bdcm = getDICOMcoord(PTV , Spacing , ImagePositionPatient , Beam.isocenter);
-  M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle);
-  Bbev = M * Bdcm; %Coordinate of the voxels of the body in IC gantry
-  Zdistal = min(Bbev(3,:)) - DepthExtension; %Position on beam axis of the distal surface of PTV + additional depth
-
   %Define the coordinate of the voxels in the IEC gantry CS for the interpolated Ct scan
   %Make the dose map a bit larger to be sire to fit all bemalets
-  iCTgntX = (minField(1) - 15 .* PixelSizeIECg(1) )      : PixelSizeIECg(1) : (maxField(1) + 15 .* PixelSizeIECg(1));
-  iCTgntY = (minField(2) - 15 .* PixelSizeIECg(2) )      : PixelSizeIECg(2) : (maxField(2) + 15 .* PixelSizeIECg(2));
-  iCTgntZ = double( (Zdistal - 15 .* PixelSizeIECg(3) )  : PixelSizeIECg(3) : maxCEF + 30 .* PixelSizeIECg(3));
+  iDoseGntX = (minField(1) - 15 .* PixelSizeIECg(1) )      : PixelSizeIECg(1) : (maxField(1) + 15 .* PixelSizeIECg(1));
+  iDoseGntY = (minField(2) - 15 .* PixelSizeIECg(2) )      : PixelSizeIECg(2) : (maxField(2) + 15 .* PixelSizeIECg(2));
+  iDoseGntZ = double( (Zdistal - 15 .* PixelSizeIECg(3) )  : PixelSizeIECg(3) : maxCEF + 30 .* PixelSizeIECg(3));
 
 end
 
@@ -510,9 +609,9 @@ end
 %-------------------------------------------
 % find the closest pixel coordinate to a given number
 %-------------------------------------------
-function [pxlVal , pixIdx] = getClosePixel(iCTgntX , value)
-  [~ , pixIdx] = min((iCTgntX - value).^2);
-  pxlVal = iCTgntX(pixIdx);
+function [pxlVal , pixIdx] = getClosePixel(iDoseGntX , value)
+  [~ , pixIdx] = min((iDoseGntX - value).^2);
+  pxlVal = iDoseGntX(pixIdx);
 end
 
 %----------------------------------------------
@@ -521,4 +620,77 @@ end
 function minField = alignFieldWithCEM(minField , RangeModulator)
   NbPxl = round( (minField - RangeModulator.ModulatorOrigin(1:2)) ./ RangeModulator.Modulator3DPixelSpacing(1:2)); %Number of pixels between origin of CEM and corner of the field
   minField = RangeModulator.ModulatorOrigin(1:2) + NbPxl .* RangeModulator.Modulator3DPixelSpacing(1:2); %Shift the origiin of the field to be aligned with CEM grid
+end
+
+
+%----------------------------------------------
+% Create an empty sparse matrix
+%This will store the dose influence matrix
+% INPUT
+%
+% |Plan| -_STRUCTURE_- Structure defining a multi energy layer PBS plan
+%
+% |handles| -_STRUCTURE_- REggui data handle. The CT scan is stored in |handles| in the image with name |Plan.CTname|.
+%
+% OUTPUT
+% |Pij| -_SCALAR MATRIX_- dose influence matrix: |Pij(vox,spot)| The dose contribution to voxel |vox| of the spot number |spot|
+% |w| -_SCALAR VECTOR_- |w(spot)| weight per fraction of the j-th spot
+%----------------------------------------------
+function [Pij , w]  = preparePij(Plan , handles)
+
+  NbBeamlets = numel(Plan.Beams.Layers(1).SpotWeights); %Number of PBS spots in plan with energy monolayer
+  nvoxels = prod(handles.size);
+
+  Pij = sparse(nvoxels , NbBeamlets);  %|Pij(vox,spot)|. Create  zeros sparse matrix
+          %Create empty sparse matrix with proper size
+          %This will make reading faster because it avoids resizing of matrices
+
+  w = plan2weight(Plan); %The beamlet weight in the monolayer plan. This weight is the sum over all fractions
+  w = w .* Plan.fractions; %Normalise the dose for w=1 and for 1 fraction
+          %In SpotWeightsOptimization at line 85, the weight are divided by the number of fractions.
+
+end
+
+%------------------------------------
+% Add one bemalet to the Pij dose influence matrix
+%
+% INPUT
+% |Pij| -_SCALAR MATRIX_- dose influence matrix: |Pij(vox,spot)| The dose contribution to voxel |vox| of the spot number |spot|
+% |spt| -_INTEGER_- Index of the beamlet to be added to Pij
+% |DoseDCMcs| -_SCALAR MATRIX_- DoseDCMcs(x,y,z) Dose (Gy) at the pixel [x,y,z]. Matrix axes are aligned with the DICOM CS of the CT scan
+% |Plan| -_STRUCTURE_- Structure defining a mono energy layer PBS plan
+% |w| -_SCALAR VECTOR_- |w(spot)| weight per fraction of the j-th spot
+%
+% OUTPUT
+% |Pij| -_SCALAR MATRIX_- [OPTIONAL] dose influence matrix: |Pij(vox,spot)| The dose contribution to voxel |vox| of the spot number |spot|
+%------------------------------------
+function Pij = addBeamlet2Pij(Pij , spt , DoseSptDCMcs , Plan , w)
+
+    DoseSptDCMcs = DoseSptDCMcs ./ w(spt) ; % w is Normalise the dose for w=1 and for 1 fraction
+            %In SpotWeightsOptimization at line 85, the weight are divided by the number of fractions.
+    temp = flip(DoseSptDCMcs,3);
+    dose1D = temp(:); %spare matrix with the dose influence of the spot spt
+    dose1D = sparse(double(full(Plan.OptROIVoxels_nominal) .* dose1D)); %Apply the mask to force to zero the voxels outside of the RT struct of interrest. This saves memory
+            %the .* product should use full matrices. Product .* with sparse matrices seems buggy in Matlab
+    Pij(:,spt) =  dose1D; %|Pij(vox,spot)|
+
+end
+
+
+%-------------------------
+%compute the deepest Z in IECg CS
+% to which the dose should be computed
+%
+% OUTPUT
+% |Zdistal| -_SCLAR_-  Z Coordinate (mm) in the IEC gantry CS of the deepest plane in which the dose is to be computed
+%-------------------------
+function Zdistal = getZdistal(PTV , Spacing , ImagePositionPatient , Beam)
+
+  DepthExtension = 50; % mm Extend the computation to this depth beyond PTV distal surface
+            %The extension must be sufficiently far to include the distal fall off
+
+  Bdcm = getDICOMcoord(PTV , Spacing , ImagePositionPatient , Beam.isocenter);
+  M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle);
+  Bbev = M * Bdcm; %Coordinate of the voxels of the body in IC gantry
+  Zdistal = min(Bbev(3,:)) - DepthExtension; %Position on beam axis of the distal surface of PTV + additional depth
 end

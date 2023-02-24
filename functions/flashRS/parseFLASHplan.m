@@ -132,28 +132,30 @@ for b = 1:NbBeams
 
     %Create the beam structure in the Plan
     %--------------------------------------
-    figure(100+b)
-    for e = 1:NbLayers
-        Plan.Beams(b).Layers(e).Energy = Layers(e).energy;
-        Plan.Beams(b).Layers(e).nominalSpotPosition = Layers(e).xy;
-        Plan.Beams(b).Layers(e).SpotPositions = Layers(e).xy;
-        Plan.Beams(b).Layers(e).SpotWeights = (Layers(e).weight)' ; %This is understood as the weight PER fraction by MIROPT
-                      % If the BDL is different in MIROPT and RayStation some rescaling of the MU definition will be required using the doseMeterSet tag
-        minW = min(Layers(e).weight);
-        maxW = max(Layers(e).weight);
-        scatter(Layers(e).xy(:,1),Layers(e).xy(:,2) , 50 , round(255.*(Layers(e).weight-minW) ./ (maxW-minW)) , 'filled')
-        hold on
-    end
-    hcb = colorbar;
-    set(get(hcb,'Title'),'String','Spot charge (AU)')
+    if Plan.showGraph
+        figure(100+b)
+        for e = 1:NbLayers
+            Plan.Beams(b).Layers(e).Energy = Layers(e).energy;
+            Plan.Beams(b).Layers(e).nominalSpotPosition = Layers(e).xy;
+            Plan.Beams(b).Layers(e).SpotPositions = Layers(e).xy;
+            Plan.Beams(b).Layers(e).SpotWeights = (Layers(e).weight)' ; %This is understood as the weight PER fraction by MIROPT
+                          % If the BDL is different in MIROPT and RayStation some rescaling of the MU definition will be required using the doseMeterSet tag
+            minW = min(Layers(e).weight);
+            maxW = max(Layers(e).weight);
+            scatter(Layers(e).xy(:,1),Layers(e).xy(:,2) , 50 , round(255.*(Layers(e).weight-minW) ./ (maxW-minW)) , 'filled')
+            hold on
+        end
+        hcb = colorbar;
+        set(get(hcb,'Title'),'String','Spot charge (AU)')
 
-    figure(100+b)
-    grid on
-    title(['Spot grid for beam ' num2str(b) '@ isocenter'])
-    xlabel('X (mm)')
-    ylabel('Y (mm)')
-    hold off
-    drawnow
+        figure(100+b)
+        grid on
+        title(['Spot grid for beam ' num2str(b) '@ isocenter'])
+        xlabel('X (mm)')
+        ylabel('Y (mm)')
+        hold off
+        drawnow
+    end
 
     physicsConstants;
     maxE =max([Plan.Beams(b).Layers(:).Energy]);
@@ -194,13 +196,13 @@ for b = 1:NbBeams
           data = reshape(block.BlockData,2,block.BlockNumberOfPoints);
           Plan.Beams(b).BlockData{BlckNb} = data';
 
-          %if Plan.showGraph
+          if Plan.showGraph
               figure(100+b)
               hold on
               plot(data(1,:) , data(2,:) , '-r')
               hold off
               drawnow
-          %end
+          end
         end
     end
 

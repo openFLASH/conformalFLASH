@@ -104,8 +104,16 @@ function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , max
             %the origin of the 3D image is now at the tip of the CEM
     end
 
+    %Re-interpolate the CEM at the resolution of the CT scan
+    CEMres = [0.2,0.2,0.2]; %mm choose small pixels so that there is no aliasing at any gnatry angle
+    [CTx, CTy, CTz ]    = getCTaxes(Origin , Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing , size(CEM) , [0,0,0]);
+    CEMnewSize = round(size(CEM) .* Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing ./ CEMres);
+    [Xint, Yint, Zint ] = getCTaxes(Origin , CEMres , CEMnewSize , [0,0,0]);
+    [Y , X , Z] = meshgrid( Yint , Xint , Zint);
+    CEMi = interpolateCT(CEM, CTx, CTy, CTz , X, Y, Z , 0 , CEMnewSize , 'nearest'); %The CEM from plan is now interpoalted at |CEMres| spatial resolution
+
     %Get the coordinates of the voxels of the CEM in the IEC gantry CS
-    Acem = getDICOMcoord(CEM, Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing , Origin , [0,0,0]);
+    Acem = getDICOMcoord(CEMi, CEMres , Origin , [0,0,0]);
     Acem = Acem';
     Acem = Acem(:,1:3);
 

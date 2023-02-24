@@ -115,7 +115,7 @@ if CEMprop.makeSTL
   %Export the STL file of the CEM
   path2beamResults = getOutputDir(Plan.output_path , 1);
   filename = fullfile(path2beamResults,[matlab.lang.makeValidName(Plan.Beams.RangeModulator.AccessoryCode),'.stl']);
-  exportCEM2STL(Plan.Beams.RangeModulator.CEM3Dmask  , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , Plan.Beams.RangeModulator.ModulatorOrigin , Plan.Beams.RangeModulator.AccessoryCode , filename)
+  exportCEM2STL(Plan.Beams.RangeModulator.CEMThicknessData  , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , Plan.Beams.RangeModulator.ModulatorOrigin , Plan.Beams.RangeModulator.AccessoryCode , filename)
 end
 
 
@@ -133,7 +133,7 @@ fprintf('Adding aperture to high resolution CT\n')
 
 %Compute the optimum spot trajectory
 %----------------------------------
-if BeamProp.FLAGOptimiseSpotOrder
+if Plan.FLAGOptimiseSpotOrder
   %Optimise spot trajectory
   % If |Plan.scanAlgoGW| is defined, then use scanAlgo. In the output |SpotTrajectoryInfo.scanAlgoGW| will be defined
   % Otherwise, use simple model
@@ -176,20 +176,20 @@ else
   end
 
   %Make sure that the spot trajectory defined in the plan is the same as MIROPT
-  if BeamProp.FLAGcheckSpotOrdering
-        fprintf('Checking that trajectory of original plan is the same than optimised with MIROPT \n')
-        SpotTrajectoryInfo = optimizeTrajectory(Plan  , ROI); %Optimsie the trajectory with simple model or scanAlgo
-
-        if (~prod(diff(SpotTrajectoryInfo.beam{1}.sobpSequence)==1))
-            %If the spot trajectory is not a monotonically increasing sequence, then the spot trajectory of the plan
-            %was optimised with a different algorithm than MIROPT (which was supposed to be used in the RaysStation script)
-            %This is an error condition
-            Plan.Beams(1).Layers(1).SpotPositions
-            Plan.SpotTrajectoryInfo.sobpPosition{1}
-            SpotTrajectoryInfo.weight2spot
-            error('Spot ordering has been changed from the order in the plan')
-        end
-    end
+  % if BeamProp.FLAGcheckSpotOrdering
+  %       fprintf('Checking that trajectory of original plan is the same than optimised with MIROPT \n')
+  %       SpotTrajectoryInfo = optimizeTrajectory(Plan  , ROI); %Optimsie the trajectory with simple model or scanAlgo
+  %
+  %       if (~prod(diff(SpotTrajectoryInfo.beam{1}.sobpSequence)==1))
+  %           %If the spot trajectory is not a monotonically increasing sequence, then the spot trajectory of the plan
+  %           %was optimised with a different algorithm than MIROPT (which was supposed to be used in the RaysStation script)
+  %           %This is an error condition
+  %           Plan.Beams(1).Layers(1).SpotPositions
+  %           Plan.SpotTrajectoryInfo.sobpPosition{1}
+  %           SpotTrajectoryInfo.weight2spot
+  %           error('Spot ordering has been changed from the order in the plan')
+  %       end
+  %   end
 
 end
 
@@ -199,6 +199,7 @@ PlanMono = Plan; %This is a Monolayer plan already
 %-----------------
 % Compute the dose through the CEF using the high resolution CT scan
 %Save the high resolution dose map of each beamlet in separate files
+%TODO deal with plan contianing setup beams
 fprintf('Computing the dose map in high resolution CT scan \n')
 for b = 1:numel(Plan.Beams)
   fprintf('Beam %d \n' , b)
@@ -211,14 +212,9 @@ for b = 1:numel(Plan.Beams)
 
   %Compute the dose of each beamlet
   path2beamResults = getOutputDir(Plan.output_path , b);
-  computeDoseWithCEF(Plan , path2beamResults , handles , ROI(idxPTV).mask3D.value , 'CTwithAperture' , true);
+  Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P = computeDoseWithCEF(Plan , path2beamResults , handles , 'CTwithAperture' , true);
   movefile (fullfile(Plan.output_path,'Outputs','Plan.dcm') , fullfile(path2beamResults,'Plan_CEM.dcm'));
 end
-
-
-%Compute the dose influence matrix
-%---------------------------------
-[handles, Plan] = getRS_doses(Plan, handles);
 
 %Compute the dose rate and save the results to disk
 %--------------------------------------------------

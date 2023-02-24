@@ -16,8 +16,6 @@ DoseRate.Dref = 2; % Dose (Gy / FRACTION) in OAR above which the dose rate condi
 
 BeamProp.NbScarves = 1; %umber of scarves to paint on the BEV
 BeamProp.CEFDoseGrid = {1, 1, 1}; % Size (mm) of final dose scoring grid. Compute the final dose through CEF on a different grid than the high-res
-BeamProp.FLAGOptimiseSpotOrder = true;
-
 
 CEMprop.makeSTL = true;
 
