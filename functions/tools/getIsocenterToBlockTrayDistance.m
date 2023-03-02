@@ -57,7 +57,7 @@ function [IsocenterToBlockTrayDistance , BlockThickness , Zskin , BlockMountingP
   else
       AirGap = 0;
   end
-  IsocenterToBlockTrayDistance = Zskin + BlockThickness + AirGap; %Distance from isocentre to upstream side of of aperture block;
+  IsocenterToBlockTrayDistance = round(Zskin + BlockThickness + AirGap , 1); %Distance from isocentre to upstream side of of aperture block;
   BlockMountingPosition = 'PATIENT_SIDE';
   %SOURCE_SIDE and PATIENT_SIDE are used to indicate which face of the accessory is used for defining its position
   %SOURCE_SIDE is using the downstream face of the block as a reference position for expressing the isocenter to block tray distance.

@@ -34,7 +34,7 @@ function IsocenterToRangeModulatorDistance  = getIsocenterToRangeModulatorDistan
 
   IsocenterToBlockTrayDistance = getIsocenterToBlockTrayDistance(Beams);
   param = getMachineParam(BDL);
-  IsocenterToRangeModulatorDistance = IsocenterToBlockTrayDistance + param.snout.CEMOffset;
+  IsocenterToRangeModulatorDistance = round(IsocenterToBlockTrayDistance + param.snout.CEMOffset,1);
 
 
 end

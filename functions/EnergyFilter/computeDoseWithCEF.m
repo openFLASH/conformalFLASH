@@ -45,10 +45,12 @@ function Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePe
 
     global g_HUair;
     global g_HUcem; %Define HU as a global variable that will be visible inside the function getHighResDose
+    global g_HUrangeshifter;
                   %getMaterialSPR reads the disk. Only make the reading once and not at every iteration of the loop for each beamlet in order to make computation faster
     g_HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
     g_HUcem =  getMaterialSPR(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
-        %The g_HUair and g_HUcem are now stored in a global varialbe that is accessible by the sub-function getHighResDose
+    g_HUrangeshifter =  getMaterialSPR(Plan.Beams.RSinfo.RangeShifterMaterial , Plan.ScannerDirectory) + 1 ; %HU and relative stopping power of the range shifter
+        %The g_HUair and g_HUcem and g_HUrangeshifter are now stored in a global varialbe that is accessible by the sub-function getHighResDose
 
     %Make some sanity check on the treatment plan
     %TODO deal with plan with setup beams
@@ -97,13 +99,6 @@ function Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePe
     hCT.size = handles.size; %Make first a copy of the size of the original CT scan. We want the dose map to match this size
     hCT.origin = handles.origin;
     hCT.spacing = handles.spacing;
-
-    %Insert the range shifter in the high resolution CT
-    %The insertion is done in the low resolution CT to avoid wasting time re-inserting the range shifter in all high reoslution beamlets
-    fprintf('Adding Range shifter to low resolution CT \n')
-    [Plan , handles ] = setRangeShifterinCT(handles , Plan , CTName);
-          %The dimensions of the images in handles is now larger than the original CT scan
-          %because the range shifter has been added to the CT
 
     if ~FLAGdosePerSpot
         % Compute the dose in the whole volume in one go
@@ -395,17 +390,14 @@ end
 
     %Generate the high resolution CT scan
     %The IEC gantry is aligned with the Y axis of the CT scan
-    %the spatial resolution of the Ct is the same as CEM to avoid aliasing problems when inserting CEM in high res CT
-    fprintf('Interpolating high resolution CT \n')
+    % The X-Y spatial resolution of the Ct is the same as CEM to avoid aliasing problems when inserting CEM in high res CT
+    % The Z resolution is 0.5mm. The CEM height is a multiple of 1mm and the rnage shifter are also multiple of 1mm
+    % The dose map and original CT scna resolution are coarser tan 0.5mm.
+    % Therefore with Z resolution 0.5mm, we can describes the fine structures of the CEM and range shifter.
     CTresolution = Plan.Beams.RangeModulator.Modulator3DPixelSpacing;
-    DoseMapResolution = Plan.Scoring_voxel_spacing;
-    if CTresolution(3) > DoseMapResolution(3)
-      %The dose map has smaller Z dimension than CEM
-      %Use the dose map resolution for the high resolution CT
-      CTresolution(3) = DoseMapResolution(3);
-    end
-
+    CTresolution(3) = 0.5; %mm
     fprintf('Interpolating CT with pixels [%f , %f , %f ] mm \n', CTresolution(1) , CTresolution(2) , CTresolution(3))
+
     [handlesHR , BeamHR ] = createHighResCT(handles , CTName , hrCTName , Plan.Beams , CTresolution , g_HUair , minField , maxField , Zdistal , Plan.CTinfo);
     PlanHR.Beams = BeamHR;
     PlanHR = copyFields(PlanHR , Plan); %Overwrite the YAML parameter in the reloaded |Plan|
@@ -415,6 +407,12 @@ end
     %Add the CEM into the high resolution CT
     fprintf('Adding CEM to high resolution CT\n')
     [PlanHR , handlesHR ] = setCEMinCT(handlesHR , PlanHR , hrCTName ,  minField , maxField, g_HUcem , g_HUair);
+
+    %Add range shifter in the high resolution CT
+    %This must be done in the high resolution CT to avoid the RS thickness to be aliased by the Z pixel resolution of the CT
+    %As the CT is aligned with the IEC gantry CS, adding the RS can be done quickly by using the Matlab indexing.
+    fprintf('Adding Range shifter to low resolution CT \n')
+    handlesHR = setRangeShifterinHRCT(handlesHR , PlanHR , hrCTName);
 
     %Save the interpolated CT on disk
     %The IEC gantry axis of the beamlet is aligned with the Y axis of this high resolution Ct scan
@@ -461,7 +459,9 @@ end
     %Define the MCsquare parameter to do the dose scoring on a different pixel size than the high resolution CT scan
     Plan2.Independent_scoring_grid = Plan.Independent_scoring_grid; % Enable a different scoring grid than the base CT for the dose calculation
     Plan2.resampleScoringGrid = Plan.resampleScoringGrid;
-    Plan2.Scoring_voxel_spacing = Plan.Scoring_voxel_spacing; % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
+    Plan2.Scoring_voxel_spacing = [Plan.Scoring_voxel_spacing(1) , Plan.Scoring_voxel_spacing(3) , Plan.Scoring_voxel_spacing(2)];
+                % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
+                                %Plan.Scoring_voxel_spacing dimension are along the high res CT scan CS. The Zg is the Y axis of the Ct CS
 
     % Compute the dose map if no dose file already exists
     if (~exist(DoseFullFileName))
@@ -494,7 +494,6 @@ end
     DoseHR = Initialize_reggui_handles(DoseHR);
     DoseHR.size = size(Dose);
     origZ = -DoseInfo.ImagePositionPatient(2) - DoseInfo.Spacing(2) .* (DoseHR.size(3) - 1);
-
 
     DoseHR.origin = [DoseInfo.ImagePositionPatient(1) , DoseInfo.ImagePositionPatient(3) , origZ ]'; %Second index is minus (because flipped) Zg
     DoseHR.isocenter = [handlesHR.isocenter(1) , handlesHR.isocenter(3) , handlesHR.isocenter(2)]; %permuted the CT scan
@@ -693,4 +692,42 @@ function Zdistal = getZdistal(PTV , Spacing , ImagePositionPatient , Beam)
   M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle);
   Bbev = M * Bdcm; %Coordinate of the voxels of the body in IC gantry
   Zdistal = min(Bbev(3,:)) - DepthExtension; %Position on beam axis of the distal surface of PTV + additional depth
+end
+
+
+%------------------------------------------------
+% Add the range shifter in the high resolution Ct scan
+%This must be done in the high resolution CT to avoid the RS thickness to be aliased by the Z pixel resolution of the CT
+%As the CT is aligned with the IEC gantry CS, adding the RS can be done quickly by using the Matlab indexing.
+%------------------------------------------------
+function handlesHR = setRangeShifterinHRCT(handlesHR , PlanHR , hrCTName)
+
+  global g_HUrangeshifter;
+
+  CT = Get_reggui_data(handlesHR,hrCTName,'images'); %Update the CT scan with the aperture block in handles
+
+  if isfield( PlanHR.Beams , 'RSinfo')
+
+      for slab =  PlanHR.Beams.RSinfo.NbSlabs : -1 : 1
+          fprintf('Slab # %d \n',slab)
+
+          %%Compute Zg of upstream side of range shifter
+          ZgUp =  PlanHR.Beams.RSinfo.IsocenterToRangeShifterDistance +  ... %Donwstream side of slab close to isocenter
+                 PlanHR.Beams.RSinfo.SlabOffset(slab); %distance from downstream side of 1st slab to upstream side of |slab|
+
+          %+Zg is aligned with -Y CT
+          [ ~, ~ , Zup ]= DICOM2PXLindex([] , handlesHR.spacing , handlesHR.origin , true, 0 , -ZgUp , 0 );
+          ZgDwn = ZgUp -  PlanHR.Beams.RSinfo.RSslabThickness(slab);
+          [ ~, ~ , Zdn ]= DICOM2PXLindex([] , handlesHR.spacing , handlesHR.origin , true, 0 , -ZgDwn , 0 );
+
+          stp = 1 .* sign(Zup-Zdn) ;
+          for slice = Zdn:stp:Zup
+            CT(:,slice,:) = g_HUrangeshifter;
+          end % for slice
+      end %for slab
+  end % if isfield( PlanHR.Beams , 'RSinfo')
+
+  handlesHR = Set_reggui_data(handlesHR , hrCTName , CT ,  PlanHR.CTinfo , 'images',1); %Update the CT scan with the aperture block in handles
+
+
 end

@@ -101,19 +101,21 @@ for b = 1:numel(Plan.Beams)
       %|Z_cem=0| at the base of CEM. |Z_cem| increases when moving up in the CEM
 
     % Try first guess step
-    stepXY = Plan.Spike.intrpCTpxlSize; %Lateral resolution of CEF mask.
+    stepXY = [Plan.Spike.intrpCTpxlSize , Plan.Spike.intrpCTpxlSize]; %Lateral resolution of CEF mask.
       %Define a mask with the same resolution as the hig resolution Ct scan to avoid aliasing problems
 
     [maxR0 , ~ , nrSides , GridLayout ] = getConvGridParam(Plan , b);
     maxR = maxR0 .* 1.5; %Make the spike grid sufficiently large to avoid clipping
     border = 10; %mm  Add a 10mm border around the spikes in order for the base to be less likely to bend
     wallThick = 1; %mm Thickness of the surrounding wall
-    maxBlock = maxCentre + [maxR ,  maxR] +  border .* 2 + wallThick; %mm
-    minBlock = minCentre - [maxR ,  maxR] - (border .* 2 + wallThick); %mm
+
+    %Align the border fo the CEM to the pixel grid size to avoid alisasing problems
+    maxBlock = rounding (maxCentre + [maxR ,  maxR] +  border .* 2 + wallThick , Plan.Spike.intrpCTpxlSize ); %mm
+    minBlock = rounding (minCentre - [maxR ,  maxR] - (border .* 2 + wallThick) , Plan.Spike.intrpCTpxlSize ); %mm
 
     % adjust number of steps to be an integer
-    nrSteps = round(maxBlock ./ (2 .* stepXY)) .*2 + 1; %Make sure this is an odd number so that the matrix copying is symetrical
-    stepXY = round(maxBlock ./ nrSteps , 1); %voxel size at 0.1mm resolution
+    nrSteps = round( (maxBlock-minBlock) ./ (2 .* stepXY)) .*2 + 1; %Make sure this is an odd number so that the matrix copying is symetrical
+    maxBlock = minBlock +  nrSteps .* stepXY; %Adjust the maximum border to have the proper number of steps
 
     %Define the dimensions of the Conformal Energy modulator
     Xvec = minBlock(1) : stepXY(1) : maxBlock(1);
@@ -163,6 +165,7 @@ for b = 1:numel(Plan.Beams)
           title(['Conformal Energy Filter beam ',num2str(b), '-- Spike ', num2str(SpikeIdx) ,' of ', num2str(NbSpikes)])
           ylabel('X (pxl)')
           xlabel('Height (pxl)')
+          grid on
           drawnow
         end
 
@@ -177,7 +180,7 @@ for b = 1:numel(Plan.Beams)
         Spacing = [stepXY(1) , stepXY(2) , stepZ];
         ImageOrigin = [min(Xspike) , min(Yspike) , min(Z_cem)]; %Origin of the spike coordinate system
         P = getDICOMcoord(MaskSpk, Spacing./2, ImageOrigin , [0,0,maxZCEF]);
-        %Get the CEM coordiantes (mm) of all pixel == 1. The rotation is done at the base of the CEF
+        %Get the CEM coordinates (mm) of all pixel == 1. The rotation is done at the base of the CEF
                                                %MaskSpk has a resolution double of the CEF3dMask
 
        % align the Z coordinate to the IEC Z gantry
@@ -255,7 +258,7 @@ for b = 1:numel(Plan.Beams)
     % Set base height to min thickness
     wzero = find(CEMelevation == 0);
     CEMelevation(wzero) = Plan.Spike.MinThickness;
-    idx = find((Z_cem <= Plan.Spike.MinThickness) .* (Z_cem >= 0));
+    idx = find((Z_cem < Plan.Spike.MinThickness) .* (Z_cem >= 0)); %Start to fill at layer Z=0 and stop at MinThickness -1
     CEF3dMask(:,:,idx) = 1; %Fill the mask of the spike in the 'CT' of the CEF
 
     %Remove the resin below the base of the CEF
@@ -299,6 +302,7 @@ for b = 1:numel(Plan.Beams)
         figure(112)
         image(squeeze(CEF3dMask(:,round(size(CEF3dMask,2)./2),:)).*255)
         title('Slice through the CEF')
+
       end
 
     %Export the STL file to disk

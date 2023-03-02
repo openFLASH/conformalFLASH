@@ -37,6 +37,7 @@ if nargin < 2
     %Create the Plan structure
     Plan = struct;
     [~,Plan.output_path] = get_reggui_path();
+    Plan.showGraph = false;
 end
 
 if nargin < 3
@@ -132,19 +133,22 @@ for b = 1:NbBeams
 
     %Create the beam structure in the Plan
     %--------------------------------------
-    if Plan.showGraph
-        figure(100+b)
-        for e = 1:NbLayers
-            Plan.Beams(b).Layers(e).Energy = Layers(e).energy;
-            Plan.Beams(b).Layers(e).nominalSpotPosition = Layers(e).xy;
-            Plan.Beams(b).Layers(e).SpotPositions = Layers(e).xy;
-            Plan.Beams(b).Layers(e).SpotWeights = (Layers(e).weight)' ; %This is understood as the weight PER fraction by MIROPT
-                          % If the BDL is different in MIROPT and RayStation some rescaling of the MU definition will be required using the doseMeterSet tag
-            minW = min(Layers(e).weight);
-            maxW = max(Layers(e).weight);
+    for e = 1:NbLayers
+        Plan.Beams(b).Layers(e).Energy = Layers(e).energy;
+        Plan.Beams(b).Layers(e).nominalSpotPosition = Layers(e).xy;
+        Plan.Beams(b).Layers(e).SpotPositions = Layers(e).xy;
+        Plan.Beams(b).Layers(e).SpotWeights = (Layers(e).weight)' ; %This is understood as the weight PER fraction by MIROPT
+                      % If the BDL is different in MIROPT and RayStation some rescaling of the MU definition will be required using the doseMeterSet tag
+        minW = min(Layers(e).weight);
+        maxW = max(Layers(e).weight);
+        if Plan.showGraph
+            figure(100+b)
             scatter(Layers(e).xy(:,1),Layers(e).xy(:,2) , 50 , round(255.*(Layers(e).weight-minW) ./ (maxW-minW)) , 'filled')
             hold on
         end
+    end
+
+    if Plan.showGraph
         hcb = colorbar;
         set(get(hcb,'Title'),'String','Spot charge (AU)')
 

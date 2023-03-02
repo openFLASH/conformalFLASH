@@ -22,6 +22,7 @@
 %     * |Beams.RSinfo.RSslabThickness| -_SCALAR or SCALAR VECTOR_- |RSslabThickness(s)| Thickness (mm) of the s-th slab of the range shifter
 %     * |Beams.Iso2Skin| -_SCALAR_- Isocentre (mm) To Skin Distance along the proton beam axis
 %
+% |Snout2RSOffset| -_SCALAR_- distance (mm) between the plane defining the snout position and the donwstream surface of the range shifter
 %
 %% Output arguments
 %
@@ -31,7 +32,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function IsocenterToRangeShifterDistance = getIsocenterToRangeShifterDistance( Beams )
+function IsocenterToRangeShifterDistance = getIsocenterToRangeShifterDistance( Beams , Snout2RSOffset)
 
   %The range shifter is upstream to the aperture block
 
@@ -41,23 +42,18 @@ function IsocenterToRangeShifterDistance = getIsocenterToRangeShifterDistance( B
     ApertureBlock = Beams.ApertureBlock;
   end
 
-  %param = getMachineParam(BDL);
-  dwstRS2Aper    =      Beams.RSinfo.SlabOffset(1)                   - Beams.RSinfo.RSslabThickness(1); %distance (mm) from upstream aperture surface to downstream RS surface
-  %distance        upstream surface or RS as defined in snout design         slab thickness
-  %downstream surface
-  %of RS to Upstream
-  %surface of aperture
-
   if ApertureBlock
     %There is an aperture. The range shifter touches the aperture
     IsocenterToBlockTrayDistance = getIsocenterToBlockTrayDistance(Beams);
-    IsocenterToRangeShifterDistance = IsocenterToBlockTrayDistance + dwstRS2Aper;
+    IsocenterToRangeShifterDistance = IsocenterToBlockTrayDistance + Snout2RSOffset;
     % From DICOM standard : Isocenter to Range Shifter Distance (300A,0364)	Isocenter to DOWNSTREAM edge of range shifter (mm) at current control point.
     % |IsocenterToRangeShifterDistance| is therefore the distance to the patient side of the range shifter
     % The range shifter is upstream to the aperture block and touching the aperture block
   else
     %There is no aperture. The range shifter touches the skin
-    IsocenterToRangeShifterDistance = Beams.Iso2Skin + dwstRS2Aper;
+    IsocenterToRangeShifterDistance = Beams.Iso2Skin + Snout2RSOffset;
   end
+
+  IsocenterToRangeShifterDistance = round(IsocenterToRangeShifterDistance,1);
 
 end
