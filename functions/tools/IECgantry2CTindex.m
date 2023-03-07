@@ -53,9 +53,7 @@ function [Aidx , X , Y , Z]  = IECgantry2CTindex(A, Beam , Spacing , ImagePositi
 
   M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle,Beam.isocenter); %Rotate around isocentre
   Adcm = inv(M) * A' ; %Convert coordinates from IEC gantry into DICOM CS. Origin is at isocentre
-  %Axyz  = DICOM2PXLindex(Adcm' , Spacing , ImagePositionPatient ); %Shift the origin of the CS from isocentre to |ImagePositionPatient| and then convert to pixel index
-
-    [~ , X , Y , Z]  = DICOM2PXLindex([] , Spacing , ImagePositionPatient , true , Adcm(1,:) , Adcm(2,:) , Adcm(3,:)); %Shift the origin of the CS from isocentre to |ImagePositionPatient| and then convert to pixel index
+  [~ , X , Y , Z]  = DICOM2PXLindex([] , Spacing , ImagePositionPatient , true , Adcm(1,:) , Adcm(2,:) , Adcm(3,:)); %Shift the origin of the CS from isocentre to |ImagePositionPatient| and then convert to pixel index
 
   %Check that the requested indices are within the provided CT scan
     if ( sum([min(X),min(Y),min(Z)] < 1) | sum( (sizeCT - [max(X),max(Y),max(Z)] ) < 0) )

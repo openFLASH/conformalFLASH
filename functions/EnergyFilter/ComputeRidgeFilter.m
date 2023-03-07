@@ -119,7 +119,7 @@ for b = 1: size(Plan.Beams,2) %Loop for each beam
         fprintf('IsocenterToRangeModulatorDistance : %f mm\n', IsocenterToRangeModulatorDistance)
         mag = min(magnification(IsocenterToRangeModulatorDistance , Plan.BDL));
         fprintf('Magnification when projecting in CEF plane : %f \n', mag)
-        Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance = IsocenterToRangeModulatorDistance; %This is the first guess at the position of the CEF
+        Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance = rounding(IsocenterToRangeModulatorDistance , Plan.Spike.intrpCTpxlSize); %This is the first guess at the position of the CEF
 
         %Get a first estimate of spike shape based on the ratio of surface of each step
         %Ignore the lateral scattering of protons

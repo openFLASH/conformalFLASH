@@ -51,7 +51,7 @@ function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPi
 
     ElvMap = reshape(ElvMap , nrPixelsX, nrPixelsY);
     ElvMap = flip(ElvMap , 2); %In DICOM, the row start at +Y and run towrds -Y. We need to flip the second dimension
-    
+
     CEMThicknessData = ElvMap; % mm Elevation map
     maxEl = max(ElvMap,[],'all'); %Maximum height of the elevation map
     
@@ -60,7 +60,7 @@ function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPi
     Y = 1:nrPixelsY;
     X = X .* pixelSize(1);
     Y = Y .* pixelSize(2);
-    
+
     [~ , ~ , VertDist] = meshgrid( Y , X , 0:pixelSize(3):maxEl); %meshgrid inversion the 1st and second index
     ElvMap3D = repmat(ElvMap , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
     CEM3Dmask = ((VertDist < ElvMap3D) .* (ElvMap3D > 0)); %Convert the 3D elevationation map into a 3D binary mask

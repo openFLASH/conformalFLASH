@@ -294,9 +294,9 @@ for b = 1:length(sobp) %Loop for each beam
         end
 
         if (Plan.SaveDoseBeamlets & ~isempty(plotID.plots_BEV))
-          %Save the text file only if we need to save the bemalet dose map
-          %AND if the plots should be displayed. Otherwise the file will be saved at
-          %each iteration of the optimiser
+         %Save the text file only if we need to save the bemalet dose map
+         %AND if the plots should be displayed. Otherwise the file will be saved at
+         %each iteration of the optimiser
 
           %Check tha tthe folder exists
           folderName = fullfile(OutputDir,'CEF_beam','Outputs','SpotDoseInCT');

@@ -41,7 +41,7 @@
 
 function CTintrp = interpolateCT(CT, CTx, CTy, CTz , Xint, Yint, Zint , HUextpl , CTintSize , interMethod)
 
-  if nargin < 11
+  if nargin < 10
     interMethod = 'nearest';
   end
 

@@ -98,14 +98,37 @@ function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , max
         Origin = Plan.Beams(b).RangeModulator.ModulatorOrigin + [0,0, Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance];
 
       case  'PATIENT_SIDE'
+        Origin = [Plan.Beams(b).RangeModulator.ModulatorOrigin(1:2) , 0];
+
         %The Z_cem is pointing opposite to the Zg
         CEM = flip(CEM,3); %flip the matrix to have it ordered in increasing Zg
-        Origin = Plan.Beams(b).RangeModulator.ModulatorOrigin + [0,0, Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance - (size(CEM,3)-1) .* Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(3)];
+        Origin(3) = Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance - ( Plan.Beams(b).RangeModulator.ModulatorOrigin(3) + (size(CEM,3) - 1) .* Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(3) );
             %the origin of the 3D image is now at the tip of the CEM
     end
 
+
+    %Re-interpolate the CEM at the resolution of the CT scan
+    M = matDICOM2IECgantry(Plan.Beams(b).GantryAngle , Plan.Beams(b).PatientSupportAngle , Plan.Beams(b).isocenter); %Rotate around isocentre
+    ZgVec = M * [0,0,0,1 ; 0,0,Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(3),1]'; %Define the orientation and length the Zg vector in the CT scan CS
+    ZgVec = ZgVec(:,2) -  ZgVec(:,1); %Define the orientation and length the Zg vector in the CT scan CS
+    ZgVec = round(ZgVec(1:3) ./ handles.spacing); %Number of CT scan pixels for each Z step in CEM
+    ResFac = max(ZgVec);
+
+    if ResFac > 1
+      %Make CEM pixels smaller in Z to match CT scan reoslution
+      %Otherwise there will be missing layers in CEM
+      fprintf('resizing \n')
+      CEMi = imresize3(CEM , size(CEM) .* [1,1,ResFac] , 'nearest');
+      CEMres = Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing;
+      CEMres(3) = CEMres(3) ./ ResFac;
+    else
+      %Keep current CEM resolution
+      CEMi = CEM;
+      CEMres = Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing;
+    end
+
     %Get the coordinates of the voxels of the CEM in the IEC gantry CS
-    Acem = getDICOMcoord(CEM, Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing , Origin , [0,0,0]);
+    Acem = getDICOMcoord(CEMi, CEMres , Origin , [0,0,0]);
     Acem = Acem';
     Acem = Acem(:,1:3);
 
