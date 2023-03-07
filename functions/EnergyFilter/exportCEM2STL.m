@@ -38,6 +38,7 @@
 
 function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, filename)
 
+    fprintf('Exporting CEM to STL... \n')
     intrpPxlSize = 0.2;
     
     % (Re)Compute the new pixel size to refine STL export
@@ -61,8 +62,9 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, fil
        
     fprintf('Saving STL file to %s \n',filename);
     NbDigit = ceil(-log10(intrpPxlSize));
-    PhysSize = round(size(CEM3Dmask_full) .* pixelSize , NbDigit); %mm length of the hedgehog;
-    header = [AccessoryCode , '-- Unit : mm X=',num2str(PhysSize(1)),'mm Y=',num2str(PhysSize(2)),'mm Z=',num2str(PhysSize(3)),'mm'];
+    sizeXYZ = max(FV.vertices, [], 1) - min(FV.vertices, [], 1);
+    PhysSize = round(sizeXYZ, NbDigit); %mm length of the hedgehog;
+    header = [AccessoryCode, '-- Unit : mm X=', num2str(PhysSize(1)), 'mm Y=', num2str(PhysSize(2)), 'mm Z=', num2str(PhysSize(3)), 'mm'];
     if (numel(header) > 80)
         header = header(1:80); %Header must be less than 80 characters in STL stnadard
     end
