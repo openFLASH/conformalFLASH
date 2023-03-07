@@ -37,12 +37,20 @@ function exportPlan2STL(plan_filename)
     Plan.ScannerDirectory = 'default';
     [handles, Plan] = parseFLASHplan(plan_filename, Plan, handles);
 
-    %Remove voxels all around the base in order to close the STL object
-    Plan.Beams.RangeModulator.CEM3Dmask(1,:,:) = 0; %Remove the resin below the base of the CEF
-    Plan.Beams.RangeModulator.CEM3Dmask(end,:,:) = 0; %Remove the resin below the base of the CEF
-    Plan.Beams.RangeModulator.CEM3Dmask(:,1,:) = 0; %Remove the resin below the base of the CEF
-    Plan.Beams.RangeModulator.CEM3Dmask(:,end,:) = 0; %Remove the resin below the base of the CEF
-    
+    %Add voxels all around the base in order to close the STL object
+    CEM3Dmask1 = Plan.Beams.RangeModulator.CEM3Dmask;
+    CEM3Dmask = zeros(size(CEM3Dmask1,1) + 2, size(CEM3Dmask1,2) + 2, size(CEM3Dmask1,3) + 2);
+    CEM3Dmask(2:end-1, 2:end-1, 2:end-1) = Plan.Beams.RangeModulator.CEM3Dmask;
+    origin = Plan.Beams.RangeModulator.ModulatorOrigin - Plan.Beams.RangeModulator.Modulator3DPixelSpacing;
+
+    if strcmp(Plan.Beams.RangeModulator.ModulatorMountingPosition, 'PATIENT_SIDE')
+        signZ = -1;
+    elseif strcmp(Plan.Beams.RangeModulator.ModulatorMountingPosition, 'SOURCE_SIDE')
+        signZ = 1;
+    else
+        error('Modulator mounting position is incorrectly specified in dicom\n');
+    end
+
     stl_filename = fullfile(plan_filepath, [plan_name '.stl']);
-    exportCEM2STL(Plan.Beams.RangeModulator.CEMThicknessData, Plan.Beams.RangeModulator.Modulator3DPixelSpacing , Plan.Beams.RangeModulator.ModulatorOrigin , Plan.Beams.RangeModulator.AccessoryCode , stl_filename)
+    exportCEM2STL(CEM3Dmask, Plan.Beams.RangeModulator.Modulator3DPixelSpacing, origin, Plan.Beams.RangeModulator.AccessoryCode, signZ, stl_filename)
 end

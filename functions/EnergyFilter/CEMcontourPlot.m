@@ -69,18 +69,18 @@ function CEMcontourPlot(fig , Xvec, Yvec, CEFelevation , BlockData , VDSA , Isoc
   grid on
   drawnow
 
-  figure(fig+1)
-  surf(Xvec, Yvec, CEFelevation');
-  set (gca,'Ydir','normal') %Set vertical axis in the upward direction
-  hold on
-  title(['Conformal Energy Filter 3D - iso view'])
-  xlabel('X_g (mm)') %imagesc plots the first index of |CEFelevation| vertically, from top to bottom of image
-  ylabel('Y_g (mm)')
-  zlabel('Height (mm)')
-  hcb = colorbar;
-  set(get(hcb,'Title'),'String','Height (mm)')
-  grid on
-  drawnow
+%   figure(fig+1)
+%   surf(Xvec, Yvec, CEFelevation');
+%   set (gca,'Ydir','normal') %Set vertical axis in the upward direction
+%   hold on
+%   title(['Conformal Energy Filter 3D - iso view'])
+%   xlabel('X_g (mm)') %imagesc plots the first index of |CEFelevation| vertically, from top to bottom of image
+%   ylabel('Y_g (mm)')
+%   zlabel('Height (mm)')
+%   hcb = colorbar;
+%   set(get(hcb,'Title'),'String','Height (mm)')
+%   grid on
+%   drawnow
 
   figure(fig+2)
   tmp = flip(CEFelevation',1);
@@ -92,7 +92,7 @@ function CEMcontourPlot(fig , Xvec, Yvec, CEFelevation , BlockData , VDSA , Isoc
   xstp = min(diff(Xvec));
   minX = min(Xvec);
   for ii=1:length(Xdat)
-      Xdat2 = Xdat{ii} .* xstp + minX * ones(size(Xdat{ii})) ;
+      Xdat2 = (Xdat{ii}-1) .* xstp + minX .* ones(size(Xdat{ii})) ;
       set(h(ii),'XData',Xdat2);
   end
 

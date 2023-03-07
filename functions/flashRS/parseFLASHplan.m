@@ -288,7 +288,7 @@ for b = 1:NbBeams
         %Define Z resolution: this is the smallest dZ step between two terraces of the tower
         dZ = double(min(diff(unique(getPrivateTag('300D' , '0010' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData') )))); %Smallest Z step in the elevation map
         Modulator3DPixelSpacing = round(double([ModulatorPixelSpacing' , dZ]),1); %| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix in the plane of the CEM
-        fprintf('CEM pixel size : ( %3.1f , %3.1f , %3.1f ) mm \n',Modulator3DPixelSpacing(1),Modulator3DPixelSpacing(2),Modulator3DPixelSpacing(3))
+        fprintf('CEM pixel size from Dicom plan : ( %3.1f , %3.1f , %3.1f ) mm \n',Modulator3DPixelSpacing(1),Modulator3DPixelSpacing(2),Modulator3DPixelSpacing(3))
 
         if(Modulator3DPixelSpacing(1) ~= Modulator3DPixelSpacing(2))
           error('Pixels of the elevation map are not square')
@@ -313,20 +313,17 @@ for b = 1:NbBeams
           Plan.Beams(b).RangeModulator.ModulatorMountingPosition = 'PATIENT_SIDE';
         end
 
-        %Add a surface of zero below and above the mask so that the STL export is full
-        CEM3Dmask = zeros(size(CEM3Dmask1,1),size(CEM3Dmask1,2),size(CEM3Dmask1,3)+2);
-        CEM3Dmask(:,:,2:end-1) = CEM3Dmask1;
-        CEM3Dmask1 = [] ; %clear memory
-        Plan.Beams(b).RangeModulator.ModulatorOrigin(3) = Plan.Beams(b).RangeModulator.ModulatorOrigin(3) - Modulator3DPixelSpacing(3); %There is one extra layer of zeros
         Plan.Beams(b).RangeModulator.CEMThicknessData = CEMThicknessData;  %| -_SCALAR MATRIX_- |CompensatorThicknessData(x,y)| Thickness (mm) of the CEF pixel at position (x;y) in the IEC beam Limiting device CS
-        Plan.Beams(b).RangeModulator.CEM3Dmask = CEM3Dmask; % | -_SCALAR MATRIX_- 3D mask of the CEF. |CEM3Dmask(x,y,z)=1| if the voxel at location (x,y,z)  in the plane of the CEF for beam b belongs to the CEF.
-                                                %      Z=0 at the base of CEF. Z increase in the smae way as Zg if the spike point toward the proton source
+        Plan.Beams(b).RangeModulator.CEM3Dmask = CEM3Dmask1; % | -_SCALAR MATRIX_- 3D mask of the CEF. |CEM3Dmask(x,y,z)=1| if the voxel at location (x,y,z)  in the plane of the CEF for beam b belongs to the CEF.
+                                                % Z=0 at the base of CEF. Z increase in the smae way as Zg if the spike point toward the proton source
 
         %Display the elevation map of the CEM
         X = 1:nrPixelsX;
         Y = 1:nrPixelsY;
-        X = X .* ModulatorPixelSpacing(1) + Plan.Beams(b).RangeModulator.ModulatorOrigin(1);
-        Y = Y .* ModulatorPixelSpacing(2) + Plan.Beams(b).RangeModulator.ModulatorOrigin(2);
+        ModulatorOrigin(1) = Plan.Beams(b).RangeModulator.ModulatorOrigin(1);
+        ModulatorOrigin(2) = Plan.Beams(b).RangeModulator.ModulatorOrigin(2);
+        X = (X-1) .* ModulatorPixelSpacing(1) + ModulatorOrigin(1);
+        Y = (Y-1) .* ModulatorPixelSpacing(2) + ModulatorOrigin(2);
         CEMcontourPlot(50 , X , Y, CEMThicknessData , Plan.Beams(b).BlockData, Plan.Beams(b).VDSA , Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance);
 
 

@@ -35,44 +35,33 @@
 %% Contributors
 % Authors :R. Labarbe, L. Hotoiu (open.reggui@gmail.com)
 
-function exportCEM2STL(CEMThicknessData, pixelSize , origin , AccessoryCode , filename)
 
+function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, filename)
 
     fprintf('Computing surface triangles \n')
-    %FV = surf2solid(double(Xbl ), double(Ybl ), CEFelevation , 'ELEVATION',0); %Create vertexes on triangular grid
-
-    intrpCTpxlSize = 0.2;
-    nrPixelsX = size(CEMThicknessData,1);
-    nrPixelsY = size(CEMThicknessData,2);
-    maxEl = max(CEMThicknessData,[],'all'); %Maximum height of the elevation map
-
-    X = 1:nrPixelsX;
-    Y = 1:nrPixelsY;
-    X = X .* pixelSize(1);
-    Y = Y .* pixelSize(2);
+    intrpPxlSize = 0.2;
     
-    Pxlfac = pixelSize ./ intrpCTpxlSize; %One input pixel is divided in multiple smaller pixels
-    Xq = 1:nrPixelsX .* Pxlfac(1);
-    Yq = 1:nrPixelsY .* Pxlfac(2);
-    [Ym , Xm] = meshgrid(Yq .* intrpCTpxlSize , Xq .* intrpCTpxlSize);
-    Vq = interp2(Y , X , CEMThicknessData , Ym , Xm , 'nearest'); %Elevation map interpolated on a higher resolution grid
-    
-    [~ , ~ , VertDist] = meshgrid( Yq , Xq , 0:intrpCTpxlSize:maxEl); %meshgrid inversion the 1st and second index
-    ElvMap3D = repmat(Vq , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
-    CEM3dmask = (VertDist <= ElvMap3D); %Convert the 3D elevationation mapo into a 3D binary mask
+    % (Re)Compute the new pixel size to refine STL export
+    Pxlfac = round(pixelSize ./ intrpPxlSize); %One input pixel is divided in multiple smaller pixels
+    intrpPxlSize = pixelSize ./ Pxlfac;
+    fprintf('CEM pixel size for exporting in STL : ( %3.1f , %3.1f , %3.1f ) mm \n', intrpPxlSize(1), intrpPxlSize(2), intrpPxlSize(3));
+    intrpPxlSize = intrpPxlSize(1);
+ 
+    % Resize the original 3D mask coming for dicom plan
+    CEM3Dmask_full = imresize3(CEM3DMask, size(CEM3DMask).*Pxlfac,'nearest');
 
-    CEM3Dmask_full = zeros(size(CEM3dmask,1),size(CEM3dmask,2),size(CEM3dmask,3)+2);
-    CEM3Dmask_full(:,:,2:end-1) = CEM3dmask;
 
-    FV = isosurface(CEM3Dmask_full , 0.5,'noshare','verbose'); %Compute the vertices in index coordinates
-    FV.vertices(:,1) =  FV.vertices(:,1) .* pixelSize(1)./Pxlfac(1) - origin(1); %Convert from index coordinates into physics coordinates
-    FV.vertices(:,2) =  FV.vertices(:,2) .* pixelSize(2)./Pxlfac(2) - origin(2);
-    FV.vertices(:,3) =  FV.vertices(:,3) .* pixelSize(3)./Pxlfac(3);
+    %FV = surf2solid(Xm, Ym, Vq, 'ELEVATION', 0, 'THICKNESS', intrpPxlSize/2); %Create vertexes on triangular grid
+    FV = isosurface(CEM3Dmask_full, 0.5, 'noshare'); %Compute the vertices in index coordinates
+    FV.vertices(:,1) = (FV.vertices(:,1)-1) .* pixelSize(1)./Pxlfac(1) + origin(1) - ((Pxlfac(1)-1)/2).*intrpPxlSize; %Convert from index coordinates into physics coordinates
+    FV.vertices(:,2) = (FV.vertices(:,2)-1) .* pixelSize(2)./Pxlfac(2) + origin(2) - ((Pxlfac(2)-1)/2).*intrpPxlSize;
+    FV.vertices(:,3) = (FV.vertices(:,3)-1) .* pixelSize(3)./Pxlfac(3) + origin(3) - ((Pxlfac(3)-1)/2).*intrpPxlSize;
+    FV.vertices(:,3) = signZ .* FV.vertices(:,3); 
     fprintf('Done \n')
     
        
     fprintf('Saving STL file to %s \n',filename);
-    NbDigit = ceil(-log10(intrpCTpxlSize));
+    NbDigit = ceil(-log10(intrpPxlSize));
     PhysSize = round(size(CEM3Dmask_full) .* pixelSize , NbDigit); %mm length of the hedgehog;
     header = [AccessoryCode , '-- Unit : mm X=',num2str(PhysSize(1)),'mm Y=',num2str(PhysSize(2)),'mm Z=',num2str(PhysSize(3)),'mm'];
     if (numel(header) > 80)
@@ -92,5 +81,4 @@ function exportCEM2STL(CEMThicknessData, pixelSize , origin , AccessoryCode , fi
     % fprintf('Saving structural coordinates to .txt file at %s \n', coordFilename)
     % exportCEFtoMCNPX(coordFilename, GridLayout, SpikeCentres, BaseSize, SpikeSteps, TowerApothems, Plan.Spike.SpikeType);
     fprintf('Done \n')
-
 end

@@ -1,13 +1,13 @@
 %% elvMap2mask
 % Convert the elevation map of the CEM form a linear vector of number into a 3D maxk and into a 2D elevation map.
-% REinterpolate the elevtation map into a high resolution grid with pixel size |[intrpCTpxlSize,intrpCTpxlSize,intrpCTpxlSize]|
+% REinterpolate the elevtation map into a high resolution grid with pixel size |[pixelSize,pixelSize,pixelSize]|
 %
 %% Syntax
-% |[CEM3Dmask , CEMThicknessData] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , intrpCTpxlSize)|
+% |[CEM3Dmask , CEMThicknessData] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , pixelSize)|
 %
 %
 %% Description
-% |[CEM3Dmask , CEMThicknessData] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , intrpCTpxlSize)| Description
+% |[CEM3Dmask , CEMThicknessData] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , pixelSize)| Description
 %
 %
 %% Input arguments
@@ -49,13 +49,13 @@ function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPi
     % On the other hand, in Matlab, "reshape" assumes that the elements are ordered [A(:,1) , A(:,2) , ....]
     % We therefore need to flip the second dimension of the matrix
 
-    ElvMap = reshape(ElvMap , nrPixelsX , nrPixelsY);
+    ElvMap = reshape(ElvMap , nrPixelsX, nrPixelsY);
     ElvMap = flip(ElvMap , 2); %In DICOM, the row start at +Y and run towrds -Y. We need to flip the second dimension
     
     CEMThicknessData = ElvMap; % mm Elevation map
     maxEl = max(ElvMap,[],'all'); %Maximum height of the elevation map
     
-    %Create an interpolation grid at the resolution of intrpCTpxlSize
+    %Create an interpolation grid at the resolution of pixelSize
     X = 1:nrPixelsX;
     Y = 1:nrPixelsY;
     X = X .* pixelSize(1);
@@ -63,7 +63,7 @@ function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPi
     
     [~ , ~ , VertDist] = meshgrid( Y , X , 0:pixelSize(3):maxEl); %meshgrid inversion the 1st and second index
     ElvMap3D = repmat(ElvMap , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
-    CEM3Dmask = (VertDist <= ElvMap3D); %Convert the 3D elevationation mapo into a 3D binary mask
+    CEM3Dmask = ((VertDist < ElvMap3D) .* (ElvMap3D > 0)); %Convert the 3D elevationation map into a 3D binary mask
 end
 
 %Ordering of the element between matrices and vector
