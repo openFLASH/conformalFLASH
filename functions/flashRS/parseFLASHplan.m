@@ -294,7 +294,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             %Define Z resolution: this is the smallest dZ step between two terraces of the tower
             dZ = double(min(diff(unique(getPrivateTag('300D' , '0010' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData') )))); %Smallest Z step in the elevation map
             Modulator3DPixelSpacing = round(double([ModulatorPixelSpacing' , dZ]),1); %| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix in the plane of the CEM
-            fprintf('CEM pixel size from Dicom plan : ( %3.1f , %3.1f , %3.1f ) mm \n',Modulator3DPixelSpacing(1),Modulator3DPixelSpacing(2),Modulator3DPixelSpacing(3))
+            fprintf('CEM pixel size from Dicom plan : (%3.1f, %3.1f, %3.1f) mm \n',Modulator3DPixelSpacing(1),Modulator3DPixelSpacing(2),Modulator3DPixelSpacing(3))
     
             if(Modulator3DPixelSpacing(1) ~= Modulator3DPixelSpacing(2))
               error('Pixels of the elevation map are not square')
@@ -346,7 +346,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             end
       end
     
-      Plan.Beams(b).spotSigma = 10;%mm It is only used to determine neighbourgh spots. The exact value is not too critical
+      Plan.Beams(b).spotSigma = 10; %mm It is only used to determine neighbourgh spots. The exact value is not too critical
     
     end %for b
 end
