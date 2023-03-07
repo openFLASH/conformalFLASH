@@ -38,7 +38,6 @@
 
 function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, filename)
 
-    fprintf('Computing surface triangles \n')
     intrpPxlSize = 0.2;
     
     % (Re)Compute the new pixel size to refine STL export
@@ -50,7 +49,7 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, fil
     % Resize the original 3D mask coming for dicom plan
     CEM3Dmask_full = imresize3(CEM3DMask, size(CEM3DMask).*Pxlfac,'nearest');
 
-
+    fprintf('Computing surface triangles \n')
     %FV = surf2solid(Xm, Ym, Vq, 'ELEVATION', 0, 'THICKNESS', intrpPxlSize/2); %Create vertexes on triangular grid
     FV = isosurface(CEM3Dmask_full, 0.5, 'noshare'); %Compute the vertices in index coordinates
     FV.vertices(:,1) = (FV.vertices(:,1)-1) .* pixelSize(1)./Pxlfac(1) + origin(1) - ((Pxlfac(1)-1)/2).*intrpPxlSize; %Convert from index coordinates into physics coordinates

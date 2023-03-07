@@ -35,6 +35,7 @@ function exportPlan2STL(plan_filename)
     handles.dataPath = plan_filepath;
     
     Plan.ScannerDirectory = 'default';
+    Plan.showGraph = true;
     [handles, Plan] = parseFLASHplan(plan_filename, Plan, handles);
 
     %Add voxels all around the base in order to close the STL object
