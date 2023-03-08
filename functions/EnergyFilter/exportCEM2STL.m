@@ -45,7 +45,6 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, fil
     CEM3DMask = permute(CEM3DMask, [2,1,3]);
     pixelSize = [pixelSize(2), pixelSize(1), pixelSize(3)];
     Pxlfac = round(pixelSize ./ intrpPxlSize); %One input pixel is divided in multiple smaller pixels
-    Pxlfac = [Pxlfac(2), Pxlfac(1), Pxlfac(3)];
 
     % Resize the original 3D mask coming for dicom plan
     CEM3Dmask_full = imresize3(CEM3DMask, size(CEM3DMask).*Pxlfac,'nearest');
