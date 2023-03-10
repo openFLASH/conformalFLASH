@@ -406,7 +406,8 @@ end
 
     %Add the CEM into the high resolution CT
     fprintf('Adding CEM to high resolution CT\n')
-    [PlanHR , handlesHR ] = setCEMinCT(handlesHR , PlanHR , hrCTName ,  minField , maxField, g_HUcem , g_HUair);
+    handlesHR = setCEMinhrCT(handlesHR , PlanHR , hrCTName , g_HUcem , g_HUair);
+    %[PlanHR , handlesHR ] = setCEMinCT(handlesHR , PlanHR , hrCTName ,  minField , maxField, g_HUcem , g_HUair);
 
     %Add range shifter in the high resolution CT
     %This must be done in the high resolution CT to avoid the RS thickness to be aliased by the Z pixel resolution of the CT

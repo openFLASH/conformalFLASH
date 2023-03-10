@@ -72,6 +72,10 @@ function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(ha
       maxCEF = Beam.RangeModulator.IsocenterToRangeModulatorDistance;
   end
 
+  % Round the CT scan size to a multiple of the pixel size
+  maxCEF = rounding(maxCEF , PixelSize(3));
+  Zdistal = rounding(Zdistal , PixelSize(3));
+
   %Define the coordinate of the voxels in the IEC gantry CS for the interpolated Ct scan
   iCTgntX = minField(1) : PixelSize(1) : maxField(1) ; %Coordinate axes of the interpolated CT expressed in IEC gantry CS
   iCTgntY = minField(2) : PixelSize(2) : maxField(2) ;
@@ -120,7 +124,6 @@ function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(ha
   BeamHR.isocenter = handlesHR.isocenter;
   BeamHR.GantryAngle = 0;
   BeamHR.PatientSupportAngle = 0;
-
 
 end
 

@@ -110,7 +110,7 @@ function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , max
     %Re-interpolate the CEM at the resolution of the CT scan
     M = matDICOM2IECgantry(Plan.Beams(b).GantryAngle , Plan.Beams(b).PatientSupportAngle , Plan.Beams(b).isocenter); %Rotate around isocentre
     ZgVec = M * [0,0,0,1 ; 0,0,Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(3),1]'; %Define the orientation and length the Zg vector in the CT scan CS
-    ZgVec = ZgVec(:,2) -  ZgVec(:,1); %Define the orientation and length the Zg vector in the CT scan CS
+    ZgVec = ZgVec(:,2) -  ZgVec(:,1);  %Define the orientation and length the Zg vector in the CT scan CS
     ZgVec = round(ZgVec(1:3) ./ handles.spacing); %Number of CT scan pixels for each Z step in CEM
     ResFac = max(ZgVec);
 

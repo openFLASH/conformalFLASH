@@ -54,16 +54,17 @@ function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPi
 
     CEMThicknessData = ElvMap; % mm Elevation map
     maxEl = max(ElvMap,[],'all'); %Maximum height of the elevation map
-    
+
     %Create an interpolation grid at the resolution of pixelSize
     X = 1:nrPixelsX;
     Y = 1:nrPixelsY;
     X = X .* pixelSize(1);
     Y = Y .* pixelSize(2);
 
-    [~ , ~ , VertDist] = meshgrid( Y , X , 0:pixelSize(3):maxEl); %meshgrid inversion the 1st and second index
-    ElvMap3D = repmat(ElvMap , 1 , 1 , size(VertDist,3)); %Create a 3D map of the verttical distances
-    CEM3Dmask = ((VertDist < ElvMap3D) .* (ElvMap3D > 0)); %Convert the 3D elevationation map into a 3D binary mask
+    [~ , ~ , VertDist] = meshgrid( Y , X , 1:pixelSize(3):maxEl); %meshgrid inversion the 1st and second index
+    ElvMap3D = repmat(ElvMap , 1 , 1 , size(VertDist,3)); %Create a 3D map of the vertical distances
+    CEM3Dmask = ((VertDist <= ElvMap3D) .* (ElvMap3D > 0)); %Convert the 3D elevationation map into a 3D binary mask
+
 end
 
 %Ordering of the element between matrices and vector
