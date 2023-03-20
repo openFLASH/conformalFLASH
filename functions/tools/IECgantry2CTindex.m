@@ -26,9 +26,9 @@
 % |sizeCT| -_SCALAR VECTOR_- Nulber of voxel in the [x,y,z] dimension for the Ct scan
 %
 % |warn| -_INTEGER_- What to do if some voxels in |A| are outside the CT scan.
-%           * |warn = 0| : return empty |Axyz| and |Aidx|
-%           * |warn = 1| : return empty |Axyz| and |Aidx| and issue a warning
-%           * |warn = 2| : return empty |Aidx|. |Axyz| contains all indices, even those out of bounds
+%           * |warn = 0| : return empty |Aidx|
+%           * |warn = 1| : return empty |Aidx| and issue a warning
+%           * |warn = 2| : return empty |Aidx|. |X|,|Y|,|Z| contain all indices, even those out of bounds
 %
 %% Output arguments
 %
@@ -83,7 +83,6 @@ function [Aidx , X , Y , Z]  = IECgantry2CTindex(A, Beam , Spacing , ImagePositi
     return
   end
 
-  %Aidx = sub2ind(sizeCT,Axyz(:,1),Axyz(:,2),Axyz(:,3));
   Aidx = sub2ind(sizeCT,X,Y,Z);
 
 

@@ -36,8 +36,8 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
     Plan.protonsFullDose = 5e6; % Number of protons in the full target. Default 1e7
     Plan.protonsHighResDose = 1e5; %TODO Number of protons in the dose in high resolution CT
 
-    Plan.SaveHighResDoseMap = false; % Do not save the dose map at CEFDoseGrid resolution in the IEC gantry CS
-    Plan.SaveDoseBeamlets = false; % Do not save beamlet dose maps to save time
+    Plan.SaveHighResDoseMap = true; % Do not save the dose map at CEFDoseGrid resolution in the IEC gantry CS
+    Plan.SaveDoseBeamlets = true; % Do not save beamlet dose maps to save time
     Plan.SaveHighResCT = true; %Do not save the high resolution CT for each beamlet in the reference frame of the beamlet
 
     %Beam properties

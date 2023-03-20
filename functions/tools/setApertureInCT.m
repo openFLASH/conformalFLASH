@@ -37,10 +37,16 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [Plan , handles ] = setApertureInCT(handles , Plan , CTname)
+function [Plan , handles ] = setApertureInCT(handles , Plan , CTname , CTwithAperture , expandCT)
+
+  if nargin < 4
+    CTwithAperture = 'CTwithAperture';
+  end
+  if nargin < 5
+    expandCT = true;
+  end
 
   CT = Get_reggui_data(handles,CTname,'images'); %Update the CT scan with the aperture block in handles
-  apertureFlag = false; %Is there any aperture in this plan ?
   CTsize = size(CT);
   ImagePositionPatient = handles.origin;
 
@@ -61,15 +67,24 @@ function [Plan , handles ] = setApertureInCT(handles , Plan , CTname)
         HUbrass = getMaterialSPR('Brass' , Plan.ScannerDirectory) + 1 ; %Hounsfield unit associated to brass in the material file
         HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
 
-        [CT , ImagePositionPatient] = insertDeviceInCT(CT , Abrass, HUbrass , Plan.Beams(b) , handles.spacing , ImagePositionPatient , HUair);
-        CTsize = size(CT); %The CT size was increased. Update the parmaeter.
-        apertureFlag = true;
+        if expandCT
+          %If the aperture is too large, expand CT scan before inserting aperture
+          [CT , ImagePositionPatient] = insertDeviceInCT(CT , Abrass, HUbrass , Plan.Beams(b) , handles.spacing , ImagePositionPatient , HUair);
+          CTsize = size(CT); %The CT size was increased. Update the parmaeter.
+        else
+          %Do not expand CT, just insert what we can of the aperture
+          [~ ,  X , Y , Z]  = IECgantry2CTindex(Abrass, Plan.Beams(b) , handles.spacing , ImagePositionPatient , size(CT) , 2); %Find pixels indices in the CT scan coordinate system
+          GoodIdx = (X > 0) .* (Y > 0) .* (Z > 0) .* (X <= size(CT,1)) .* (Y <= size(CT,2)).* (Z <= size(CT,3)); %This is the list of indices that fit in the CT
+          GoodIdx = find(GoodIdx);
+          Aidx = sub2ind(size(CT) , X(GoodIdx) , Y(GoodIdx) , Z(GoodIdx)); %Only get the indices of the aperture that fits in the CT scan
+          CT(Aidx) = HUbrass; %Put Hu of the device in the voxels of the device
+        end
 
   end %for b
 
   %Update the handles and plan
   [handles , Plan] = updateAllImages(handles , Plan , CT , ImagePositionPatient , HUair  , CTname);
-  handles = Set_reggui_data(handles,'CTwithAperture',CT,Plan.CTinfo,'images',1); %Create a new image with only the aperture
+  handles = Set_reggui_data(handles,CTwithAperture,CT,Plan.CTinfo,'images',1); %Create a new image with only the aperture
 
 
 end

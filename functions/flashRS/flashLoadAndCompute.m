@@ -101,6 +101,8 @@ end
 
 [handles, Plan] = parseFLASHplan(planFileName , Plan, handles);
 
+
+
 %If records from logs are provided, then overwrite the spot info in plan
 % with the log records
 if ~isempty(spots)
@@ -125,13 +127,6 @@ end
 %----------------------
 [handles , Plan , ROI, usedROI] = loadRSrtStructs(rtstructFileName , handles, Plan, RTstruct, DoseRate);
 Plan  = updatePlanCTparam(handles , Plan  );
-
-
-% Add the aperture in the CT scan
-%--------------------------------
-fprintf('Adding aperture to high resolution CT\n')
-[Plan , handles ] = setApertureInCT(handles , Plan , Plan.CTname); %Add an apertrue block in the CT scan
-[handles , Plan , ROI] = updateROI(handles , Plan , ROI); %Update the ROI mask used to load the dose influence matrices
 
 %Compute the optimum spot trajectory
 %----------------------------------
@@ -192,7 +187,7 @@ for b = 1:numel(Plan.Beams)
 
   %Compute the dose of each beamlet
   path2beamResults = getOutputDir(Plan.output_path , b);
-  Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P = computeDoseWithCEF(Plan , path2beamResults , handles , 'CTwithAperture' , true);
+  Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P = computeDoseWithCEF(Plan , path2beamResults , handles , Plan.CTname , true);
   movefile (fullfile(Plan.output_path,'Outputs','Plan.dcm') , fullfile(path2beamResults,'Plan_CEM.dcm'));
 end
 

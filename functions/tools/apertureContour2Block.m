@@ -87,13 +87,16 @@ function [Abrass , Rmax] = apertureContour2Block(Beam ,  Spacing  , BDL_file)
   Ya = Y(Ind);
   Ap = [Xa,Ya]; %X,Y coordinate of voxels containing brass
   Zres = Spacing(3) ./ 5; %Z resolution at Nyquest limit along the Z axis. This will avoid having gaps between layers duye to pixelisation
-  Abrass = []; %Indices of the voxels containing brass
+
 
   %Create a x * 4 matrix with the coordinate of all the CT voxel to be filled by brass
   % IsocenterToBlockTrayDistance defines the upstream side of the block which is at more positive values of Z IEC gantry.
-  for Z = Beam.IsocenterToBlockTrayDistance-Beam.BlockThickness : Zres : Beam.IsocenterToBlockTrayDistance
-      Abrass = [Abrass ; Ap , ones(size(Ap,1),1).* Z , ones(size(Ap,1),1)];
-  end
+  Z = Beam.IsocenterToBlockTrayDistance-Beam.BlockThickness : Zres : Beam.IsocenterToBlockTrayDistance;
+  Z2 = reshape(repmat(Z ,  size(Ap,1) ,1) , [1,size(Ap,1).* numel(Z)]);
+
+  Abrass = ones(size(Ap,1).* numel(Z) , 4); %Indices of the voxels containing brass
+  Abrass(:,1:2) = repmat(Ap , numel(Z) , 1);
+  Abrass(:,3) = Z2' ;
 
 
 end

@@ -404,6 +404,11 @@ end
     PlanHR.CTname =  hrCTName;
     PlanHR  = updatePlanCTparam(handlesHR , PlanHR );
 
+    % Add the aperture in the CT scan
+    fprintf('Adding aperture to low resolution CT\n')
+    [PlanHR , handlesHR ] = setApertureInCT(handlesHR , PlanHR , hrCTName , hrCTName , false); %Add an apertrue block in the CT scan
+
+
     %Add the CEM into the high resolution CT
     fprintf('Adding CEM to high resolution CT\n')
     handlesHR = setCEMinhrCT(handlesHR , PlanHR , hrCTName , g_HUcem , g_HUair);
