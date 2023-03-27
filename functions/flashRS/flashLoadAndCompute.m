@@ -101,8 +101,6 @@ end
 
 [handles, Plan] = parseFLASHplan(planFileName , Plan, handles);
 
-
-
 %If records from logs are provided, then overwrite the spot info in plan
 % with the log records
 if ~isempty(spots)

@@ -61,7 +61,16 @@ function snout = getParamSnout(snoutType)
 
     snout.RangeShifterSlabs = containers.Map(AccessoryCode,RangeShifterSlabs);
     snout.AccessoryCode = containers.Map(RangeShifterThickness,AccessoryCode);
-    snout.RangeShifterMaterial = 'aluminium';
+    %snout.RangeShifterMaterial = 'aluminium';
+    snout.RangeShifterMaterial = 'RS_57';
+      %RS_57 : defined in the exported materials
+
+      %As defined in RayPhysics
+      %density: g/cm2 2.571 
+      %Mean exitation energy 166.16eV,
+      % (atomic number ; element weights) (12 Mg ; 0.00475) (13 Al; 0.98875) (14 Si; 0.0045) (26 Fe; 0.002)
+
+
 
   otherwise
     snoutType

@@ -50,6 +50,7 @@ else
   Plan.ScannerDirectory = 'default';
   fprintf('Using default folder for CT scanner calibration : %s \n', Plan.ScannerDirectory);
 end
+fprintf('CT scanner calibration file : %s \n', Plan.ScannerDirectory);
 
 %Check that the scanner directory exists.
 [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();

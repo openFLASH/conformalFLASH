@@ -242,6 +242,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               if ~isfield(Plan.Beams(b).RSinfo , 'RangeShifterDescription')
                 Plan.Beams(b).RSinfo.RangeShifterDescription = 'RayStation';
               end
+              fprintf('Range shifter material : %s \n', Plan.Beams(b).RSinfo.RangeShifterMaterial)
 
 
               if ~isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1, 'RangeShifterWaterEquivalentThickness')
