@@ -39,7 +39,7 @@
 %% Contributors
 % Authors : R. Labarbe, L. Hotoiu (open.reggui@gmail.com)
 
-function handles = save2Disk(handles , Imatrix , imgsize , CTinfo , imgName , output_path , planFullPath , doseType)
+function [handles, CorrectedName] = save2Disk(handles , Imatrix , imgsize , CTinfo , imgName , output_path , planFullPath , doseType)
 
   if nargin < 7
     planFullPath = []; % don't use plan info to save the file

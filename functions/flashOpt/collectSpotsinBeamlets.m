@@ -57,7 +57,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [beamletPosition , weight2spot , DRcritical , Plan] =  collectSpotsinBeamlets(Plan , ROI)
+function [beamletPosition , weight2spot , DRcritical , Plan] =  collectSpotsinBeamlets(Plan, ROI)
 
 flagROI = 0;
 if (nargin > 1) && ~isempty(ROI)
@@ -109,7 +109,7 @@ end
         Ind = find(ROI(Plan.TargetROI_ID).mask3D.value); %Put the PTV in the list of ROI
         for optFidx = 1:length(Plan.optFunction)
           if (Plan.optFunction(optFidx).ID == 8 || Plan.optFunction(optFidx).ID == 9 || Plan.optFunction(optFidx).ID == 10)
-            Ind = [Ind ; find(ROI(Plan.optFunction(optFidx).ROIindex).mask3D.value)];
+            Ind = [Ind; find(ROI(Plan.optFunction(optFidx).ROIindex).mask3D.value)];
           end
         end
         Ind = unique(Ind);

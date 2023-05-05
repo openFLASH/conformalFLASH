@@ -23,7 +23,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function Plan  = updatePlanCTparam(handles , Plan  )
+function Plan  = updatePlanCTparam(handles, Plan)
 
   CT = Get_reggui_data(handles,Plan.CTname,'images');
   Plan.DoseGrid.size = size(CT);

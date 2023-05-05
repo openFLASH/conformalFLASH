@@ -68,11 +68,11 @@
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function handles = ComputeFinalDoseRate(Plan, handles, ROI )
+function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI)
 
-    collectSpotsinBeamlets(Plan , ROI); %display the BEV images
+    [~ , ~, ~, Plan] = collectSpotsinBeamlets(Plan, ROI); %display the BEV images
 
-    Pij = Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal ).RangeScenario(Plan.rs_nominal).P ; %The dose influence matrix for the nominal case of the first breathing phase
+    Pij = Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P ; %The dose influence matrix for the nominal case of the first breathing phase
     if Plan.showGraph
       plots_BEV = 1:numel(Plan.Beams); %Figure # where to plot the spot trajectory
     else
@@ -131,20 +131,24 @@ function handles = ComputeFinalDoseRate(Plan, handles, ROI )
             end
 
 
+            doseRatesCreated = {};
             for b = 1:length(DRaStru)
               %Loop for each beam
               path2beamResults = getOutputDir(Plan.output_path , b);
               planFullPath = fullfile(path2beamResults,'Plan');
 
               %Save the percentile dose rate
-              handles = save2Disk(handles , DRaStru{b} , Plan.DoseGrid.size , Plan.CTinfo , ['DRprct_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname] , path2beamResults , planFullPath ,'PERCENTILE');
+              [handles, doseRateName] = save2Disk(handles, DRaStru{b}, Plan.DoseGrid.size, Plan.CTinfo, ['DRprct_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath ,'PERCENTILE');
+              doseRatesCreated{1} = doseRateName;
 
               %Save the dose averaged dose rate
-              handles = save2Disk(handles , DADR{b}    , Plan.DoseGrid.size , Plan.CTinfo , ['DADR_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname]     , path2beamResults , planFullPath ,'DADR');
+              [handles, doseRateName] = save2Disk(handles, DADR{b}, Plan.DoseGrid.size, Plan.CTinfo, ['DADR_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath ,'DADR');
+              doseRatesCreated{2} = doseRateName;
 
               %Save the dose-rate averaged dose
               if ~isempty(DRAD)
-                handles = save2Disk(handles , DRAD{b}    , Plan.DoseGrid.size , Plan.CTinfo , ['DRAD_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname]     , path2beamResults , planFullPath , 'DRAD');
+                [handles, doseRateName] = save2Disk(handles, DRAD{b}, Plan.DoseGrid.size, Plan.CTinfo, ['DRAD_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath , 'DRAD');
+                doseRatesCreated{3} = doseRateName;
               end
 
               %NB: the file name must be less than 64 characters, otherwise (0008,103E)	SeriesDescription will rise a warning at export

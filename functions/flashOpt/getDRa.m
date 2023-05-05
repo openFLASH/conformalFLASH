@@ -135,8 +135,13 @@ dr = zeros(length(sobp),1); %dr(b) average of the percentile dose rate for the b
 drm = zeros(length(sobp),1); %drm(b) Median of the percentile dose rate for the b-th beam
 DADRm = zeros(length(sobp),1); %DADRm(b) Median of the dose averaged dose rate for the b-th beam
 
-Tested =  DoseAtPxl > Dref; %find the voxels receiving a total dose  > than the threshold and that are inside the ROI. The DR computation will occur only in those pixels
-Tested =  Tested .* ROImask;
+if ~isempty(ROImask)
+    Tested =  DoseAtPxl > Dref; %find the voxels receiving a total dose  > than the threshold and that are inside the ROI. The DR computation will occur only in those pixels
+    Tested =  Tested .* ROImask;
+else
+    Tested = ones(size(DoseAtPxl)); % Compute DR in all voxels regardless of ROI or Dref constraint
+end
+
 NbPixels = numel(find(Tested));
 
 fprintf('-- getDRa() --- Nb of pixels tested = %d \n', NbPixels)
