@@ -34,7 +34,8 @@ function exportPlan2STL(plan_filename)
     handles = Initialize_reggui_handles();
     handles.dataPath = plan_filepath;
     
-    Plan.ScannerDirectory = 'default';
+    %Plan.ScannerDirectory = 'default';
+    Plan.ScannerDirectory = 'Oncentra_MasterPlan';
     Plan.showGraph = true;
     [handles, Plan] = parseFLASHplan(plan_filename, Plan, handles);
 

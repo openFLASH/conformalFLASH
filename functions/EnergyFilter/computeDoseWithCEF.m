@@ -46,7 +46,7 @@ function Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePe
     global g_HUair;
     global g_HUcem; %Define HU as a global variable that will be visible inside the function getHighResDose
     global g_HUrangeshifter;
-                  %getMaterialSPR reads the disk. Only make the reading once and not at every iteration of the loop for each beamlet in order to make computation faster
+    %getMaterialSPR reads the disk. Only make the reading once and not at every iteration of the loop for each beamlet in order to make computation faster
     g_HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
     g_HUcem =  getMaterialSPR(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
     g_HUrangeshifter =  getMaterialSPR(Plan.Beams.RSinfo.RangeShifterMaterial , Plan.ScannerDirectory) + 1 ; %HU and relative stopping power of the range shifter
@@ -452,11 +452,13 @@ end
     end
 
     %Prepare data for monolayer plan for MCsquare computation
+    [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
     Plan2 = struct;
+    Plan2.MCsqExecPath = MCsqExecPath;
     Plan2.CTname = hrCTName;
-    Plan2.output_path = fullfile(outputPath,'CEF_beam');
-    Plan2.ScannerDirectory = Plan.ScannerDirectory;
-    Plan2.BDL = Plan.BDL;
+    Plan2.output_path = fullfile(outputPath, 'CEF_beam');
+    Plan2.ScannerDirectory = fullfile(ScannersPath, Plan.ScannerDirectory);
+    Plan2.BDL = fullfile(BDLpath, Plan.BDL);
     Plan2.protonsFullDose = Plan.protonsHighResDose;
     Plan2.CTinfo = PlanMono.CTinfo;
 
@@ -465,7 +467,7 @@ end
     Plan2.Independent_scoring_grid = Plan.Independent_scoring_grid; % Enable a different scoring grid than the base CT for the dose calculation
     Plan2.resampleScoringGrid = Plan.resampleScoringGrid;
     Plan2.Scoring_voxel_spacing = [Plan.Scoring_voxel_spacing(1) , Plan.Scoring_voxel_spacing(3) , Plan.Scoring_voxel_spacing(2)];
-                % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
+                % In [mm]. Set dose calculation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
                                 %Plan.Scoring_voxel_spacing dimension are along the high res CT scan CS. The Zg is the Y axis of the Ct CS
 
     % Compute the dose map if no dose file already exists
@@ -674,10 +676,13 @@ function Pij = addBeamlet2Pij(Pij , spt , DoseSptDCMcs , Plan , w)
             %In SpotWeightsOptimization at line 85, the weight are divided by the number of fractions.
     temp = flip(DoseSptDCMcs,3);
     dose1D = temp(:); %spare matrix with the dose influence of the spot spt
-    dose1D = sparse(double(full(Plan.OptROIVoxels_nominal) .* dose1D)); %Apply the mask to force to zero the voxels outside of the RT struct of interrest. This saves memory
+    if isfield(Plan, 'OptROIVoxels_nominal')
+        if (~isempty(Plan.OptROIVoxels_nominal) || ~isempty(find(Plan.OptROIVoxels_nominal,1)))
+            dose1D = sparse(double(full(Plan.OptROIVoxels_nominal) .* dose1D)); %Apply the mask to force to zero the voxels outside of the RT struct of interrest. This saves memory
             %the .* product should use full matrices. Product .* with sparse matrices seems buggy in Matlab
+        end
+    end
     Pij(:,spt) =  dose1D; %|Pij(vox,spot)|
-
 end
 
 
