@@ -16,17 +16,7 @@
     },
 
   "RTstruct": {
-    "selected_ROIs" : [
-       "Shallow Sphere"
-        ],
-    "DRCritical_ROIs" : [
-        "Shallow Sphere"
-        ],
-    "ExternalROI" : "body",
-    "TargetROI" : "rombus"
-  },
+    "ExternalROI" : "body"
+  }
 
-  "DoseRate": {
-    "Dref" : 2
-    }
 }

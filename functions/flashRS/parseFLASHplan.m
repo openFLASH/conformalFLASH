@@ -101,6 +101,16 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
     Plan.name = monoPlan.RTPlanLabel;
     Plan.FileName = 'Plan'; %default value for the file name of the plan
 
+
+    %Find the ROI number of the target structure for this plan
+    for d = 1:numel(monoPlan.DoseReferenceSequence)
+      itemDose = sprintf('Item_%i',d);
+      if strcmp(monoPlan.DoseReferenceSequence.(itemDose).DoseReferenceType , 'TARGET')
+        Plan.TargetROI_ID = monoPlan.DoseReferenceSequence.(itemDose).ReferencedROINumber;
+        break;
+      end
+    end
+
     %Construct the beam structure
     %------------------------------
     for b = 1:NbBeams

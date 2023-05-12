@@ -91,9 +91,8 @@ function Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePe
     createDICOMPlan(Plan,Plan.CTinfo,outputPath,dictionary)
 
     %GEt the deepest Zg at which the dose should be computed
-    PTV = Get_reggui_data(handles , Plan.TargetROI); % |PTV| - _SCALAR MATRIX_ - Mask defining the position of the PTV |PTV(x,y,z)=1| if the voxel is inside the PTV
-                                                    % Get the mask of the PTV before we add any accessories in the beam path
-    Zdistal = getZdistal(PTV , handles.spacing , handles.origin , Plan.Beams); % |Zdistal| -_SCLAR_-  Z Coordinate (mm) in the IEC gantry CS of the deepest plane in which the dose is to be computed
+    Body = Get_reggui_data(handles , Plan.ExternalROI);
+    Zdistal = getZdistal(Body , handles.spacing , handles.origin , Plan.Beams); % |Zdistal| -_SCLAR_-  Z Coordinate (mm) in the IEC gantry CS of the deepest plane in which the dose is to be computed
 
     %REcord the parameters of the original CT scan
     hCT.size = handles.size; %Make first a copy of the size of the original CT scan. We want the dose map to match this size
@@ -674,13 +673,27 @@ function Pij = addBeamlet2Pij(Pij , spt , DoseSptDCMcs , Plan , w)
 
     DoseSptDCMcs = DoseSptDCMcs ./ w(spt) ; % w is Normalise the dose for w=1 and for 1 fraction
             %In SpotWeightsOptimization at line 85, the weight are divided by the number of fractions.
+
     temp = flip(DoseSptDCMcs,3);
     dose1D = temp(:); %spare matrix with the dose influence of the spot spt
+
+    flagMasked = false;
     if isfield(Plan, 'OptROIVoxels_nominal')
         if (~isempty(Plan.OptROIVoxels_nominal) || ~isempty(find(Plan.OptROIVoxels_nominal,1)))
             dose1D = sparse(double(full(Plan.OptROIVoxels_nominal) .* dose1D)); %Apply the mask to force to zero the voxels outside of the RT struct of interrest. This saves memory
             %the .* product should use full matrices. Product .* with sparse matrices seems buggy in Matlab
+            flagMasked = true;
         end
+    end
+
+    %If the matrix was not clipped with the mask, clip it with a dose threshold
+    %This will save memory
+    if ~flagMasked
+      thresh = max(dose1D,[],'all') ./ 1000; %Threshold at 0.1% of the maximum dose of the spot
+      dose1D = sparse( (full(dose1D)>thresh) .* full(dose1D) );
+                %The product .* is applied to the full matrices
+                %when the product is appleid on the sparse matrices, the size of |dose1D| doubles instead of decreasinf (as there are more zeros).
+                %So the product is applied to double matrices. And then sparse is applied afterwards to remove all the zeros
     end
     Pij(:,spt) =  dose1D; %|Pij(vox,spot)|
 end
@@ -695,13 +708,10 @@ end
 %-------------------------
 function Zdistal = getZdistal(PTV , Spacing , ImagePositionPatient , Beam)
 
-  DepthExtension = 50; % mm Extend the computation to this depth beyond PTV distal surface
-            %The extension must be sufficiently far to include the distal fall off
-
   Bdcm = getDICOMcoord(PTV , Spacing , ImagePositionPatient , Beam.isocenter);
   M = matDICOM2IECgantry(Beam.GantryAngle,Beam.PatientSupportAngle);
   Bbev = M * Bdcm; %Coordinate of the voxels of the body in IC gantry
-  Zdistal = min(Bbev(3,:)) - DepthExtension; %Position on beam axis of the distal surface of PTV + additional depth
+  Zdistal = min(Bbev(3,:)); %Position on beam axis of the distal surface of body
 end
 
 

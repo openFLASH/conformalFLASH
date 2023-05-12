@@ -36,11 +36,6 @@
 %   * |RTstruct.ExternalROI| -_STRING_- Name of the RT struct with the body contour
 %   * |RTstruct.TargetROI| -_STRING_- Name of the RT struct with the PTV
 %
-% |DoseRate| -_STRUCTURE_- [OPTIONAL: If empty, does not compute the dose rate histograms] Definition of parameters for the computation of dose rates
-%   * |DoseRate.Dref| -_SCALAR_- Threshold dose (Gy / FRACTION) in OAR above which the dose rate condition must be respected. Voxels below the threshold dose are not included in DR condition
-%   * |DoseRate.DMF| -_SCALAR_- Dose modifying factor of flash for this organ. Not used for dose constraint.
-%   * |DoseRate.DR50| -_SCALAR_- Gy/s 50% dose rate of the sigmoid probability function. Not used for dose constraint.
-%
 % |CEMprop| -_STRUCTURE_- Information for the computation of the CEM
 %    * |makeSTL| -_BOOL_- If true, the STL file is saved in the output folder
 %
@@ -68,13 +63,13 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [handles, Plan] = flashLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, DoseRate , CEMprop , scanAlgoGW , spots)
+function [handles, Plan] = flashLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, CEMprop , scanAlgoGW , spots)
 
-if nargin < 9
+if nargin < 8
   scanAlgoGW = [];
 end
 
-if nargin < 10
+if nargin < 9
   spots = [];
 end
 
@@ -123,7 +118,8 @@ end
 
 %Load the RT structures
 %----------------------
-[handles , Plan , ROI, usedROI] = loadRSrtStructs(rtstructFileName , handles, Plan, RTstruct, DoseRate);
+[handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, RTstruct );
+ROI = [];
 Plan  = updatePlanCTparam(handles , Plan  );
 
 %Compute the optimum spot trajectory
@@ -191,10 +187,6 @@ end
 
 %Compute the dose rate and save the results to disk
 %--------------------------------------------------
-%Include all structure in the dose rate computation
-for  optFidx = 1:numel(Plan.optFunction)
-    Plan.optFunction(optFidx).ID = 8; %Activate the dose rate computation
-end
 
 %Compute dose rate in all structures
 handles = ComputeFinalDoseRate(Plan, handles, ROI);

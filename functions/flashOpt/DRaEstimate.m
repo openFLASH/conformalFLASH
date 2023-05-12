@@ -84,8 +84,8 @@ function [DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DR
       percentile = 0.01; %Default value of percentile if an invalid value is given
     end
 
-    NbSpots = length(spotSequence); %# of spots
-    NbPxl = size(Dose , 2); %# Nb de measurement points
+    NbSpots = length(spotSequence); %number of spots
+    NbPxl = size(Dose , 2); %number Nb de measurement points
 
     SweepTime = [0 , cumsum(dT)']; %SweepTime(i) is time at which spot spotSequence(i) was delivered (still need to add the beam delivery time)
     SweepTime = SweepTime + 1; %the clock start at '1', so that the 0 is reserved for "no dose delivered"
@@ -171,7 +171,6 @@ function [DR ,  SpotTiming] = GetPercentileDR(Dose , spotTimingStart, spotTiming
     cumDose = cumsum(Dose,1); % cumDose(spot,pxl) cumulated dose at the end of delivery of spot |spot| to pixel # |pxl|
     NbSpots = size(Dose,1);
     DoseMAX = repmat(cumDose(end,:) , NbSpots , 1 ); %|DoseMAX(spot,pxl)| Total dose delivered at pixel # |pxl|
-
     [~, startTimeIndex] = max( (cumDose ./ DoseMAX) >= percentile,[],1); % index of the first spot for which the cumulated delivered dose is above the lower percentile
     startTime = spotTimingStart(startTimeIndex);
 

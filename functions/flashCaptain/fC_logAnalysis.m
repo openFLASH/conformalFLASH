@@ -71,7 +71,7 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
 
 
   %Load plan from TPS and create a MIROPT |PLan| structure with the monolayer plan
-  [~, Plan] = flashLoadAndCompute(RSplanFileName, CTname , rtstructFileName , config.files.output_path , BeamProp , config.RTstruct , config.DoseRate , CEMprop , [] , handles.plans.data{logID}{1});
+  [~, Plan] = flashLoadAndCompute(RSplanFileName, CTname , rtstructFileName , config.files.output_path , BeamProp , config.RTstruct , CEMprop , [] , handles.plans.data{logID}{1});
 
 
 end

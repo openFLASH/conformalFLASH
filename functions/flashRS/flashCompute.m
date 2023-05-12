@@ -66,21 +66,23 @@
 
 function [handles, Plan, doseRatesCreated] = flashCompute(handles, SimuParam, BeamProp, RTstruct, DoseRate, CEMprop, scanAlgoGW, spots)
 
-    if nargin < 9
+spots
+
+    if nargin < 7
       scanAlgoGW = [];
     end
-    
-    if nargin < 10
+
+    if nargin < 8
       spots = [];
     end
-    
+
     warning('on') %Turn on warning messages
-    
-    
+
+
     %Add MIROpt specific configuration
     %----------------------------------------------------------------------
     Plan = configMiropt_RS(BeamProp, CEMprop, SimuParam.OutputDirectory);
-    
+
 
     %Load the CT scan and update the data
     %----------------------------------------------------------------------
@@ -97,8 +99,8 @@ function [handles, Plan, doseRatesCreated] = flashCompute(handles, SimuParam, Be
       Plan.scanAlgoGW.snout_id = scanAlgoGW.snout_id; %TODO get this infor from plan
       Plan.scanAlgoGW.spot_id = scanAlgoGW.spot_id; %TODO get this infor from plan
     end
-    
-    [handles, Plan] = parseFLASHplan(SimuParam.RefPlanName, Plan, handles);   
+
+    [handles, Plan] = parseFLASHplan(SimuParam.RefPlanName, Plan, handles);
 
     %If records from logs are provided, then overwrite the spot info in plan
     % with the log records
@@ -106,26 +108,26 @@ function [handles, Plan, doseRatesCreated] = flashCompute(handles, SimuParam, Be
       fprintf('Overwriting spot info with record from logs \n')
       Plan = overwriteWithLogs(Plan, spots);
     end
-    
+
     if (~exist(fullfile(Plan.output_path,'Outputs'),'dir'))
       mkdir (fullfile(Plan.output_path,'Outputs'))
     end
     copyfile (SimuParam.RefPlanName, fullfile(Plan.output_path,'Outputs','Plan.dcm')); %Copy the RS plan into the output folder to be used when creating the dose maps
-    
+
     if CEMprop.makeSTL
       %Export the STL file of the CEM
       path2beamResults = getOutputDir(Plan.output_path , 1);
       filename = fullfile(path2beamResults,[matlab.lang.makeValidName(Plan.Beams.RangeModulator.AccessoryCode),'.stl']);
       exportCEM2STL(Plan.Beams.RangeModulator.CEMThicknessData, Plan.Beams.RangeModulator.Modulator3DPixelSpacing, Plan.Beams.RangeModulator.ModulatorOrigin, Plan.Beams.RangeModulator.AccessoryCode, filename)
     end
-    
-    
+
+
     %Load the RT structures
     %----------------------------------------------------------------------
     %[handles , Plan , ROI, usedROI] = loadRSrtStructs(rtstructFileName , handles, Plan, RTstruct, DoseRate);
     [handles, Plan, ROI, usedROI] = make_DR_opt_func(handles, Plan, RTstruct, DoseRate);
     Plan = updatePlanCTparam(handles, Plan);
-    
+
 
     %Compute the optimum spot trajectory
     %----------------------------------------------------------------------
@@ -136,20 +138,22 @@ function [handles, Plan, doseRatesCreated] = flashCompute(handles, SimuParam, Be
       fprintf('Optimising spot trajectory \n')
       [SpotTrajectoryInfo , Plan] = optimizeTrajectory(Plan, ROI);
       Plan.SpotTrajectoryInfo = SpotTrajectoryInfo;
-    
+
     else
       %Do not optimise spot trajectory. Use the one from the plan
       fprintf('Using spot trajectory from plan\n')
-    
-      [sobpPosition , weight2spot ] =  collectSpotsinBeamlets(Plan, []);
+
+      [sobpPosition , weight2spot ] =  collectSpotsinBeamlets(Plan, [])
                   %Gather the spots into beamlets for form SOBP
                   %This is a mono layer plan, so we should get back the same spots
       Plan.SpotTrajectoryInfo.sobpPosition =  sobpPosition;
       Plan.SpotTrajectoryInfo.weight2spot = weight2spot;
-    
+
       for b = 1:numel(Plan.Beams)
         Plan.SpotTrajectoryInfo.beam{b}.sobpSequence  = weight2spot(:,2);
-    
+
+Plan.Beams(b).Layers
+
         if isfield(Plan.Beams(b).Layers ,'time') && isfield(Plan.Beams(b).Layers ,'duration')
           %Spot timing provided from log. We will use the logs
           Plan.SpotTrajectoryInfo.beam{b}.TimePerSpot = Plan.Beams(b).Layers.duration; %|TimePerSpot(s)| Duration (ms) of the s-th spot
@@ -157,13 +161,16 @@ function [handles, Plan, doseRatesCreated] = flashCompute(handles, SimuParam, Be
           deltaT = deltaT - Plan.Beams(b).Layers.duration(2:end);
           Plan.SpotTrajectoryInfo.beam{b}.dT = [0; deltaT]; %|dT(st)| Sweep (ms) to move from the s-1-th spot to the s-th spot
           Plan.SpotTrajectoryInfo.TimingMode = 'Record'; %The spot timing is recovered from logs
-    
+
         else
           %No spot timing provided. We will compute the trajectory using the simple model or scanAlgo
           Plan.SpotTrajectoryInfo.beam{b}.Nmaps = getTopologicalMaps(sobpPosition{b} , Plan.BDL , Plan.Beams(b).spotSigma(b) , scanAlgoGW); %Get the inital topological map;
           Plan.SpotTrajectoryInfo.TimingMode = 'Model'; %The spot timing is from a model
         end
-    
+
+Plan.SpotTrajectoryInfo
+pause
+
         if Plan.showGraph
           figure(100+b)
           hold on
@@ -171,30 +178,30 @@ function [handles, Plan, doseRatesCreated] = flashCompute(handles, SimuParam, Be
         end
       end
     end
-    
-    
+
+
     %Compute dose map
     %----------------------------------------------------------------------
     % Compute the dose through the CEF using the high resolution CT scan
     %Save the high resolution dose map of each beamlet in separate files
     fprintf('Computing the dose map in high resolution CT scan \n')
-    
+
     for b = 1:numel(Plan.Beams)
       %TODO deal with plan containing setup beams
       fprintf('Beam %d \n' , b)
-    
+
       %Compute the dose of each beamlet
       path2beamResults = getOutputDir(Plan.output_path , b);
       Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P = computeDoseWithCEF(Plan, path2beamResults , handles , Plan.CTname, true);
       movefile (fullfile(Plan.output_path,'Outputs','Plan.dcm') , fullfile(path2beamResults,'Plan_CEM.dcm'));
     end
-    
+
 
     %Include all structure in the dose rate computation
     %----------------------------------------------------------------------
     for  optFidx = 1:numel(Plan.optFunction)
         Plan.optFunction(optFidx).ID = 8; %Activate the dose rate computation
-    end   
+    end
 
     %Compute dose rate in all structures and save the results to disk
     [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI);
@@ -217,7 +224,7 @@ function [Plan, MCsqExecPath, ScannersPath] = getScannerCalib(handles, CTimageNa
       fprintf('Using default folder for CT scanner calibration : %s \n', Plan.ScannerDirectory);
     end
     fprintf('CT scanner calibration file : %s \n', Plan.ScannerDirectory);
-    
+
     %Check that the scanner directory exists.
     [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
     if (~exist(fullfile(ScannersPath, Plan.ScannerDirectory),'dir'))
@@ -227,10 +234,10 @@ function [Plan, MCsqExecPath, ScannersPath] = getScannerCalib(handles, CTimageNa
       Plan.ScannerDirectory = 'default';
       fprintf('Using default folder for CT scanner calibration : %s \n', Plan.ScannerDirectory);
     end
-    
+
     Plan.CTinfo = info;
     Plan.CTname = CTimageName;
-    
+
     Plan.CTinfo.Spacing = info.Spacing;
     Plan.DoseGrid.resolution = Plan.CTinfo.Spacing;
     Plan.CTinfo.ImagePositionPatient = info.ImagePositionPatient;
@@ -248,20 +255,20 @@ function [handles, Plan, ROI, usedROI] = make_DR_opt_func(handles, Plan, RTstruc
     Plan.TargetROI = [remove_bad_chars(RTstruct.TargetROI)];
     Plan.TargetROI_ID = numel(strName) - 1;
     Plan.ExternalROI_ID = numel(strName);
-    
+
     Plan.DoseGrid.size = handles.size';
     %nvoxels = prod(handles.size);
     %Plan.OptROIVoxels_nominal = false(nvoxels,1); % initialize to zeros
     %Plan.OptROIVoxels_robust = false(nvoxels,1); % initialize to zeros
     %ROItotalMask = zeros(Plan.DoseGrid.size); %Create a structure which is the sum of all ROI
-    
+
     %Create the ROI structure
     for i = 1:numel(strName)
         % Set ROI name and create list of ROIs
         RTstruct.selected_ROIs{i} = [remove_bad_chars(strName{i})];
         ROImask = Get_reggui_data(handles, RTstruct.selected_ROIs{i});
         ROI(i) = createROI(RTstruct.selected_ROIs{i}, ROImask);
-    
+
         if (sum(strcmp(strName{i} , RTstruct.DRCritical_ROIs)))
             %This is a dose rate critical structure to include in the spot trajectory
             Plan.optFunction(i) = createOptFunctionStruct(remove_bad_chars(strName{i}), ROI, DoseRate , true);
@@ -269,13 +276,13 @@ function [handles, Plan, ROI, usedROI] = make_DR_opt_func(handles, Plan, RTstruc
             %This is not a dose rate critical structure. Ignore it for the trajectory computation
             Plan.optFunction(i) = createOptFunctionStruct(remove_bad_chars(strName{i}), ROI, DoseRate , false);
         end
-    
+
         %if(i<numel(strName)) %Do not add EXTERNAL to the mask
         %    Plan.OptROIVoxels_nominal = Plan.OptROIVoxels_nominal | ROI(i).mask1D;
         %    ROItotalMask = ROItotalMask  | ROImask;
         %end
     end
-    
+
     %Add the mask for the total volume in which the dose rate is to be computed
     %TotalMaskName = [remove_bad_chars('TotalMask')];
     %RTstruct.selected_ROIs{end+1} = TotalMaskName;
@@ -283,9 +290,9 @@ function [handles, Plan, ROI, usedROI] = make_DR_opt_func(handles, Plan, RTstruc
     %ROImask = Get_reggui_data(handles, TotalMaskName);
     %ROI(end+1) = createROI(TotalMaskName, ROImask);
     %Plan.optFunction(end+1) = createOptFunctionStruct(remove_bad_chars('TotalMask') , ROI , DoseRate , false);
-    
+
     Plan.TargetROI_ID = getROIByName(ROI, [remove_bad_chars(RTstruct.TargetROI)]);
-    
+
     %Get the list of structure names
     usedROI = RTstruct.selected_ROIs;
 end
@@ -326,14 +333,14 @@ end
 
 % Add the ROI to the list of ROIs
 function ROI = createROI(ROIname, ROImask)
-    
+
     ROI.name = ROIname;
     % Calculate mask for each ROI
     ROI.mask3D.value = ROImask;
-    
+
     % Convert to 1D sparse mask with z inverse format (to be consistent
     % with beamlets format)
     temp = flip(ROI.mask3D.value,3);
-    ROI.mask1D = sparse(logical(double(temp(:))));  
+    ROI.mask1D = sparse(logical(double(temp(:))));
 end
 %##########################################################################

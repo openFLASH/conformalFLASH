@@ -55,14 +55,15 @@
 %
 % |handles| - _STRUCT_ - REGGUI data structure.
 %
-% |ROI| - _struct_ - MIROpt structure containing information about all
-% volumes in the RTSTRUCT file. The following data must be present in the
-% structure:
+% |ROI| - _struct_ - MIROpt structure containing information about all volumes in the RTSTRUCT file. The following data must be present in the structure
+%     If empty, then the dose rate is computed in the whole dose map
 % * |ROI(i).mask1D| - _array_ - Logical column vector storing a binary mask for ROI i (voxels inside the volume of interest are equal to 1, and those outside are equal to zero).
 %
 %% Output arguments
 %
-% |res| - _STRUCTURE_ -  Description
+% |handles| - _STRUCT_ - REGGUI data structure.
+%
+% |doseRatesCreated| -_CELL VECTOR of STRINGS_- List of names of dose rate maps saved to disk
 %
 %
 %% Contributors
@@ -91,11 +92,13 @@ function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI)
     %Compute the total dose delivered to a voxel.
     %This will be used for the dose threshold in the dose rate computation
     D = sparse(Pij * w');
-    targetROIid = getROIByName(ROI,  Plan.TargetROI);
 
     %For info: display dose stat in PTV
-    Dose = D(ROI(targetROIid).mask1D);
-    fprintf('Dose in %s : %f <= D(Gy)= %f <= %f \n',Plan.TargetROI,full(min(sum(Dose,2))),full(mean(sum(Dose,2))),full(max(sum(Dose,2))));
+    if ~isempty(ROI)
+      targetROIid = getROIByName(ROI,  Plan.TargetROI);
+      Dose = D(ROI(targetROIid).mask1D);
+      fprintf('Dose in %s : %f <= D(Gy)= %f <= %f \n',Plan.TargetROI,full(min(sum(Dose,2))),full(mean(sum(Dose,2))),full(max(sum(Dose,2))));
+    end
 
     for optFidx = 1:length(Plan.optFunction)
         %Loop for each constraints
@@ -123,11 +126,19 @@ function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI)
                   plotID.SaveHisto = false;
             end
 
+            if isempty(ROI)
+              %No mask provided. Compute dose rate in full volume
+              ROImask = [];
+            else
+              %Mask for the structre were provided. Compute dose rate only in defined mask
+              ROImask = ROI(Plan.optFunction(optFidx).ROIindex).mask1D;
+            end
+
             if isfield(Plan.optFunction(optFidx), 'DMF') & isfield(Plan.optFunction(optFidx) , 'DR50') & ~isempty(plotID.pDR_D)
-              [~, DRaStru, ~, DADR, ~, DRAD]  = getDRa(Plan.SpotTrajectoryInfo, w, Pij, Plan, Plan.optFunction(optFidx).Dref,  ROI(Plan.optFunction(optFidx).ROIindex).mask1D, D, Plan.optFunction(optFidx).DMF, Plan.optFunction(optFidx).DR50, percentile, Plan.optFunction(optFidx).ROIname, plotID ) ;
+              [~, DRaStru, ~, DADR, ~, DRAD]  = getDRa(Plan.SpotTrajectoryInfo, w, Pij, Plan, Plan.optFunction(optFidx).Dref,  ROImask, D, Plan.optFunction(optFidx).DMF, Plan.optFunction(optFidx).DR50, percentile, Plan.optFunction(optFidx).ROIname, plotID ) ;
             else
               DRAD = [];
-              [~, DRaStru, ~, DADR]  = getDRa(Plan.SpotTrajectoryInfo, w, Pij, Plan, Plan.optFunction(optFidx).Dref,  ROI(Plan.optFunction(optFidx).ROIindex).mask1D, D, [], [] , percentile, Plan.optFunction(optFidx).ROIname, plotID ) ;
+              [~, DRaStru, ~, DADR]  = getDRa(Plan.SpotTrajectoryInfo, w, Pij, Plan, Plan.optFunction(optFidx).Dref,  ROImask, D, [], [] , percentile, Plan.optFunction(optFidx).ROIname, plotID ) ;
             end
 
 

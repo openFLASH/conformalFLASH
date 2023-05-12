@@ -48,7 +48,7 @@
 %
 % |Pij| -_SCALAR MATRIX_- dose influence matrix: |Pij(vox,spot)| The dose contribution to voxel |vox| of the spot number |spot|
 %
-% |ROImask| -_SCLAR VECTOR_- MAsk identifying the position of the voxel contained in the organ. |ROImask(i)=1| if the i-th voxel is inside the organ
+% |ROImask| -_SCLAR VECTOR_- [If empty, compute dose rate for all voxels] MAsk identifying the position of the voxel contained in the organ. |ROImask(i)=1| if the i-th voxel is inside the organ
 %
 % |Plan| - _struct_ - MIROpt structure where all the plan parameters are
 % stored. The following data must be present in the structure:
@@ -139,7 +139,7 @@ if ~isempty(ROImask)
     Tested =  DoseAtPxl > Dref; %find the voxels receiving a total dose  > than the threshold and that are inside the ROI. The DR computation will occur only in those pixels
     Tested =  Tested .* ROImask;
 else
-    Tested = ones(size(DoseAtPxl)); % Compute DR in all voxels regardless of ROI or Dref constraint
+    Tested =  DoseAtPxl > Dref; %find the voxels receiving a total dose  > than the threshold and that are inside the ROI. The DR computation will occur only in those pixels
 end
 
 NbPixels = numel(find(Tested));
@@ -246,7 +246,7 @@ for b = 1:length(sobp) %Loop for each beam
               [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected , DRhisto] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
                   % If the BEV plot is displayed, then we also compute the  |DRhisto| dose rate vs dose histogram
           else
-              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected ] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected ]          = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
               DRhisto = [];
           end
 
@@ -316,11 +316,11 @@ for b = 1:length(sobp) %Loop for each beam
 
 
         [i,j]= find(Tested);
-        DRa{b}=sparse(full(i),full(j),tmp,size(ROImask,1),size(ROImask,2));
-        DADR{b}=sparse(full(i),full(j),DADRtmp,size(ROImask,1),size(ROImask,2));
+        DRa{b} = sparse(full(i),full(j),tmp,size(DoseAtPxl,1),size(DoseAtPxl,2));
+        DADR{b} = sparse(full(i),full(j),DADRtmp,size(DoseAtPxl,1),size(DoseAtPxl,2));
         if numel(DRADtmp > 1)
           %If the DRAD has been computed, then process it
-          DRAD{b}=sparse(full(i),full(j),DRADtmp,size(ROImask,1),size(ROImask,2));
+          DRAD{b} = sparse(full(i),full(j),DRADtmp,size(DoseAtPxl,1),size(DoseAtPxl,2));
         else
           DRAD{b}= 0;
         end
@@ -334,10 +334,10 @@ for b = 1:length(sobp) %Loop for each beam
         end
     else
       % There no dose delivered in the OAR for any beam
-      DRa{b} = sparse(size(ROImask,1),size(ROImask,2));
-      DADR{b} = sparse(size(ROImask,1),size(ROImask,2));
-      DRAD{b} = sparse(size(ROImask,1),size(ROImask,2));
-      SpotTiming{b}= sparse(size(ROImask,1),size(ROImask,2));
+      DRa{b} = sparse(size(DoseAtPxl,1),size(DoseAtPxl,2));
+      DADR{b} = sparse(size(DoseAtPxl,1),size(DoseAtPxl,2));
+      DRAD{b} = sparse(size(DoseAtPxl,1),size(DoseAtPxl,2));
+      SpotTiming{b}= sparse(size(DoseAtPxl,1),size(DoseAtPxl,2));
 
       dr(b)  = -1; %There is no voxel receiving a dose above the threshold. Define DRa < 0 to indicate that Dra is not defined in this case
       drm(b) = -1;
