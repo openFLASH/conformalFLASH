@@ -2,6 +2,8 @@
 
 The ConformalFLASH software library is a set of tools for research work in proton therapy, more specifically for the research work in FLASH proton therapy using a ridge filter to create a spread out Bragg peak.  
 
+For guidance, refer to the Wiki: https://github.com/openFLASH/conformalFLASH/wiki
+
 Please read these terms and conditions carefully before using this software LIBRARY.
 
 The software LIBRARY in the “ConformalFLASH” repository https://github.com/openFLASH/conformalFLASH is published by Ion Beam Applications SA (“IBA SA”), RPM Nivelles 0428.750.985, Chemin du Cyclotron, 3 at 1348 Louvain-la-Neuve, Belgium, Tel.: +32 10 47 58 11, Fax : +32 10 47 58 10 and email : info@iba-group.com, www.iba-worldwide.com (the “LIBRARY Publisher”).
