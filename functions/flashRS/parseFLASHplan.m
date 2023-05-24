@@ -121,7 +121,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         spot = data{b}.spots.xy;
 
         MachineName = monoPlan.IonBeamSequence.(itemBeam).TreatmentMachineName;
-        Plan.BDL = BDLname4machine(MachineName); %Identify the BDL file name from the treatment machine name in the plan
+
         fprintf('BDL name      : %s \n' , Plan.BDL);
         [Plan.MachineType , Plan.Machine.name] = getMachineFromBDL(Plan.BDL); %Read machine type and machine name from BDL
         fprintf('Machine name  : %s \n' , Plan.Machine.name)
@@ -239,12 +239,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               Plan.Beams(b).RSinfo = monoPlan.IonBeamSequence.(itemBeam).RangeShifterSequence.Item_1;
 
               snout = getParamSnout(Plan.Beams(b).SnoutID);
-              if ~strcmp(Plan.Beams(b).RSinfo.RangeShifterID, Plan.Beams(b).RSinfo.AccessoryCode)
-                NrSlabsString = extractBefore(Plan.Beams(b).RSinfo.RangeShifterID," [Al]");
-                Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(NrSlabsString));
-              else
-                Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.AccessoryCode));
-              end
+              Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.AccessoryCode));
               Plan.Beams(b).RSinfo.NbSlabs = numel(find(Plan.Beams(b).RSinfo.RSslabThickness));
               Plan.Beams(b).RSinfo.SlabOffset = snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - snout.RangeShifterOffset(1) + Plan.Beams(b).RSinfo.RSslabThickness(1) ; %Offset from |IsocenterToRangeShifterDistance| and the upstream side of the i-th slab
               fprintf('Range shifter thickness : %f mm \n', Plan.Beams(b).RSinfo.RSslabThickness)
@@ -263,7 +258,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               if ~isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1, 'RangeShifterWaterEquivalentThickness')
                 %The range shifter WET is not defined in the plan. Compute it
                 water = materialDescription('water');
-                [~, ~, SPRrs] =  getMaterialSPR(Plan.Beams(b).RSinfo.RangeShifterMaterial, Plan.ScannerDirectory); %CEM relative stopping power
+                [~, ~, SPRrs] =  getMaterialPropCT(Plan.Beams(b).RSinfo.RangeShifterMaterial, Plan.ScannerDirectory); %CEM relative stopping power
                 WET_RS = Plan.Beams(b).RSinfo.RSslabThickness .* SPRrs;  %Water equivalent thickness (mm) of the range shifter
                 Plan.Beams(b).RSinfo.RangeShifterWET = sum(WET_RS); %Range shifter WET in mm
               else

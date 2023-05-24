@@ -107,17 +107,22 @@ function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan,OptConfig, w
 
   loaded = false;
   if isfield(Plan,'PlanExistentFile')
-    if(exist(fullfile(Plan.PlanExistentFile,'x.mat'),'file') && exist(fullfile(Plan.PlanExistentFile,'info.mat'),'file') && exist(fullfile(Plan.PlanExistentFile,'spotSequence.mat'),'file'))
+    if (exist(fullfile(Plan.PlanExistentFile,'x.mat'),'file') && exist(fullfile(Plan.PlanExistentFile,'info.mat'),'file'))
       fprintf('Loading previously optimised weights ...')
       data = load(fullfile(Plan.PlanExistentFile,'x'));
       x = data.x;
       data = load(fullfile(Plan.PlanExistentFile,'info'));
       info = data.info;
-      data = load(fullfile(Plan.PlanExistentFile,'spotSequence'));
-      Plan.SpotTrajectoryInfo = data.GBL_SpotTrajectoryInfo;
       fprintf('done \n')
       loaded = true;
     end
+  end
+
+  if exist(fullfile(Plan.PlanExistentFile,'spotSequence.mat'),'file')
+    fprintf('Loading previously optimised trajectory ...')
+    data = load(fullfile(Plan.PlanExistentFile,'spotSequence'));
+    Plan.SpotTrajectoryInfo = data.GBL_SpotTrajectoryInfo;
+    fprintf('done \n')
   end
 
   if (~loaded)
@@ -137,7 +142,9 @@ function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan,OptConfig, w
 
     eV = 1.6021766208e-19 ; % J/eV
     param = getMachineParam(Plan.BDL);
-    GLB_alpha = 1000 .* MU_to_NumProtons(1, param.MAXenergy) .* eV ./ (Plan.Inozzle .* 1e-9); % ms / MU :   aplha * w = T
+    if isfield(Plan , 'Inozzle')
+      GLB_alpha = 1000 .* MU_to_NumProtons(1, param.MAXenergy) .* eV ./ (Plan.Inozzle .* 1e-9); % ms / MU :   aplha * w = T
+    end
 
     %Get the (x,y) position of each spot in the weight vector
     GLB_DRa = []; % Average percentile dose rate
@@ -162,10 +169,18 @@ function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan,OptConfig, w
       fprintf('Nozzle current from scanAlgo : %f nA \n',Plan.Inozzle);
     end
 
-    %The trajectory is optimized once.
-    %Only the spot weights will be optimised afterwards
-    GBL_SpotTrajectoryInfo = optimizeTrajectory(Plan  , ROI);
-    Plan.SpotTrajectoryInfo = GBL_SpotTrajectoryInfo;
+    %Check whether the objective function requires the dose rate
+    %If so, then we need to compute trajectory information
+    flagUseDoseRate = 0; %Flag is true if anyone function requires dose rate computation
+    for optFidx = 1:length(Plan.optFunction)
+     flagUseDoseRate = flagUseDoseRate + UseDoseRate(Plan.optFunction(optFidx).ID);
+   end
+   if flagUseDoseRate
+     %The trajectory is optimized once.
+     %Only the spot weights will be optimised afterwards
+     GBL_SpotTrajectoryInfo = optimizeTrajectory(Plan  , ROI);
+     Plan.SpotTrajectoryInfo = GBL_SpotTrajectoryInfo;
+   end
 
     if (OptConfig.plotTargetDVH == 1)
         h = figure;
@@ -349,7 +364,9 @@ function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan,OptConfig, w
     save(fullfile(Plan.PlanExistentFile,'warm_start_out'),'warm_start_out');
     save(fullfile(Plan.PlanExistentFile,'x'),'x')
     save(fullfile(Plan.PlanExistentFile,'info'),'info')
-    save(fullfile(Plan.PlanExistentFile,'spotSequence'),'GBL_SpotTrajectoryInfo')
+    if flagUseDoseRate
+      save(fullfile(Plan.PlanExistentFile,'spotSequence'),'GBL_SpotTrajectoryInfo')
+    end
 
 end %if (~loaded)
 
@@ -382,7 +399,7 @@ if any(w ~= GLB_backUp.w)
                     GLB_backUp.scenarioDose(s).D = Plan.Scenario4D(i_4D).RandomScenario(rr).RangeScenario(rs).P * Plan.SystSetUpScenario(ss).ws; %Compute the dose map for this scenario
                                   %This is the total dose for ALL fractions
                     for optFidx = 1:length(Plan.optFunction)
-                      if(Plan.optFunction(optFidx).ID == 8 || Plan.optFunction(optFidx).ID == 9 || Plan.optFunction(optFidx).ID == 10)
+                      if UseDoseRate(Plan.optFunction(optFidx).ID)
                         if ~isfield(Plan.optFunction(optFidx),'Vref')
                           %Use the default percentile
                           percentile = 0.01; %Default percentile for dose rate
@@ -916,6 +933,13 @@ function fder = dCdadr_dw(dr , DRref , impw , nvoxels , Pij , T , D)
     fder = fder - 2 .* (delta(b) .* impw ./ (nvoxels .* maxD))  .*   ( 2.* (D(wNZ)'./T{b}(wNZ)) * Pij(wNZ,:)     - sum (GLB_alpha .* D(wNZ).^2 ./ T{b}(wNZ)'.^2 , 1) ) ;
     %dC / d_w = sum_beam ()
   end
+end
+
+%---------------------------------------------------------------------------
+%Check whether the speicfied objective function requires the computation of dose rate
+%---------------------------------------------------------------------------
+function value = UseDoseRate(ID)
+  value = ID == 8 || ID == 9 || ID == 10;
 end
 
 % ---------------------------------------------------------------------

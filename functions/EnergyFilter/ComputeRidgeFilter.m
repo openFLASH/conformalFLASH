@@ -94,7 +94,7 @@ for b = 1: size(Plan.Beams,2) %Loop for each beam
     rangeMin = CSDArange('Water' , T_min); %Minimum range (cm) in water
     rangeMax  = CSDArange('Water' , T_max); %Maximum range (cm) in water
     Modul = rangeMax - rangeMin; %Modulation depth (cm) in water equivalent thickness
-    [~, ~, SPR] =  getMaterialSPR(Plan.Spike.MaterialID, Plan.ScannerDirectory); %CEM relative stopping power
+    [~, ~, SPR] =  getMaterialPropCT(Plan.Spike.MaterialID, Plan.ScannerDirectory); %CEM relative stopping power
     CEMThickness = 10 .* Modul ./ SPR; %Physical thickness (mm) of CEM
     param = getMachineParam(Plan.BDL);
     if (CEMThickness > param.snout.CEMmaxHeight)

@@ -64,14 +64,15 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
   logID = find(strcmp(handles.plans.name , 'record')); %identify the logs in handles
 
   BeamProp.NbScarves = 1; %umber of scarves to paint on the BEV
-  BeamProp.CEFDoseGrid = {1, 1, 1}; % Size (mm) of final dose scoring grid. Compute the final dose through CEF on a different grid than the high-res
   BeamProp.FLAGOptimiseSpotOrder = false; %Do not optimise trajectory. Use the one read from logs
   BeamProp.FLAGcheckSpotOrdering = false; %Check that spot ordering in plan matches scanAlgo output
+
+  BeamProp = copyFields(config.BeamProp , BeamProp);
+  BeamProp.CEFDoseGrid =  num2cell(BeamProp.CEFDoseGrid);
   CEMprop.makeSTL = false;
 
 
   %Load plan from TPS and create a MIROPT |PLan| structure with the monolayer plan
   [~, Plan] = flashLoadAndCompute(RSplanFileName, CTname , rtstructFileName , config.files.output_path , BeamProp , config.RTstruct , CEMprop , [] , handles.plans.data{logID}{1});
-
 
 end

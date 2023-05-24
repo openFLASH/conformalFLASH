@@ -44,12 +44,14 @@
 function Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)
 
     global g_HUair;
+    global g_HUbrass;
     global g_HUcem; %Define HU as a global variable that will be visible inside the function getHighResDose
     global g_HUrangeshifter;
-    %getMaterialSPR reads the disk. Only make the reading once and not at every iteration of the loop for each beamlet in order to make computation faster
-    g_HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
-    g_HUcem =  getMaterialSPR(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
-    g_HUrangeshifter =  getMaterialSPR(Plan.Beams.RSinfo.RangeShifterMaterial , Plan.ScannerDirectory) + 1 ; %HU and relative stopping power of the range shifter
+    %getMaterialPropCT reads the disk. Only make the reading once and not at every iteration of the loop for each beamlet in order to make computation faster
+    g_HUair =  getMaterialPropCT('Schneider_Air' , Plan.ScannerDirectory ) + 1; %Hounsfield unit associated to air in the material file
+    g_HUcem =  getMaterialPropCT(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
+    g_HUbrass = getMaterialPropCT('Brass' , Plan.ScannerDirectory) + 1 ; %Hounsfield unit associated to brass in the material file
+    g_HUrangeshifter =  getMaterialPropCT(Plan.Beams.RSinfo.RangeShifterMaterial , Plan.ScannerDirectory) + 1 ; %HU and relative stopping power of the range shifter
         %The g_HUair and g_HUcem and g_HUrangeshifter are now stored in a global varialbe that is accessible by the sub-function getHighResDose
 
     %Make some sanity check on the treatment plan
@@ -399,13 +401,13 @@ end
 
     [handlesHR , BeamHR ] = createHighResCT(handles , CTName , hrCTName , Plan.Beams , CTresolution , g_HUair , minField , maxField , Zdistal , Plan.CTinfo);
     PlanHR.Beams = BeamHR;
-    PlanHR = copyFields(PlanHR , Plan); %Overwrite the YAML parameter in the reloaded |Plan|
+    PlanHR = copyFields(PlanHR , Plan);
     PlanHR.CTname =  hrCTName;
     PlanHR  = updatePlanCTparam(handlesHR , PlanHR );
 
     % Add the aperture in the CT scan
     fprintf('Adding aperture to high resolution CT\n')
-    [PlanHR , handlesHR ] = setApertureInCT(handlesHR , PlanHR , hrCTName , hrCTName , false); %Add an apertrue block in the CT scan
+    handlesHR = setApertureinHRCT(handlesHR , PlanHR , hrCTName); %Add an apertrue block in the CT scan
 
 
     %Add the CEM into the high resolution CT
@@ -451,13 +453,12 @@ end
     end
 
     %Prepare data for monolayer plan for MCsquare computation
-    [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
     Plan2 = struct;
-    Plan2.MCsqExecPath = MCsqExecPath;
+    Plan2.MCsqExecPath = Plan.MCsqExecPath;
     Plan2.CTname = hrCTName;
     Plan2.output_path = fullfile(outputPath, 'CEF_beam');
-    Plan2.ScannerDirectory = fullfile(ScannersPath, Plan.ScannerDirectory);
-    Plan2.BDL = fullfile(BDLpath, Plan.BDL);
+    Plan2.ScannerDirectory = Plan.ScannerDirectory;
+    Plan2.BDL = Plan.BDL;
     Plan2.protonsFullDose = Plan.protonsHighResDose;
     Plan2.CTinfo = PlanMono.CTinfo;
 
@@ -748,6 +749,37 @@ function handlesHR = setRangeShifterinHRCT(handlesHR , PlanHR , hrCTName)
   end % if isfield( PlanHR.Beams , 'RSinfo')
 
   handlesHR = Set_reggui_data(handlesHR , hrCTName , CT ,  PlanHR.CTinfo , 'images',1); %Update the CT scan with the aperture block in handles
+
+
+end
+
+
+%------------------------------------------------
+% Add the aperture in the high resolution Ct scan
+%------------------------------------------------
+function handlesHR = setApertureinHRCT(handlesHR , PlanHR , hrCTName)
+
+  global g_HUbrass;
+
+  CT = Get_reggui_data(handlesHR,hrCTName,'images'); %Update the CT scan with the aperture block in handles
+  CTsize = size(CT);
+  ImagePositionPatient = handlesHR.origin;
+
+  if PlanHR.Beams.ApertureBlock
+
+        Abrass  = apertureContour2Block(PlanHR.Beams ,  handlesHR.spacing  , PlanHR.BDL); %Coordinate of the brass voxels in IEC gantry
+        MinC = ImagePositionPatient;
+        MaxC = ImagePositionPatient + (CTsize'-1) .* handlesHR.spacing;
+        GoodIdx = find((Abrass(:,1) > MinC(1)) .* (Abrass(:,2) > MinC(2)) .* (Abrass(:,3) > MinC(3)) .* (Abrass(:,1) <= MaxC(1)) .* (Abrass(:,2) <= MaxC(2)) .* (Abrass(:,3) <= MaxC(3)) ); %This is the list of indices that fit in the CT
+        [~, X , Y , Z] = DICOM2PXLindex([] , handlesHR.spacing , ImagePositionPatient , 1, Abrass(GoodIdx,1) , Abrass(GoodIdx,2) , Abrass(GoodIdx,3));
+        Aidx = sub2ind(size(CT) , X , Y , Z); %Only get the indices of the aperture that fits in the CT scan
+        CT(Aidx) = g_HUbrass; %Put Hu of the device in the voxels of the device
+
+  end
+
+
+  %Update the handles and plan
+  handlesHR = Set_reggui_data(handlesHR,hrCTName,CT,PlanHR.CTinfo,'images',1); %Create a new image with only the aperture
 
 
 end

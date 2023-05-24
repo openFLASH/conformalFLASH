@@ -1,0 +1,124 @@
+##################### MIROpt user configuration file ##########################
+
+## NOTE: tabs are not recognized in Yaml format and will trigger an error at
+# read-time. Use only spaces to indent content ##
+
+## NOTE: the "-" symbol in the syntax means one entry in a list. For example,
+# it's possible to have a list of "Beams" where the "key" in the yaml "key:value"
+# structure is void. ##
+
+###############################################################################
+
+
+# Datapath
+Data:
+  folder: D:\programs\openREGGUI\REGGUI_userdata\test_data\miropt        # Location of your datafiles
+  CT: CT_1.dcm                                                            # CT slice name to load the 3D image
+  RTStruct: Structs.dcm                                                   # RT Struct name of file holding the associated contours
+
+
+# Plan parameters--------------------------------------------------------------
+Plan:
+  output_path: D:\programs\openREGGUI\REGGUI_userdata\miroptSTD           # If commented out, everything is written in inside the Data.folder/miropt_Plan.name folder
+  #PlanExistentFile: D:\programs\openREGGUI\REGGUI_userdata\miroptSTD      # If you already have pre-calculated beamlets, set the path here. The "output_path" variable needs to be commented out. To calculate from scratch comment out this line and re-enable "output_path".
+  name: PBSplan               # Default plan name tag inside the plan file
+  ScannerDirectory: D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib\Scanners\default   # Default value. Go to MCsquare/Scanners to check what are the other scanners implemented
+  BDL: D:\programs\openREGGUI\flash\openMCsquare\lib\BDL\BDL_default_UN1_G0_Al_RangeShifter_tilted.txt  # Beam model. Go to MCsquare/BDL directory to check what are the other possible models
+  MCsqExecPath : D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib
+  BeamletsBy: MCsquare        # Algorithm used to compute the beamlets: Monte Carlo ('MCsquare') or Pencil Beam ('FoCa')
+  Beams:
+  - name: min                # Beam name
+    GantryAngle: 90           # Gantry angle in degrees
+    PatientSupportAngle: 0    # Couch rotation angle in degree
+    isocenter: []             # in mm, DICOM coords. You can set it manually, or leave empty. By default empty, it will be calculated as the center of the selected target
+    TargetMargin: [5, 5, 5]   # Margin around the target to take into account penumbra and errors (mm)
+    LayerSpacing: 10          # Spacing between energy layers in WET-mm (Water equivalent length)
+    SpotSpacing: 10           # Lateral spacing between spots (perpendicular to beam direction) in mm
+    NumberOfRangeShifters: 0  # Number of range shifters associated with current beam. Options = 1 or 0!
+    RSinfo:
+      RangeShifterID: RS_Block
+  - name: Beam2                 # Beam name
+    GantryAngle: 180            # Gantry angle in degrees
+    PatientSupportAngle: 0    # Couch rotation angle in degree
+    isocenter: []               # in mm, DICOM coords. You can set it manually, or leave empty. By default empty, it will be calculated as the center of the selected target
+    TargetMargin: [5, 5, 5]     # Margin around the target to take into account penumbra and errors (mm)
+    LayerSpacing: 10            # Spacing between energy layers in WET-mm (Water equivalent length)
+    SpotSpacing: 10             # Lateral spacing between spots (perpendicular to beam direction) in mm
+    NumberOfRangeShifters: 0    # Number of range shifters associated with current beam. Options = 1 or 0!
+    RSinfo:
+      RangeShifterID: RS_Block
+  TargetROI: ct_PTV          # name for target ROI
+  ExternalROI: ct_BODY       # name for external ROI - the body contour
+  optFunction:
+  - name: min                # Type of objective function. Possible types are: min, max,max_mean, min_mean, minDVH, maxDVH
+    ROIname: ct_PTV          # Name for the ROI to which the objective function needs to be applied
+    Dref: 74                 # Reference dose in Gy
+    Vref: 0.95               # Reference volume in 1% only needed for minDVH and maxDVH functions
+    impw: 0.1                # Importance weight for the current objective function (impw > 0)
+    robust: 0                # Set robust to 1 if robustness optimization needs to be applied to this volume, otherwise set to 0
+  - name: max                # Type of objective function. Possible types are: min, max,max_mean, min_mean, minDVH, maxDVH
+    ROIname: ct_PTV          # Name for the ROI to which the objective function needs to be applied
+    Dref: 76                 # Reference dose in Gy
+    Vref: 0.95               # Reference volume in 1% only needed for minDVH and maxDVH functions
+    impw: 0.1                # Importance weight for the current objective function (impw > 0)
+    robust: 0                # Set robust to 1 if robustness optimization needs to be applied to this volume, otherwise set to 0
+  SystSetUpError: [0, 0, 0, 0, 0, 0]     # Systematic setup error (in mm) for x,y and z DICOM coords (positive and negative directions)
+  RandSetUpError:
+  - [0, 0, 0]                # Standard deviation for random errors for x,y,z axis (in mm, DICOM coords.)
+  RangeError: 0              # Proton range error, implemented as a density perturbation (out of %). Recommended value 3-3.5%
+  'Opt4Dmode': 0             # 4D optimization. Set to 1 if ON, set to 0 if OFF
+  Opt4D:
+    Dir4DCT:                 # Paths for the 4DCT phases
+    - []                     # Path phase 1
+    - []                     # Path phase 2. You can input as many phases as needed
+    DirDeformFields:         # Path to deformation fields (given by REGGUI workflow)
+    Num_4D_Phases: 10        # Number of phases in 4DCT. Must coincide with the number of entries in the Dir4DCT list above.
+  fractions: 30              # Number of fractions for the treatment. The final spot weights vector will be divided by this number (w_per_fraction)
+  protonsBeamlet: 5e4        # Number of protons per beamlet. Default 5e4
+  protonsFullDose: 1e4       # Number of protons in the full target. Default 1e7
+
+
+# Optimization parameters------------------------------------------------------
+OptConfig:
+  max_iter: 200                          # Maximum number of iterations for optimization. Default 200
+  'plotTargetDVH': 0                     # Set to 1 if you want to plot the DVH for the target every few iterations (set to 25 iterations but can be changed in NLPSolver.m). Set to 0 otherwise.
+  'plotObjective': 0                     # Set 1 if you want to plot the objective function evolution.
+  BeamletsMatrixPrecision: d             # Precision for beamlet matrix. Set 'f' for float or 'd' for double. Default value is 'f' since it reduces the memory. NOTE that for MATLAB v2015 the 'f' option is not working due to the mex file functions are not supported anymore
+  mixedOptimization:                     # Mixed optimization ON/OFF, MC_corrections, iter
+    'ON': 0                              # Mixed optimization ON if 1, OFF if 0
+    MC_corrections: 3                    # Number of MC updates for correction matrix C
+    iter: 250                            # Number of iterations after the MC update
+    RandSetUpError:
+    - [0, 0, 0]                          # Include random errors. In mm
+    Opt4D:                               # Include 4D data
+       mode: 0                          # 1 - yes include. 0 - no don't include
+       Dir4DCT:                          # Paths for the 4DCT phases in mixedoptimization
+       - []                              # Path phase 1
+       - []                              # Path phase 2. You can input as many phases as needed
+       DirDeformFields:                  # Path to deformation fields (given by REGGUI workflow)
+       - []                              # Path to deformation fields
+       Num_4D_Phases: 5                  # Number of phases in 4DCT. Must coincide with the number of entries in the Dir4DCT list above.
+
+
+# Output parameters------------------------------------------------------------
+Outputs:
+  Compute_preForwardDVHs: 0              # Computes DVH for final dose as BeamletMatrix*weights, before performing a final MC forward dose calculation.
+  Compute_MCfinalDose: 0                 # Set to 1 if you want to compute a final MC dose (forward dose) for the nominal case
+  Compute_MCDVHbands: 0                  # Set to 1 if you want to compute the final MC dose (forwad dose) for all the scenarios beside the nominal DVH band
+  DVH_roiSet: [2, 5, 7]                  # Indicate the ROI indices for which you want to calculate the DVH. If empty, it calculates the DVH for all ROIs in RTSTRUCT.dcm
+
+
+# Robustness test parameters---------------------------------------------------
+Rtest:
+  CTpath:                                # Path for the CT to use in the robustness test
+  RTSTRUCT:                              # Path for the RSTRUCT to use in the robustness test
+  RandSetUpError: [0, 0, 0]              # In mm
+  SystSetUpError: [0, 0, 0, 0, 0, 0]     # In mm
+  RangeError: 3                          # In %
+  Opt4D:                                 # Include 4D data
+    mode: 0                            # 1 - yes test. 0 - no don't test
+    Num_4D_Phases: 10                    # Number of phases in 4DCT in robustness test
+    Dir4DCT:                             # Paths for the 4DCT phases in test
+    - []                                 # Path phase 1. You can input as many phases as needed
+    DirDeformFields:                     # Deformation fields (given by REGGUI workflow)
+    - []

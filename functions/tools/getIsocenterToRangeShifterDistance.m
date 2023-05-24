@@ -24,6 +24,7 @@
 %
 % |Snout2RSOffset| -_SCALAR_- distance (mm) between the plane defining the snout position and the donwstream surface of the range shifter
 %
+%
 %% Output arguments
 %
 % |IsocenterToRangeShifterDistance| -_SCALAR_- Isocenter to DOWNSTEAM edge of range shifter (mm).

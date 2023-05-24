@@ -50,8 +50,8 @@
 function [Plan , handles ] = setRangeCompensatorinCT(handles , Plan , CTname)
 
   CT = Get_reggui_data(handles,CTname,'images'); %Update the CT scan with the aperture block in handles
-  HUcem = getMaterialSPR(Plan.Spike.MaterialID , Plan.ScannerDirectory) + 1 ; %Hounsfield unit associated to CEM in the material file
-  HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
+  HUcem = getMaterialPropCT(Plan.Spike.MaterialID , Plan.ScannerDirectory) + 1 ; %Hounsfield unit associated to CEM in the material file
+  HUair =  getMaterialPropCT('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
   Zres = min(handles.spacing) ./3;
   ImagePositionPatient = handles.origin;
 

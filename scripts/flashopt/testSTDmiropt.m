@@ -1,7 +1,8 @@
 clear
 close all
 
-configFile = 'D:\programs\github\openFLASH\conformalFLASH\scripts\flashopt\config_MIROpt.yaml';
+configFile = 'D:\programs\openREGGUI\flash\test\config_MIROpt_conv.yaml';
+
 
 %optimize with MIROTP
 %--------------------

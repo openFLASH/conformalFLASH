@@ -118,7 +118,7 @@ spots
       %Export the STL file of the CEM
       path2beamResults = getOutputDir(Plan.output_path , 1);
       filename = fullfile(path2beamResults,[matlab.lang.makeValidName(Plan.Beams.RangeModulator.AccessoryCode),'.stl']);
-      exportCEM2STL(Plan.Beams.RangeModulator.CEMThicknessData, Plan.Beams.RangeModulator.Modulator3DPixelSpacing, Plan.Beams.RangeModulator.ModulatorOrigin, Plan.Beams.RangeModulator.AccessoryCode, filename)
+      exportCEM2STL(Plan.Beams.RangeModulator.CEMThicknessData, Plan.Beams.RangeModulator.Modulator3DPixelSpacing, Plan.Beams.RangeModulator.ModulatorOrigin, Plan.Beams.RangeModulator.AccessoryCode, Plan.Beams.RangeModulator.ModulatorMountingPosition , filename)
     end
 
 
@@ -227,7 +227,7 @@ function [Plan, MCsqExecPath, ScannersPath] = getScannerCalib(handles, CTimageNa
 
     %Check that the scanner directory exists.
     [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
-    if (~exist(fullfile(ScannersPath, Plan.ScannerDirectory),'dir'))
+    if (~exist(Plan.ScannerDirectory,'dir'))
       %TODO This should be an error and the program should stop here in a well configured system
       warning('(008,1090) ManufacturerModelName references an unknown scanner')
       fprintf('Folder for CT scanner calibration : %s \n', Plan.ScannerDirectory);

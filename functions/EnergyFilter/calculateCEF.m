@@ -43,7 +43,7 @@
 %
 % |GridLayout| -_STRING_- Layout of the PBS spots on the grid. Options: HEXAGONAL (default), SQUARE
 %
-%  |BDL| -_STRING_- Beam data library. Name of the folder in REGGUI\plugins\openMCsquare\lib\BDL
+%  |BDL| -_STRING_- Full path to the Beam data library
 %
 % |ScannerDirectory| - _STRING_ - Name of the folder containing the definition of the CT scanner properties in MCsquare in folder "plugins\openMCsquare\lib\Scanners"
 %
@@ -89,7 +89,7 @@ N_layer = length([Beams.Layers(:).Energy]);
 T_max = max([Beams.Layers(:).Energy]);
 
 water = materialDescription('water');
-[~, ~ , SPRcef] =  getMaterialSPR(Spike.MaterialID , ScannerDirectory); %Relative stopping power of the CEF material
+[~, ~ , SPRcef] =  getMaterialPropCT(Spike.MaterialID , ScannerDirectory); %Relative stopping power of the CEF material
 R_max = energy2range(T_max, water.alpha,water.p); %Range in water of the maximum energy
 
 %Put weight at right location  = > step width for given energy

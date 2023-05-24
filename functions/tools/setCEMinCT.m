@@ -69,10 +69,10 @@ function [Plan , handles ] = setCEMinCT(handles , Plan , CTname , minField , max
   end
 
   if nargin < 6
-    HUcem = getMaterialSPR(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
+    HUcem = getMaterialPropCT(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
   end
   if nargin < 7
-    HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to air in the material file
+    HUair =  getMaterialPropCT('Schneider_Air' , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to air in the material file
   end
 
   CT = Get_reggui_data(handles, CTname ,'images'); %Update the CT scan with the aperture block in handles

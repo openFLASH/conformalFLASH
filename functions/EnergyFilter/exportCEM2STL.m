@@ -18,6 +18,10 @@
 %
 % |AccessoryCode| -_STRING_- (300A,00F9) An accessory identifier to be read by a device such as a bar code reader. Read from the YAML configuration file
 %
+% |ModulatorMountingPosition| -_STRING_- DICOM tag Modulator Mounting Position (300D,1017). Defines the face of the CEM used as reference for |IsocenterToRangeModulatorDistance|
+%                         SOURCE_SIDE is using the downstream face of the block as a reference position for expressing the isocenter to block tray distance.
+%                         PATIENT_SIDE is using the upstream face
+%
 % |filename| -_STRING_- file name (including full path and extension) of the STL file
 %
 %% Output arguments
@@ -36,10 +40,18 @@
 % Authors :R. Labarbe, L. Hotoiu (open.reggui@gmail.com)
 
 
-function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, filename)
+function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, ModulatorMountingPosition, filename)
 
     fprintf('Exporting CEM to STL... \n')
     intrpPxlSize = 0.2;
+
+    if strcmp(ModulatorMountingPosition, 'PATIENT_SIDE')
+        signZ = -1;
+    elseif strcmp(PModulatorMountingPosition, 'SOURCE_SIDE')
+        signZ = 1;
+    else
+        error('Modulator mounting position is incorrectly specified in dicom\n');
+    end
 
     % Prepare data for isosurface/meshgrid/imagesc YX swap. The usual matlab YX axis inversion
     CEM3DMask = permute(CEM3DMask, [2,1,3]);
@@ -49,7 +61,7 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, fil
     % Resize the original 3D mask coming for dicom plan
     CEM3Dmask_full = imresize3(CEM3DMask, size(CEM3DMask).*Pxlfac,'nearest');
 
-    
+
     % (Re)Compute the new pixel size to refine STL export
     intrpPxlSize = pixelSize ./ Pxlfac;
     fprintf('CEM pixel size for exporting in STL : (%3.1f, %3.1f, %3.1f) mm \n', intrpPxlSize(1), intrpPxlSize(2), intrpPxlSize(3));
@@ -63,8 +75,8 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, fil
     FV.vertices(:,3) = (FV.vertices(:,3)-1) .* pixelSize(3)./Pxlfac(3) + origin(3) - ((Pxlfac(3)-1)/2).*intrpPxlSize;
     FV.vertices(:,3) = signZ .* FV.vertices(:,3);
     fprintf('Done \n')
-    
-       
+
+
     fprintf('Saving STL file to %s \n',filename);
     NbDigit = ceil(-log10(intrpPxlSize));
     sizeXYZ = max(FV.vertices, [], 1) - min(FV.vertices, [], 1);
@@ -73,7 +85,7 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, fil
     if (numel(header) > 80)
         header = header(1:80); %Header must be less than 80 characters in STL stnadard
     end
-    
+
     filepath = fileparts(filename);
     if (~exist(filepath,'dir'))
         %The folder to save the CT does not exist. Create it
@@ -81,7 +93,7 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, signZ, fil
     end
     stlwrite(filename, FV.faces , FV.vertices , 'TITLE' , header); %Create the STL file
     fprintf('Done \n')
-    
+
     %Export ridge filter structural coordinates to text file
     % coordFilename = [fullfile(pathName,Plan.Beams(b).RangeModulator.AccessoryCode) '.i'];
     % fprintf('Saving structural coordinates to .txt file at %s \n', coordFilename)

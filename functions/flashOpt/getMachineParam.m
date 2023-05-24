@@ -45,17 +45,13 @@ function param = getMachineParam(BDL)
   if ~strcmp(BDLdata.BDL , BDL)
       %This is the first time the function is called with this BDL name
 
-      %get the BDL full path
-      [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
-      BDLfullPath = fullfile(BDLpath,BDL);
-
       %Load BDL from disk
-      [~ , sadX , sadY] = get_sad(BDLfullPath);
+      [~ , sadX , sadY] = get_sad(BDL);
       param.VDSA = [sadX , sadY];  %mm source to axis distance for the 2 scanning magnets
       [param.MachineType , param.MachineName] = getMachineFromBDL(BDL);
 
 
-      BDLdata.data = load_BDL(BDLfullPath);
+      BDLdata.data = load_BDL(BDL);
       param.MAXenergy = max(BDLdata.data.NominalEnergy);  %MeV Beam energy of deepest layer. Defines the beam line transmisssion for MAXcurrent in nozzle
 
       BDLdata.param = param;

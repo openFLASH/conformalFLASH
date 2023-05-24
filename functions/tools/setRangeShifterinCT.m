@@ -63,7 +63,7 @@ function [Plan , handles] = setRangeShifterinCT(handles , Plan , CTname , minSiz
   PixelSize = min(handles.spacing);
 
 
-  HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
+  HUair =  getMaterialPropCT('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
 
   for b = 1: size(Plan.Beams,2) %Loop for each beam
 
@@ -79,7 +79,7 @@ function [Plan , handles] = setRangeShifterinCT(handles , Plan , CTname , minSiz
 
             Ap = [Xrs(:),Yrs(:)]; %X,Y coordinate of voxels containing brass
 
-            HUrangeshifter =  getMaterialSPR(Plan.Beams(b).RSinfo.RangeShifterMaterial , Plan.ScannerDirectory); %HU and relative stopping power of the range shifter
+            HUrangeshifter =  getMaterialPropCT(Plan.Beams(b).RSinfo.RangeShifterMaterial , Plan.ScannerDirectory); %HU and relative stopping power of the range shifter
             HUrangeshifter = HUrangeshifter + 1;
 
 

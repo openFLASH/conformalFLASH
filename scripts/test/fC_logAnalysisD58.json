@@ -1,0 +1,25 @@
+{
+ "files" : {
+   "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/RP_D58.dcm",
+   "RecordName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/logs/CEM01-01-20230325_112741_256.PBS.2.7.zip",
+   "rtstructFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/RS1.2.752.243.1.1.20230220152044639.1200.30532.dcm",
+   "CTname" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/reggui_CT/reggui_CT_0001.dcm",
+   "AggregatePaintings" : 0,
+   "output_path" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58_output",
+   "ResultTXT" : "result.json"
+  },
+
+  "BeamProp" : {
+    "protonsHighResDose" : 1e4,
+    "CEFDoseGrid" : [1, 1, 1],
+    "BDL" : "D:/programs/openREGGUI/flash/openMCsquare/lib/BDL/BDL_default_UN1_G0_Al_RangeShifter_tilted.txt",
+    "ScannerDirectory" : "D:/programs/openREGGUI/REGGUI/plugins/openMCsquare/lib/Scanners/default",
+    "MCsqExecPath" : "D:/programs/openREGGUI/REGGUI/plugins/openMCsquare/lib"
+    },
+
+  "RTstruct": {
+    "ExternalROI" : "WaterCube"
+  }
+
+
+}

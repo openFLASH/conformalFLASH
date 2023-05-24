@@ -64,8 +64,8 @@ function [Plan , handles ] = setApertureInCT(handles , Plan , CTname , CTwithApe
         % means that the carbon (ID =2) starts at HU = 2001 inclu
         % Therefore, when setting the value of the voxel, add 1 to the HU from the calibrationtable so that the correct mateiral ID is identified.
         % The density of the material is lineraly interpolated. This is why we added +1 to the values in HU_Density_Conversion.txt
-        HUbrass = getMaterialSPR('Brass' , Plan.ScannerDirectory) + 1 ; %Hounsfield unit associated to brass in the material file
-        HUair =  getMaterialSPR('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
+        HUbrass = getMaterialPropCT('Brass' , Plan.ScannerDirectory) + 1 ; %Hounsfield unit associated to brass in the material file
+        HUair =  getMaterialPropCT('Schneider_Air' , Plan.ScannerDirectory) + 1; %Hounsfield unit associated to air in the material file
 
         if expandCT
           %If the aperture is too large, expand CT scan before inserting aperture
@@ -80,11 +80,13 @@ function [Plan , handles ] = setApertureInCT(handles , Plan , CTname , CTwithApe
           CT(Aidx) = HUbrass; %Put Hu of the device in the voxels of the device
         end
 
-  end %for b
+    end %if Plan.Beams(b).ApertureBlock
 
   %Update the handles and plan
   [handles , Plan] = updateAllImages(handles , Plan , CT , ImagePositionPatient , HUair  , CTname);
   handles = Set_reggui_data(handles,CTwithAperture,CT,Plan.CTinfo,'images',1); %Create a new image with only the aperture
 
 
-end
+  end %for b
+
+end %function

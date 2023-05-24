@@ -1,13 +1,13 @@
-%% getMaterialSPR
+%% getMaterialPropCT
 % Retrieve the stopping power, relative electron density, density and Hounsfield unit for a given material.
 % The information is retrieved from the MCsquare database for the specified CT scanner
 %
 %% Syntax
-% |[HU, Density, SPR, SP, RelElecDensity] =  getMaterialSPR(material)|
+% |[HU, Density, SPR, SP, RelElecDensity] =  getMaterialPropCT(material)|
 %
 %
 %% Description
-% |[HU, Density, SPR, SP, RelElecDensity] =  getMaterialSPR(material)| Description
+% |[HU, Density, SPR, SP, RelElecDensity] =  getMaterialPropCT(material)| Description
 %
 %
 %% Input arguments
@@ -31,10 +31,10 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [HU, Density, SPR, SP, RelElecDensity] =  getMaterialSPR(material, ScannerDirectory)
+function [HU, Density, SPR, SP, RelElecDensity] =  getMaterialPropCT(material, ScannerDirectory)
 
-  [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
-  HUmaterialPath = fullfile(ScannersPath, ScannerDirectory,'HU_Material_Conversion.txt');
+
+  HUmaterialPath = fullfile(ScannerDirectory,'HU_Material_Conversion.txt');
 
   [HUm, materialID , descr] = MC2_import_scanner_file(HUmaterialPath); %Read link between HU and material ID
   [HUct, Densitiesct, SPRct, SPct, RelElecDensityct] = Compute_SPR_data(ScannerDirectory); %Read link between HU and physical properties

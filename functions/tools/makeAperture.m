@@ -2,11 +2,11 @@
 % Compute the chape of the aperture block for all the beams in the plan
 %
 %% Syntax
-% |Plan = makeAperture(Plan , PTV , Body ,  Spacing , ImagePositionPatient )|
+% |[Plan , HasAperture] = makeAperture(Plan , PTV , Body ,  Spacing , ImagePositionPatient )|
 %
 %
 %% Description
-% |Plan = makeAperture(Plan , PTV , Body ,  Spacing , ImagePositionPatient )| Description
+% |[Plan , HasAperture] = makeAperture(Plan , PTV , Body ,  Spacing , ImagePositionPatient )| Description
 %
 %
 %% Input arguments
@@ -42,15 +42,21 @@
 %   * |Plan.Beams(b).BlockMaterialID| - _STRING_ - Name of the aperture block material, as defined in the file "plugins\openMCsquare\lib\Materials\list.dat"
 %   * |Plan.Beams(b).SnoutPosition| -_SCALAR_- Distance (mm) from the isocenter to the downstream surface of tha aperture block
 %
+% |HasAperture| -_BOOL_- True is the plan contains an aperture. False otherwise.
 %
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function Plan = makeAperture(Plan , PTV , Body ,  Spacing , ImagePositionPatient )
+function [Plan , HasAperture] = makeAperture(Plan , PTV , Body ,  Spacing , ImagePositionPatient )
+
+  HasAperture = false;
 
   for b = 1: size(Plan.Beams,2) %Loop for each beam
 
-    if Plan.Beams(b).ApertureBlock
+    if isfield(Plan.Beams(b), 'ApertureBlock') && Plan.Beams(b).ApertureBlock
+
+        HasAperture = true;
+
         %Dilate the PTV with the margin
         if (isfield(Plan.Beams(b), 'ApertureMargin'))
           if (prod(Plan.Beams(b).ApertureMargin) ~= 0)

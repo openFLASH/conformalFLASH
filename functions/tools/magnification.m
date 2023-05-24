@@ -28,9 +28,7 @@
 
 function mag = magnification(DisoPlane , BDL_file)
 
-  [pluginPath , MCsqExecPath , BDLpath , MaterialsPath , ScannersPath] = get_MCsquare_folders();
-  BDLfullPath = fullfile(BDLpath,BDL_file);
-  [~ , sad_X , sad_Y] = get_sad(BDLfullPath);
+  [~ , sad_X , sad_Y] = get_sad(BDL_file);
   mag = project2Plane([sad_X , sad_Y] , DisoPlane);
 
 end

@@ -305,16 +305,6 @@ for b = 1:numel(Plan.Beams)
 
       end
 
-    %Export the STL file to disk
-    if (SaveSTL)
-      pathName = getOutputDir(Plan.output_path , b);
-      filename = fullfile(pathName,[matlab.lang.makeValidName(Plan.Beams(b).RangeModulator.AccessoryCode),'.stl'])
-      exportCEM2STL(CEMelevation , round([stepXY , stepZ] , 2) , ...
-                                [rounding(minBlock(1),stepXY(1)) , rounding(minBlock(2),stepXY(2)) , 0] ,...
-                                Plan.Beams(b).RangeModulator.AccessoryCode , filename)
-
-end
-
     %Draw a contour plot of the CEF
     if Plan.showGraph
 
@@ -338,6 +328,17 @@ end
         error('Unknown Plan.Spike.SpikeOrientation')
 
     end
+
+    %Export the STL file to disk
+    if (SaveSTL)
+      pathName = getOutputDir(Plan.output_path , b);
+      filename = fullfile(pathName,[matlab.lang.makeValidName(Plan.Beams(b).RangeModulator.AccessoryCode),'.stl'])
+
+      exportCEM2STL(CEF3dMask , round([stepXY , stepZ] , 2) , ...
+                                [rounding(minBlock(1),stepXY(1)) , rounding(minBlock(2),stepXY(2)) , 0] ,...
+                                Plan.Beams(b).RangeModulator.AccessoryCode ,ModulatorMountingPosition , filename)
+
+end
 
     %Check that the total height of the CEF will fit in the FLASH snout
     if max(CEMelevation,[],'all') > param.snout.CEMmaxHeight

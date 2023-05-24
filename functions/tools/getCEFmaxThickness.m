@@ -19,6 +19,7 @@
 %
 % |ScannerDirectory| - _STRING_ - Name of the folder containing the definition of the CT scanner properties in MCsquare in folder "plugins\openMCsquare\lib\Scanners"
 %
+%
 %% Output arguments
 %
 % |CEFmaxThick| - _SCALAR_ - MAximum thickness (mm) of the CEF
@@ -33,7 +34,7 @@ function CEFmaxThick = getCEFmaxThickness(Layers , Spike , ScannerDirectory)
   T_max = max([Layers(:).Energy]);
 
   water = materialDescription('water');
-  [~, ~ , SPRcef] =  getMaterialSPR(Spike.MaterialID , ScannerDirectory); %Relative stopping power of the CEF material
+  [~, ~ , SPRcef] =  getMaterialPropCT(Spike.MaterialID , ScannerDirectory); %Relative stopping power of the CEF material
   R_max = energy2range(T_max, water.alpha,water.p) + Spike.MinThickness .* SPRcef ./10; %Add the minimum thickness to the max range
 
   for k_layer = 1:N_layer

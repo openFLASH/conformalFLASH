@@ -21,9 +21,9 @@ Data:
 Plan:
   output_path: D:\programs\openREGGUI\REGGUI_userdata\water_data\50_50_50         # If commented out, everything is written in inside the Data.folder/miropt_Plan.name folder
   #PlanExistentFile: D:\programs\openREGGUI\REGGUI_userdata\water_data\50_50_50    # If you already have pre-calculated beamlets, set the path here. The "output_path" variable needs to be commented out. To calculate from scratch comment out this line and re-enable "output_path".
-  ScannerDirectory: default   # Default value. Go to MCsquare/Scanners to check what are the other scanners implemented
-  MaterialsDirectory: D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib\Materials        # MCsquare /Materials directory
-  BDL: BDL_default_UN3_Al_RangeShifter_tilted.txt  # Beam model. Go to MCsquare/BDL directory to check what are the other possible models
+  ScannerDirectory: D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib\Scanners\default   # Default value. Go to MCsquare/Scanners to check what are the other scanners implemented
+  BDL: D:\programs\openREGGUI\flash\openMCsquare\lib\BDL\BDL_default_UN1_G0_Al_RangeShifter_tilted.txt  # Beam model. Go to MCsquare/BDL directory to check what are the other possible models
+  MCsqExecPath : D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib
   BeamletsBy: MCsquare        # Algorithm used to compute the beamlets: Monte Carlo ('MCsquare')
   RidgeFilter: true           # TRUE = convert the different energy layers into a Conformal Energy Filter shape
   ComputeCEMdose : true     # TRUE = compute the dose distribution through the hedgehog, range shifter and aperture
@@ -117,8 +117,8 @@ Plan:
   fractions: 1               # Number of fractions for the treatment. The final spot weights vector will be divided by this number (w_per_fraction). For FLASH, this is the number of fraction PER beam; the total number of fraction is #beam .* |fractions| as one beam is delivered per fraction
   Inozzle: 500               # Nozzle current (nA) during spot delivery
   protonsBeamlet: 5e4        # Number of protons per beamlet. Default 5e4
-  protonsFullDose: 1e6       # Number of protons in the full target. Default 1e7
-  protonsHighResDose: 5e4    # Number of protons in the dose in high resolution CT
+  protonsFullDose: 1e4       # Number of protons in the full target. Default 1e7
+  protonsHighResDose: 1e4    # Number of protons in the dose in high resolution CT
 
 
 # Optimization parameters------------------------------------------------------

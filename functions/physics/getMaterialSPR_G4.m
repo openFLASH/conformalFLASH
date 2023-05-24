@@ -14,6 +14,7 @@
 %
 % |E| -_SCALAR_- Energy (MeV) of the incoming proton beam
 %
+%
 %% Output arguments
 %
 % |Density| -_SCALAR_- Density (g/cm3) of the material
@@ -30,7 +31,7 @@
 
 function [SPR, SP, Density, RelElecDensity] = getMaterialSPR_G4(material , E)
 
-  MaterialsDirectory = fullfile(getPluginPath('openMCsquare'), 'lib', 'Materials');
+  [~ , ~ , ~ , MaterialsDirectory] = get_MCsquare_folders(); %folder with the definition of the materials
   Material_List_File = fullfile(MaterialsDirectory, 'list.dat');
 
   % Import the list of materials

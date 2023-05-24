@@ -35,8 +35,8 @@ function [range , Ep] = CSDArange(material , Ep)
     Ep = [];
   end
 
-  [Name , MaterialsDirectory] = getMaterialNameinDB(material);
-
+  Name = getMaterialNameinDB(material);
+  [~ , ~ , ~ , MaterialsDirectory] = get_MCsquare_folders(); %folder with the definition of the materials
   Density = Import_MatProperty(fullfile(MaterialsDirectory, Name, 'Material_Properties.dat'),'Density');
   [E, SP] = Import_SP_data(fullfile(MaterialsDirectory, Name, 'G4_Stop_Pow.dat')); %mass stopping power as a function of energy
 
@@ -82,9 +82,9 @@ end
 %=====================================
 % Get the correct material name to retrieve Geant4 database
 %=====================================
-function [Name , MaterialsDirectory] = getMaterialNameinDB(material)
+function Name  = getMaterialNameinDB(material )
 
-  MaterialsDirectory = fullfile(getPluginPath('openMCsquare'), 'lib', 'Materials');
+  [~ , ~ , ~ , MaterialsDirectory] = get_MCsquare_folders(); %folder with the definition of the materials
   Material_List_File = fullfile(MaterialsDirectory, 'list.dat');
 
   % Import the list of materials

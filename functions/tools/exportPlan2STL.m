@@ -30,10 +30,10 @@
 function exportPlan2STL(plan_filename)
 
     [plan_filepath, plan_name, plan_ext] = fileparts(plan_filename);
-      
+
     handles = Initialize_reggui_handles();
     handles.dataPath = plan_filepath;
-    
+
     %Plan.ScannerDirectory = 'default';
     Plan.ScannerDirectory = 'Oncentra_MasterPlan';
     Plan.showGraph = true;
@@ -45,14 +45,6 @@ function exportPlan2STL(plan_filename)
     CEM3Dmask(2:end-1, 2:end-1, 2:end-1) = Plan.Beams.RangeModulator.CEM3Dmask;
     origin = Plan.Beams.RangeModulator.ModulatorOrigin - Plan.Beams.RangeModulator.Modulator3DPixelSpacing;
 
-    if strcmp(Plan.Beams.RangeModulator.ModulatorMountingPosition, 'PATIENT_SIDE')
-        signZ = -1;
-    elseif strcmp(Plan.Beams.RangeModulator.ModulatorMountingPosition, 'SOURCE_SIDE')
-        signZ = 1;
-    else
-        error('Modulator mounting position is incorrectly specified in dicom\n');
-    end
-
     stl_filename = fullfile(plan_filepath, [plan_name '.stl']);
-    exportCEM2STL(CEM3Dmask, Plan.Beams.RangeModulator.Modulator3DPixelSpacing, origin, Plan.Beams.RangeModulator.AccessoryCode, signZ, stl_filename)
+    exportCEM2STL(CEM3Dmask, Plan.Beams.RangeModulator.Modulator3DPixelSpacing, origin, Plan.Beams.RangeModulator.AccessoryCode, Plan.Beams.RangeModulator.ModulatorMountingPosition, stl_filename)
 end
