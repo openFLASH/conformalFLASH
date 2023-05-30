@@ -35,14 +35,16 @@ function exportPlan2STL(plan_filename)
     handles.dataPath = plan_filepath;
 
     %Plan.ScannerDirectory = 'default';
-    Plan.ScannerDirectory = 'Oncentra_MasterPlan';
+    Plan.ScannerDirectory = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib\Scanners\default';
     Plan.showGraph = true;
+    Plan.BDL = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib\BDL\BDL_default_UN3_Al_RangeShifter_tilted_IBA_FLASH_G0_round_UpennFlash_v02.txt';
     [handles, Plan] = parseFLASHplan(plan_filename, Plan, handles);
+
 
     %Add voxels all around the base in order to close the STL object
     CEM3Dmask1 = Plan.Beams.RangeModulator.CEM3Dmask;
     CEM3Dmask = zeros(size(CEM3Dmask1,1) + 2, size(CEM3Dmask1,2) + 2, size(CEM3Dmask1,3) + 2);
-    CEM3Dmask(2:end-1, 2:end-1, 2:end-1) = Plan.Beams.RangeModulator.CEM3Dmask;
+    CEM3Dmask(2:end-1, 2:end-1, 2:end-1) = CEM3Dmask1;
     origin = Plan.Beams.RangeModulator.ModulatorOrigin - Plan.Beams.RangeModulator.Modulator3DPixelSpacing;
 
     stl_filename = fullfile(plan_filepath, [plan_name '.stl']);

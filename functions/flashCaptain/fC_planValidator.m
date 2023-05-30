@@ -46,7 +46,7 @@ BeamProp.FLAGcheckSpotOrdering = false;
 RTstruct = config.RTstruct;
 DoseRate  = config.DoseRate;
 
-CEMprop.makeSTL = true;
+CEMprop.makeSTL = false;
 
 %Process the RayStation plan
 %---------------------------

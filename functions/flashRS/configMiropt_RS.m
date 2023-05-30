@@ -33,6 +33,8 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
     %MCsqaure properties
     %-------------------
     Plan.BeamletsBy = 'MCsquare'; %Algorithm used to compute the beamlets: Monte Carlo ('MCsquare') or Pencil Beam ('FoCa')
+    Plan.protonsFullDose = 1e7; % Number of protons in the full target. Default 1e7
+    Plan.protonsHighResDose = 1e6; %TODO Number of protons in the dose in high resolution CT
 
     Plan.SaveHighResDoseMap = true; % Do not save the dose map at CEFDoseGrid resolution in the IEC gantry CS
     Plan.SaveDoseBeamlets = true; % Do not save beamlet dose maps to save time

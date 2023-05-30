@@ -88,7 +88,7 @@ function [Plan , handles] = setRangeShifterinCT(handles , Plan , CTname , minSiz
             for slab = Plan.Beams(b).RSinfo.NbSlabs : -1 : 1
                 fprintf('Slab # %d \n',slab)
                 for step = PixelSize:PixelSize./2:Plan.Beams(b).RSinfo.RSslabThickness(slab)
-                  Zg = Plan.Beams.RSinfo.IsocenterToRangeShifterDistance +  ... %Donwstream side of slab close to isocenter
+                  Zg = Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance +  ... %Donwstream side of slab close to isocenter
                         Plan.Beams(b).RSinfo.SlabOffset(slab)  + ... %distance from downstream side of 1st slab to upstream side of |slab|
                         - step ; %Add a layer to the slab from upstream to downstream surface
                                       %Z in IEC gantry at which this layer of CEF is located

@@ -31,7 +31,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , pixelSize )
+function [CEM3Dmask , CEMThicknessData ] = elvMap2mask(ElvMap , nrPixelsX , nrPixelsY , pixelSize)
 
     % DICOM order the pixels row by row. The row are paralell to the X axis (IEC gantry).
     % The first row is at +Y. The last row is at -Y
