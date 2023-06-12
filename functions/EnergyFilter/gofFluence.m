@@ -74,7 +74,7 @@ function [gof , FluenceOpt] = gofFluence(x , Plan , b , SpikeIdx , sigma0 , Meas
     else
       showGraph = 0;
     end
-    [FluenceSpk , X_far , Y_far , E_filter , ~ , ~ , maskLayer] = fluenceWithCEF(Plan , b , sigma0 , pencil_x , pencil_y  , weight_table , [] ,  Meas_Zg , 2, sigmas_far, 0, 'config_RS_CEM');
+    [FluenceSpk , X_far , Y_far , E_filter , ~ , ~ , maskLayer] = fluenceWithCEF(Plan , b , sigma0 , pencil_x , pencil_y  , weight_table , [] ,  Meas_Zg , 2, sigmas_far, 0, 'config_CEM_RS');
 
     mask = ~~sum(maskLayer,3); %The gof is computed only in the lattice cell fo the spike
 

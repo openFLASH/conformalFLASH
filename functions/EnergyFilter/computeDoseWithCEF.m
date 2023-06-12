@@ -41,7 +41,7 @@
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)
+function [Plan] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)
 
     global g_HUair;
     global g_HUbrass;
@@ -116,8 +116,12 @@ function Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePe
         % Compute the dose in one beamlet at a time
         fprintf('Computing high resolution dose map one spot at a time \n')
         [DoseOrig, DoseFileName , handlesDose, Pij] = getFullHighResDosemap(Plan , handles , Zdistal , outputPath, CTName , PijFlag , hCT);
-
     end
+
+
+    % Save to plan the Pij matrix with beamlets through CEM  
+    Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P = Pij;
+
 
     %Save dose map in original grid
     planFullPath = fullfile(outputPath,Plan.FileName);

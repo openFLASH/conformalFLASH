@@ -243,6 +243,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               %There is a range shifter
               Plan.Beams(b).RSinfo = monoPlan.IonBeamSequence.(itemBeam).RangeShifterSequence.Item_1;
               snout = getParamSnout(Plan.Beams(b).SnoutID);
+
               Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.RangeShifterID));
               Plan.Beams(b).RSinfo.NbSlabs = numel(find(Plan.Beams(b).RSinfo.RSslabThickness));
               Plan.Beams(b).RSinfo.SlabOffset = snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - snout.RangeShifterOffset(1) + Plan.Beams(b).RSinfo.RSslabThickness(1) ; %Offset from |IsocenterToRangeShifterDistance| and the upstream side of the i-th slab
@@ -309,8 +310,10 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             ModulatorPixelSpacing = flip(ModulatorPixelSpacing,2); %Stored in DICOM as [Y,X]
 
             %Define Z resolution: this is the smallest dZ step between two terraces of the tower
-            dZ = double(min(diff(unique(getPrivateTag('300D' , '0010' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData') )))); %Smallest Z step in the elevation map
-            Modulator3DPixelSpacing = round(double([ModulatorPixelSpacing' , dZ]),1); %| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix in the plane of the CEM
+            %Z = getPrivateTag('300D' , '0010' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData');
+            %dZ = double(min(diff(unique(Z)))); %Smallest Z step in the elevation map
+            z_unif_val = 1; % we consider 1 mm as uniform step value in tower
+            Modulator3DPixelSpacing = round(double([ModulatorPixelSpacing', z_unif_val]),1); %| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix in the plane of the CEM
             fprintf('CEM pixel size from Dicom plan : (%3.1f, %3.1f, %3.1f) mm \n',Modulator3DPixelSpacing(1),Modulator3DPixelSpacing(2),Modulator3DPixelSpacing(3))
 
             if(Modulator3DPixelSpacing(1) ~= Modulator3DPixelSpacing(2))
@@ -320,7 +323,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
 
             %Convert the 3D elevation map from DICOM file into a 3D mask.
             %elvMap2mask takes care of the flip of the Y axis
-            [CEM3Dmask1 , CEMThicknessData] = elvMap2mask(double( getPrivateTag('300D' , '0020' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorThicknessData') ) , nrPixelsX , nrPixelsY , Modulator3DPixelSpacing);
+            [CEM3Dmask1 , CEMThicknessData] = elvMap2mask(double( getPrivateTag('300D' , '0020' , 'IBA ConformalFLASH energy modulator', monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorThicknessData') ) , nrPixelsX , nrPixelsY , Modulator3DPixelSpacing);
 
             ModulatorPosition = getPrivateTag('300D' , '0016' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorPosition');
             Plan.Beams(b).RangeModulator.ModulatorOrigin = [ModulatorPosition' , 0]; %| -_SCALAR VECTOR_- Physical coordinate [x,y,z] the voxel |CompensatorThicknessData(1,1)| and |hedgehog3D(1,1,1)| for beam b  in the plane of the CEF.

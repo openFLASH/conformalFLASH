@@ -277,7 +277,7 @@ function [Fluence , mask , W0ext ] = getFluence (Plan , b , SpikeIdx , pencil_x 
   W0 = W0 ./ sum(W0); %Normalise the reference weights of the IMPT plan
 
   %Compute the fluence map (for the single spike)
-  [FluenceSpk , X_far , Y_far , E_filter , ~ , ~ , maskLayer] = fluenceWithCEF(Plan , b , pencil_x , pencil_y  ,weight_table , SAD , Meas_Zg , showGraph , sigmas, 0, 'config_RS_CEM');
+  [FluenceSpk , X_far , Y_far , E_filter , ~ , ~ , maskLayer] = fluenceWithCEF(Plan , b , pencil_x , pencil_y  ,weight_table , SAD , Meas_Zg , showGraph , sigmas, 0, 'config_CEM_RS');
 
   %Make the computation only in the area of the spike
   mask = ~~sum(maskLayer,3);

@@ -69,7 +69,7 @@ function Plan = getOptimumSpike(Plan , b)
   weight_table = [Plan.Beams(b).RidgeFilter(:).w]; % w(spt) is the weight of the spt-th PBS spot. The value is proportional to the number of proton at **maximum** energy
 
   % Get the model parameters by calling fluenceWithCEF
-  [Fluence , X_flu , Y_flu , E_flu, sigmas , CEF_thickness] = fluenceWithCEF(Plan , b , pencil_x , pencil_y  , weight_table , [] ,  Meas_Zg , Plan.showGraph , [], 0, 'config_RS_CEM');
+  [Fluence , X_flu , Y_flu , E_flu, sigmas , CEF_thickness] = fluenceWithCEF(Plan , b , pencil_x , pencil_y  , weight_table , [] ,  Meas_Zg , Plan.showGraph , [], 0, 'config_CEM_RS');
 
   if (isfield(Plan.Beams(b), 'BlockData'))
       %Get the information about the aperture block

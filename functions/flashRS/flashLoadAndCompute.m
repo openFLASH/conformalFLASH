@@ -186,7 +186,7 @@ for b = 1:numel(Plan.Beams)
 
   %Compute the dose of each beamlet
   path2beamResults = getOutputDir(Plan.output_path , b);
-  Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P = computeDoseWithCEF(Plan , path2beamResults , handles , Plan.CTname , true);
+  Plan = computeDoseWithCEF(Plan , path2beamResults , handles , Plan.CTname , true);
   movefile (fullfile(Plan.output_path,'Outputs','Plan.dcm') , fullfile(path2beamResults,'Plan_CEM.dcm'));
 end
 

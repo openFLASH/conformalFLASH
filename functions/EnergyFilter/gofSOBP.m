@@ -78,7 +78,7 @@ function [gof , FluenceOpt] = gofSOBP(x , Plan , b , SpikeIdx , sigma0 , Meas_Zg
     end
 
     %Compute the fluence map (for the single spike)
-    [FluenceSpk , X_far , Y_far , ~ , ~ , ~ , maskLayer] = fluenceWithCEF(Plan , b , sigma0 , pencil_x , pencil_y , weight_table, [] , Meas_Zg , showGraph , sigmas_far, WaterThickeness, 'config_RS_CEM');
+    [FluenceSpk , X_far , Y_far , ~ , ~ , ~ , maskLayer] = fluenceWithCEF(Plan , b , sigma0 , pencil_x , pencil_y , weight_table, [] , Meas_Zg , showGraph , sigmas_far, WaterThickeness, 'config_CEM_RS');
 
     %Make the computation only in the area of the spike
     mask = ~~sum(maskLayer,3);

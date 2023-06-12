@@ -55,24 +55,23 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, ModulatorM
 
     % Prepare data for isosurface/meshgrid/imagesc YX swap. The usual matlab YX axis inversion
     CEM3DMask = permute(CEM3DMask, [2,1,3]);
-    pixelSize = [pixelSize(2), pixelSize(1), pixelSize(3)];
-    Pxlfac = round(pixelSize ./ intrpPxlSize); %One input pixel is divided in multiple smaller pixels
+    CEMPixelSize = [pixelSize(2), pixelSize(1), pixelSize(3)]; 
+    CEMPxlfac = round(CEMPixelSize ./ intrpPxlSize); %One input pixel is divided in multiple smaller pixels
 
     % Resize the original 3D mask coming for dicom plan
-    CEM3Dmask_full = imresize3(CEM3DMask, size(CEM3DMask).*Pxlfac,'nearest');
-
+    CEM3Dmask_full = imresize3(CEM3DMask, size(CEM3DMask).*CEMPxlfac,'nearest');
 
     % (Re)Compute the new pixel size to refine STL export
-    intrpPxlSize = pixelSize ./ Pxlfac;
+    intrpPxlSize = CEMPixelSize ./ CEMPxlfac;
     fprintf('CEM pixel size for exporting in STL : (%3.1f, %3.1f, %3.1f) mm \n', intrpPxlSize(1), intrpPxlSize(2), intrpPxlSize(3));
     intrpPxlSize = intrpPxlSize(1);
 
     fprintf('Computing surface triangles \n')
     %FV = surf2solid(Xm, Ym, Vq, 'ELEVATION', 0, 'THICKNESS', intrpPxlSize/2); %Create vertexes on triangular grid
     FV = isosurface(CEM3Dmask_full, 0.5, 'noshare'); %Compute the vertices in index coordinates
-    FV.vertices(:,1) = (FV.vertices(:,1)-1) .* pixelSize(1)./Pxlfac(1) + origin(1) - ((Pxlfac(1)-1)/2).*intrpPxlSize; %Convert from index coordinates into physics coordinates
-    FV.vertices(:,2) = (FV.vertices(:,2)-1) .* pixelSize(2)./Pxlfac(2) + origin(2) - ((Pxlfac(2)-1)/2).*intrpPxlSize;
-    FV.vertices(:,3) = (FV.vertices(:,3)-1) .* pixelSize(3)./Pxlfac(3) + origin(3) - ((Pxlfac(3)-1)/2).*intrpPxlSize;
+    FV.vertices(:,1) = (FV.vertices(:,1)-1) .* CEMPixelSize(1)./CEMPxlfac(1) + origin(1) - ((CEMPxlfac(1)-1)/2).*intrpPxlSize; %Convert from index coordinates into physics coordinates
+    FV.vertices(:,2) = (FV.vertices(:,2)-1) .* CEMPixelSize(2)./CEMPxlfac(2) + origin(2) - ((CEMPxlfac(2)-1)/2).*intrpPxlSize;
+    FV.vertices(:,3) = (FV.vertices(:,3)-1) .* CEMPixelSize(3)./CEMPxlfac(3) + origin(3) - ((CEMPxlfac(3)-1)/2).*intrpPxlSize;
     FV.vertices(:,3) = signZ .* FV.vertices(:,3);
     fprintf('Done \n')
 
@@ -83,7 +82,7 @@ function exportCEM2STL(CEM3DMask, pixelSize , origin , AccessoryCode, ModulatorM
     PhysSize = round(sizeXYZ, NbDigit); %mm length of the hedgehog;
     header = [AccessoryCode, '-- Unit : mm X=', num2str(PhysSize(1)), 'mm Y=', num2str(PhysSize(2)), 'mm Z=', num2str(PhysSize(3)), 'mm'];
     if (numel(header) > 80)
-        header = header(1:80); %Header must be less than 80 characters in STL stnadard
+        header = header(1:80); %Header must be less than 80 characters in STL standard
     end
 
     filepath = fileparts(filename);
