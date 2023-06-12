@@ -177,13 +177,16 @@ for b = 1:length(sobp) %Loop for each beam
           % To avoid the problem, we selet out of the sparse Pij matrix only the elements of the selected voxels and selected beamlets.
           % Then convert the Pij matrix into a full matrix and carry out the matrix multiplication using the full matrix
           % The result is then converted back into a sparse matrix
+
           if (size(weightIN(spotIndices),1)==1)
             %transpose weights
-            tmp = Pij(:,spotIndices) * weightIN(spotIndices)'; %Compute dose only for voxels in mask and above dose threshold
+            tmp = full(Pij(:,spotIndices)) * full(weightIN(spotIndices)'); %Compute dose only for voxels in mask and above dose threshold
           else
-            tmp = Pij(:,spotIndices) * weightIN(spotIndices); %Compute dose only for voxels in mask and above dose threshold
+            tmp = full(Pij(:,spotIndices)) * full(weightIN(spotIndices)); %Compute dose only for voxels in mask and above dose threshold
           end
-          Dose(:,beamletIndex) = tmp(T); %Select only the pixel above the minimum dose |Dref|
+
+          Dose(:,beamletIndex) = sparse(tmp(T)); %Select only the pixel above the minimum dose |Dref|
+
 
           %TODO This code does not work robustly. With some dataset, it works. With other dataset it does not work
           % It is difficult to understand the origin of the problem
@@ -208,8 +211,9 @@ for b = 1:length(sobp) %Loop for each beam
 
         Dose = Dose'; %Dose(spot,pxl)
 
+
         if (verbose)
-          fprintf('Beam %d : Dose per fraction per beamlet in %s : %f <= D(Gy) <= %f in %d pixels (out of %d) \n',b,ROIName,full(min(Dose,[],'all'))  ,full(max(Dose,[],'all')) , numel(find(sum(Dose,1))), numel(find(ROImask)));
+          fprintf('Beam %d : Dose per fraction per beamlet in %s : %f <= D(Gy) <= %f in %d pixels (out of %d) \n',b,ROIName,full(min(Dose,[],'all'))  ,full(max(Dose,[],'all')) , numel(find(sum(Dose,1))), NbPixels);
           fprintf('Beam %d : Dose per fraction             in %s : %f <= D(Gy) <= %f \n',b,ROIName,full(min(sum(Dose,1))),full(max(sum(Dose,1))));
         end
 
@@ -314,10 +318,11 @@ for b = 1:length(sobp) %Loop for each beam
 
         end
 
-
         [i,j]= find(Tested);
-        DRa{b} = sparse(full(i),full(j),tmp,size(DoseAtPxl,1),size(DoseAtPxl,2));
-        DADR{b} = sparse(full(i),full(j),DADRtmp,size(DoseAtPxl,1),size(DoseAtPxl,2));
+        %[i,j]= ind2sub(size(DoseAtPxl),T);
+        DRa{b}  = sparse(full(i),full(j),tmp,size(DoseAtPxl,1),size(DoseAtPxl,2));
+        DADR{b} = sparse(full(i),full(j),full(DADRtmp),size(DoseAtPxl,1),size(DoseAtPxl,2));
+
         if numel(DRADtmp > 1)
           %If the DRAD has been computed, then process it
           DRAD{b} = sparse(full(i),full(j),DRADtmp,size(DoseAtPxl,1),size(DoseAtPxl,2));

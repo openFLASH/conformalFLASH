@@ -168,17 +168,18 @@ end
 
 function [DR ,  SpotTiming] = GetPercentileDR(Dose , spotTimingStart, spotTimingStop , percentile)
 
+
     cumDose = cumsum(Dose,1); % cumDose(spot,pxl) cumulated dose at the end of delivery of spot |spot| to pixel # |pxl|
     NbSpots = size(Dose,1);
     DoseMAX = repmat(cumDose(end,:) , NbSpots , 1 ); %|DoseMAX(spot,pxl)| Total dose delivered at pixel # |pxl|
+
     [~, startTimeIndex] = max( (cumDose ./ DoseMAX) >= percentile,[],1); % index of the first spot for which the cumulated delivered dose is above the lower percentile
     startTime = spotTimingStart(startTimeIndex);
 
+
     [~, endTimeIndex] = max( (cumDose ./ DoseMAX) >= (1-percentile),[],1); % index of the first spot for which the cumulated delivered dose is above the higher percentile
     endTime = spotTimingStop(endTimeIndex);
-
     SpotTiming = endTime - startTime;
-
     wZero = find(SpotTiming == 0);
     DR = 1000 .*  (1 - 2.* percentile) .* cumDose(end,:) ./ SpotTiming ; %Dose rate (Gy/s) to deliver the percentile dose
     DR(wZero) = 0;

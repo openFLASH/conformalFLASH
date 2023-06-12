@@ -47,7 +47,7 @@ function [Abrass , Rmax] = apertureContour2Block(Beam ,  Spacing  , BDL_file)
 
   %Get the magnification foctor from isocentre to aperture plane
   mag = magnification(Beam.IsocenterToBlockTrayDistance , BDL_file); %Get the magnification factor from isocentre plane to upstream side aperture plane
-  fprintf('Isocenter to Block Tray Distance : %f mm \n', Beam.IsocenterToBlockTrayDistance);
+  fprintf('Isocenter to Upstream Block side Distance : %f mm \n', Beam.IsocenterToBlockTrayDistance);
   fprintf('Magnification factor X : %f \n', mag(1))
   fprintf('Magnification factor Y : %f \n', mag(2))
 

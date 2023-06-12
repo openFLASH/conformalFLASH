@@ -419,6 +419,7 @@ end
     %As the CT is aligned with the IEC gantry CS, adding the RS can be done quickly by using the Matlab indexing.
     fprintf('Adding Range shifter to low resolution CT \n')
     handlesHR = setRangeShifterinHRCT(handlesHR , PlanHR , hrCTName);
+    PlanHR.Beams.NumberOfRangeShifters = 0;  %Remove the range shifter from the MCsquare beam model. The range shifter is now inserted in the CT scan
 
     %Save the interpolated CT on disk
     %The IEC gantry axis of the beamlet is aligned with the Y axis of this high resolution Ct scan

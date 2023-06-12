@@ -103,13 +103,13 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
 
 
     %Find the ROI number of the target structure for this plan
-    for d = 1:numel(monoPlan.DoseReferenceSequence)
-      itemDose = sprintf('Item_%i',d);
-      if strcmp(monoPlan.DoseReferenceSequence.(itemDose).DoseReferenceType , 'TARGET')
-        Plan.TargetROI_ID = monoPlan.DoseReferenceSequence.(itemDose).ReferencedROINumber;
-        break;
-      end
-    end
+    % for d = 1:numel(monoPlan.DoseReferenceSequence)
+    %   itemDose = sprintf('Item_%i',d);
+    %   if strcmp(monoPlan.DoseReferenceSequence.(itemDose).DoseReferenceType , 'TARGET')
+    %     Plan.TargetROI_ID = monoPlan.DoseReferenceSequence.(itemDose).ReferencedROINumber;
+    %     break;
+    %   end
+    % end
 
     %Construct the beam structure
     %------------------------------
@@ -174,12 +174,17 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         physicsConstants;
         maxE =max([Plan.Beams(b).Layers(:).Energy]);
         ChargePerMU = MU_to_NumProtons(1, maxE) .* eV; %Cb per MU
-        if isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1 , 'MetersetRate')
-          Plan.Inozzle = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.MetersetRate .* ChargePerMU .* 1e9 ./ 60; %Proton beam current (nA)
-        else
-          warning('Plan is missing MetersetRate. Using default value.')
-          Plan.Inozzle = 500; %nA
-        end
+        if ~isfield(Plan , 'Inozzle')
+            if isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1 , 'MetersetRate')
+              fprintf('Loading Inozzle from DICOM plan \n')
+              Plan.Inozzle = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.MetersetRate .* ChargePerMU .* 1e9 ./ 60; %Proton beam current (nA)
+            else
+              warning('Plan is missing MetersetRate. Using default value.')
+              Plan.Inozzle = 500; %nA
+            end
+          else
+            fprintf('Inozzle already defined in variable Plan \n')
+          end
         fprintf('Proton beam current : %f nA \n', Plan.Inozzle)
 
 
@@ -223,11 +228,11 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         %Get snout information
         %---------------------
         Plan.Beams(b).SnoutID = monoPlan.IonBeamSequence.(itemBeam).SnoutSequence.Item_1.SnoutID;
-        if ~strcmp(Plan.Beams(b).SnoutID , 'FLASH_SNOUT')
-          fprintf('SnoutID in the plan : %s \n',Plan.Beams(b).SnoutID)
-          warning('This is not a FLASH snout. Overwriting snout ID')
-          Plan.Beams(b).SnoutID = 'FLASH_SNOUT';
-        end
+        % if ~strcmp(Plan.Beams(b).SnoutID , 'FLASH_SNOUT')
+        %   fprintf('SnoutID in the plan : %s \n',Plan.Beams(b).SnoutID)
+        %   warning('This is not a FLASH snout. Overwriting snout ID')
+        %   Plan.Beams(b).SnoutID = 'FLASH_SNOUT';
+        % end
         %The plan defines the snout position on the UPSTREAM side of the aperture block
         Plan.Beams(b).SnoutPosition = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.SnoutPosition;
 
@@ -237,21 +242,22 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         if Plan.Beams(b).NumberOfRangeShifters
               %There is a range shifter
               Plan.Beams(b).RSinfo = monoPlan.IonBeamSequence.(itemBeam).RangeShifterSequence.Item_1;
-
               snout = getParamSnout(Plan.Beams(b).SnoutID);
-              Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.AccessoryCode));
+              Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.RangeShifterID));
               Plan.Beams(b).RSinfo.NbSlabs = numel(find(Plan.Beams(b).RSinfo.RSslabThickness));
               Plan.Beams(b).RSinfo.SlabOffset = snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - snout.RangeShifterOffset(1) + Plan.Beams(b).RSinfo.RSslabThickness(1) ; %Offset from |IsocenterToRangeShifterDistance| and the upstream side of the i-th slab
               fprintf('Range shifter thickness : %f mm \n', Plan.Beams(b).RSinfo.RSslabThickness)
               fprintf('Number of slabs : %d \n', Plan.Beams(b).RSinfo.NbSlabs)
 
-              dwstRS2Aper = snout.RangeShifterOffset(1) - Plan.Beams(b).RSinfo.RSslabThickness(1); %distance (mm) from upstream aperture surface to downstream RS surface
-              Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance = Plan.Beams(b).SnoutPosition + dwstRS2Aper;
+              Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1.IsocenterToRangeShifterDistance; %Distance from isocenter to downstream surface of range shifter
+              % dwstRS2Aper = snout.RangeShifterOffset(1) - Plan.Beams(b).RSinfo.RSslabThickness(1); %distance (mm) from upstream aperture surface to downstream RS surface
+              % Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance = Plan.Beams(b).SnoutPosition + dwstRS2Aper;
+
               Plan.Beams(b).RSinfo.RangeShifterSetting = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1.RangeShifterSetting;
               Plan.Beams(b).RSinfo.RangeShifterMaterial = snout.RangeShifterMaterial;
-              if ~isfield(Plan.Beams(b).RSinfo , 'RangeShifterDescription')
-                Plan.Beams(b).RSinfo.RangeShifterDescription = 'RayStation';
-              end
+              % if ~isfield(Plan.Beams(b).RSinfo , 'RangeShifterDescription')
+              %   Plan.Beams(b).RSinfo.RangeShifterDescription = 'RayStation';
+              % end
               fprintf('Range shifter material : %s \n', Plan.Beams(b).RSinfo.RangeShifterMaterial)
 
 
@@ -265,7 +271,6 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
                 %the range shifter WET is in the plan. Just copy it
                 Plan.Beams(b).RSinfo.RangeShifterWET = double(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1.RangeShifterWaterEquivalentThickness); %Range shifter WET in mm
               end
-
               if isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1 , 'IsocenterToRangeShifterDistance')
                   if round(double(Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance),1) ~= round(double(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.RangeShifterSettingsSequence.Item_1.IsocenterToRangeShifterDistance),1)
                     fprintf('Isocenter To RangeShifter Distance from snout position        : %f mm \n', round(double(Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance),1))
@@ -285,6 +290,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         Plan.Beams(b).NumberOfRidgeFilters = monoPlan.IonBeamSequence.(itemBeam).NumberOfRangeModulators;
         if Plan.Beams(b).NumberOfRidgeFilters
             %There is a range modulator
+            Plan.RidgeFilter = true;
             Plan.Beams(b).RangeModulator.AccessoryCode = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).AccessoryCode;
             Plan.Beams(b).RangeModulator.RangeModulatorID = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).RangeModulatorID;
             Plan.Beams(b).RangeModulator.RangeModulatorType = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).RangeModulatorType;

@@ -27,7 +27,7 @@ Plan:
   MCsqExecPath : D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib
   BeamletsBy: MCsquare        # Algorithm used to compute the beamlets: Monte Carlo ('MCsquare') or Pencil Beam ('FoCa')
   Beams:
-  - name: min                # Beam name
+  - name: Beam1                # Beam name
     GantryAngle: 90           # Gantry angle in degrees
     PatientSupportAngle: 0    # Couch rotation angle in degree
     isocenter: []             # in mm, DICOM coords. You can set it manually, or leave empty. By default empty, it will be calculated as the center of the selected target
@@ -35,18 +35,14 @@ Plan:
     LayerSpacing: 10          # Spacing between energy layers in WET-mm (Water equivalent length)
     SpotSpacing: 10           # Lateral spacing between spots (perpendicular to beam direction) in mm
     NumberOfRangeShifters: 0  # Number of range shifters associated with current beam. Options = 1 or 0!
-    RSinfo:
-      RangeShifterID: RS_Block
   - name: Beam2                 # Beam name
-    GantryAngle: 180            # Gantry angle in degrees
+    GantryAngle: 270            # Gantry angle in degrees
     PatientSupportAngle: 0    # Couch rotation angle in degree
     isocenter: []               # in mm, DICOM coords. You can set it manually, or leave empty. By default empty, it will be calculated as the center of the selected target
     TargetMargin: [5, 5, 5]     # Margin around the target to take into account penumbra and errors (mm)
     LayerSpacing: 10            # Spacing between energy layers in WET-mm (Water equivalent length)
     SpotSpacing: 10             # Lateral spacing between spots (perpendicular to beam direction) in mm
     NumberOfRangeShifters: 0    # Number of range shifters associated with current beam. Options = 1 or 0!
-    RSinfo:
-      RangeShifterID: RS_Block
   TargetROI: ct_PTV          # name for target ROI
   ExternalROI: ct_BODY       # name for external ROI - the body contour
   optFunction:

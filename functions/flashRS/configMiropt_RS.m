@@ -40,11 +40,11 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
 
     %Beam properties
     %----------------
+    BeamProp.FLAGOptimiseSpotOrder = false; %Do not optimise trajectory. Use the one read from logs
     if ~isempty(BeamProp)
       Plan = copyFields(BeamProp , Plan);
     end
 
-    Plan.FLAGOptimiseSpotOrder = false; %The order is defined in the plan. Do not change it
     Plan.output_path = output_path;
     Plan.showGraph = true;
     if isfield(BeamProp , 'NbScarves')
@@ -54,8 +54,11 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
 
     %CEM properties
     %--------------
-    Plan.makeSTL = CEMprop.makeSTL;
-    Plan.RidgeFilter = true;
+    if isfield(CEMprop , 'makeSTL')
+      Plan.makeSTL = CEMprop.makeSTL;
+    else
+      Plan.makeSTL = false;
+    end
     Plan.exportCEFinCT = false;
 
     %Count the number of robust scenario
