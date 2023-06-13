@@ -239,7 +239,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               Plan.Beams(b).RSinfo = monoPlan.IonBeamSequence.(itemBeam).RangeShifterSequence.Item_1;
 
               snout = getParamSnout(Plan.Beams(b).SnoutID);
-              if isfield(Plan.Beams(b).RSinfo, 'RangeShifterID')
+              if (isfield(Plan.Beams(b).RSinfo, 'RangeShifterID') && ~strcmp(Plan.Beams(b).RSinfo.RangeShifterID, Plan.Beams(b).RSinfo.AccessoryCode)) 
                   nrSlabsStr = extractBefore(Plan.Beams(b).RSinfo.RangeShifterID, " [Al]");
                   Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(nrSlabsStr));
               else
