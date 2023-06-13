@@ -61,7 +61,21 @@ function snout = getParamSnout(snoutType)
 
     snout.RangeShifterSlabs = containers.Map(AccessoryCode,RangeShifterSlabs);
     snout.AccessoryCode = containers.Map(RangeShifterThickness,AccessoryCode);
-    snout.RangeShifterMaterial = 'aluminium';    
+    snout.RangeShifterMaterial = 'aluminium';
+
+  case '40'
+    snout.snoutType = '40';
+    snout.RangeShifterType = 'BINARY'; % These are slabs. So its binary: slabs in or out
+    snout.RSslabThickness = [0 , 50] ; %mm Thickness of the individual slabs of the range shifter
+    snout.RangeShifterOffset = 0;
+    snout.RangeShifterMaterial = 'PMMA';
+
+    AccessoryCode = {'None' , 'FlashRS'};
+    RangeShifterThickness = [0 , 1];
+    RangeShifterSlabs = {[1], [2]};
+    snout.RangeShifterSlabs = containers.Map(AccessoryCode,RangeShifterSlabs);
+    snout.AccessoryCode = containers.Map(RangeShifterThickness,AccessoryCode);
+
 
   otherwise
     snoutType

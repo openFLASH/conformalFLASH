@@ -179,7 +179,7 @@ function PlanMono = CreatePlanMonoLayer(Plan , filename , protonsFullDose)
               PlanMono.Beams(b).NumberOfRangeShifters = 1;
               param = getMachineParam(Plan.BDL);
               PlanMono.Beams(b).RSinfo.RangeShifterNumber = 1;
-              PlanMono.Beams(b).RSinfo.AccessoryCode = snout.AccessoryCode(sum(Plan.Beams(b).RSinfo.RSslabThickness) ./ snout.RSslabThickness(end));
+              PlanMono.Beams(b).RSinfo.RangeShifterID = snout.AccessoryCode(sum(Plan.Beams(b).RSinfo.RSslabThickness) ./ snout.RSslabThickness(end));
               PlanMono.Beams(b).RSinfo.RSslabThickness = Plan.Beams(b).RSinfo.RSslabThickness; %mm
 
               %PlanMono.Beams(b).RSinfo.RangeShifterMaterial = Plan.Beams(b).RSinfo.RangeShifterMaterial;

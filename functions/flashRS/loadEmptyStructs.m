@@ -49,7 +49,7 @@ function [handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, 
 
   Plan.DoseGrid.size = handles.size';
   Plan.OptROIVoxels_nominal = createROI(Plan.ExternalROI, handles);
-  %Plan.OptROIVoxels_robust = []; % initialize to zeros
+  Plan.OptROIVoxels_robust = []; % initialize to zeros
 
   %Create the ROI structure
   optFidx = 1;

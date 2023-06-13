@@ -1,15 +1,15 @@
-%% flashLoadAndCompute
-% Load a DICOM RT plan (ConformalFLASH plan) and:
-%  * Optimize spot trajectory if  |BeamProp.FLAGOptimiseSpotOrder = true|
-%  * Compute the dose rate in the |RTstruct.selected_ROIs|
+%% flashSTLoadAndCompute
+% Load a DICOM RT plan (shoot through plan) and:
+%  * Compute the dose map
+%  * Compute the dose rate
 %
 %
 %% Syntax
-% |[handles, Plan] = flashLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, DoseRate , CEMprop)|
+% |[handles, Plan] = flashSTLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, DoseRate , CEMprop)|
 %
 %
 %% Description
-% |[handles, Plan] = flashLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, DoseRate , CEMprop)| Description
+% |[handles, Plan] = flashSTLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, DoseRate , CEMprop)| Description
 %
 %
 %% Input arguments
@@ -36,9 +36,6 @@
 %   * |RTstruct.ExternalROI| -_STRING_- Name of the RT struct with the body contour
 %   * |RTstruct.TargetROI| -_STRING_- Name of the RT struct with the PTV
 %
-% |CEMprop| -_STRUCTURE_- [OPTIONAL. If absent, no CEM is present in the plan] Information for the computation of the CEM
-%    * |makeSTL| -_BOOL_- If true, the STL file is saved in the output folder
-%
 % |scanAlgoGW| -_STRUCTURE_- [OPTIONAL : default : no conexion to scanAlgo] Information about the scanAlgo gateway
 %    * |scanAlgoGW.scanalgoGateway_IP| -_STRING_- IP address, including port, to the scanAlkgo gatewat
 %    * |scanAlgoGW.room_id| -_STRING_- Room ID as defined  inthe gateway
@@ -63,18 +60,15 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [handles, Plan] = flashLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, CEMprop , scanAlgoGW , spots)
-
-  if nargin < 7
-    CEMprop = struct;
-  end
+function [handles, Plan] = flashSTLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, scanAlgoGW , spots)
 
 
-if nargin < 8
+
+if nargin < 7
   scanAlgoGW = [];
 end
 
-if nargin < 9
+if nargin < 8
   spots = [];
 end
 
@@ -83,6 +77,7 @@ warning('on') %Turn on warning messages
 
 %Add MIROpt specific configuration
 %-------------
+CEMprop = struct;
 Plan = configMiropt_RS(BeamProp, CEMprop, output_path);
 
 %Load the CT scan and update the data
@@ -99,6 +94,7 @@ if ~isempty(scanAlgoGW)
   Plan.scanAlgoGW.spot_id = scanAlgoGW.spot_id; %TODO get this infor from plan
 end
 
+
 [handles, Plan] = parseFLASHplan(planFileName , Plan, handles);
 
 %If records from logs are provided, then overwrite the spot info in plan
@@ -112,13 +108,6 @@ if (~exist(fullfile(Plan.output_path,'Outputs'),'dir'))
   mkdir (fullfile(Plan.output_path,'Outputs'))
 end
 copyfile (planFileName, fullfile(Plan.output_path,'Outputs','Plan.dcm')); %Copy the RS plan into the output folder to be used when creating the dose maps
-
-if CEMprop.makeSTL
-  %Export the STL file of the CEM
-  path2beamResults = getOutputDir(Plan.output_path , 1);
-  filename = fullfile(path2beamResults,[matlab.lang.makeValidName(Plan.Beams.RangeModulator.AccessoryCode),'.stl']);
-  exportCEM2STL(Plan.Beams.RangeModulator.CEMThicknessData  , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , Plan.Beams.RangeModulator.ModulatorOrigin , Plan.Beams.RangeModulator.AccessoryCode , Plan.Beams.RangeModulator.ModulatorMountingPosition , filename)
-end
 
 
 %Load the RT structures
@@ -174,27 +163,49 @@ end
 
 PlanMono = Plan; %This is a Monolayer plan already
 
-%Compute dose map
-%-----------------
-% Compute the dose through the CEF using the high resolution CT scan
-%Save the high resolution dose map of each beamlet in separate files
-fprintf('Computing the dose map in high resolution CT scan \n')
+%Compute dose influence matix
+fprintf('Inserting aperture in CT \n')
+[Plan , handles ] = setApertureInCT(handles , Plan , Plan.CTname , Plan.CTname); %Add an apertrue block in the CT scan
 
 for b = 1:numel(Plan.Beams)
   %TODO deal with plan contianing setup beams
   fprintf('Beam %d \n' , b)
-
-  %Compute the dose of each beamlet
-  path2beamResults = getOutputDir(Plan.output_path , b);
-  Plan = computeDoseWithCEF(Plan , path2beamResults , handles , Plan.CTname , true);
-  movefile (fullfile(Plan.output_path,'Outputs','Plan.dcm') , fullfile(path2beamResults,'Plan_CEM.dcm'));
+  fprintf('Inserting range shifter in CT \n')
+  [Plan , handles] = setRangeShifterinCT(handles , Plan , Plan.CTname);
+  Plan.Beams(b).NumberOfRangeShifters = 0;  %Remove the range shifter from the MCsquare beam model. The range shifter is now inserted in the CT scan
 end
 
-%Compute the dose rate and save the results to disk
-%--------------------------------------------------
+%Update the size of the masks after expanding the CT scan
+Plan  = updatePlanCTparam(handles, Plan);
+nvoxels = prod(handles.size);
 
-%Compute dose rate in all structures
+handles.size
+Body = Get_reggui_data(handles , Plan.ExternalROI);
+
+temp = flip(Body,3);
+%Plan.OptROIVoxels_nominal = sparse(logical(double(temp(:)))); %Mask defining the voxels of the dose influence matrix to be loaded in the sparse matrix
+Plan.OptROIVoxels_nominal = true(nvoxels,1);
+%Plan.OptROIVoxels_robust = false(nvoxels,1); % initialize to zeros
+
+Export_image(Plan.CTname,fullfile(Plan.output_path,'Outputs','ct_IMPT'),'dcm',handles);
+
+
+%Compute the dose influence matrix. It will be used to compute the dose rate
+%There is no hedgehog in the plan, so we can use the standard MIROPT function to compute the Piuj matrix
+[warm_start_in,Plan] = ComputePijsMatrix(Plan, handles, Plan.CTname); %Compute the influence matrix
+Plan.PlanExistentFile = Plan.output_path;
+
+
+OptConfig.BeamletsMatrixPrecision = 'd';
+Plan = ReadPijsMatrix(Plan, OptConfig, handles);
+
+%Compute the dose rate and save the results to disk
+path2beamResults = getOutputDir(Plan.output_path , 1);
+copyfile (planFileName, fullfile(path2beamResults,'Plan.dcm')); %Copy the RS plan into the output folder to be used when creating the dose maps
 handles = ComputeFinalDoseRate(Plan, handles, ROI);
 
+%Compute the final dose with higher number of protons
+DoseFileName = 'MCsquare_Dose.dcm';
+handles = ComputeFinalDose(Plan, handles, DoseFileName, 'multi-energy');
 
 end

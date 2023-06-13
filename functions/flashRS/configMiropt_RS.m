@@ -33,20 +33,17 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
     %MCsqaure properties
     %-------------------
     Plan.BeamletsBy = 'MCsquare'; %Algorithm used to compute the beamlets: Monte Carlo ('MCsquare') or Pencil Beam ('FoCa')
-    Plan.protonsFullDose = 1e7; % Number of protons in the full target. Default 1e7
-    Plan.protonsHighResDose = 1e6; %TODO Number of protons in the dose in high resolution CT
-
     Plan.SaveHighResDoseMap = true; % Do not save the dose map at CEFDoseGrid resolution in the IEC gantry CS
     Plan.SaveDoseBeamlets = true; % Do not save beamlet dose maps to save time
     Plan.SaveHighResCT = true; %Do not save the high resolution CT for each beamlet in the reference frame of the beamlet
 
     %Beam properties
     %----------------
+    BeamProp.FLAGOptimiseSpotOrder = false; %Do not optimise trajectory. Use the one read from logs
     if ~isempty(BeamProp)
       Plan = copyFields(BeamProp , Plan);
     end
 
-    Plan.FLAGOptimiseSpotOrder = false; %The order is defined in the plan. Do not change it
     Plan.output_path = output_path;
     Plan.showGraph = true;
     if isfield(BeamProp , 'NbScarves')
@@ -56,8 +53,11 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
 
     %CEM properties
     %--------------
-    Plan.makeSTL = CEMprop.makeSTL;
-    Plan.RidgeFilter = true;
+    if isfield(CEMprop , 'makeSTL')
+      Plan.makeSTL = CEMprop.makeSTL;
+    else
+      Plan.makeSTL = false;
+    end
     Plan.exportCEFinCT = false;
 
     %Count the number of robust scenario

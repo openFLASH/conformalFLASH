@@ -1,0 +1,22 @@
+{
+"files": {
+  "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/FLASHshootThrought/datasetForFrancois/RP1.2.752.243.1.1.20230324163535657.4000.45731.dcm",
+  "rtstructFileName" : "D:/programs/openREGGUI/REGGUI_userdata/FLASHshootThrought/datasetForFrancois/RS1.2.752.243.1.1.20230324163535656.2000.81625.dcm",
+  "CTname" : "D:/programs/openREGGUI/REGGUI_userdata/FLASHshootThrought/reggui_waterCube/reggui_waterCube_0001.dcm",
+  "output_path" : "D:/programs/openREGGUI/REGGUI_userdata/FLASHshootThrought/output"
+  },
+
+  "BeamProp" : {
+    "Inozzle" : 450,
+    "protonsFullDose" : 1e6,
+    "protonsBeamlet" : 1e5,
+    "CEFDoseGrid" : [1, 1, 1],
+    "BDL" : "D:/programs/openREGGUI/flash/openMCsquare/lib/BDL/BDL_default_UN1_G0_Al_RangeShifter_tilted.txt",
+    "ScannerDirectory" : "D:/programs/openREGGUI/REGGUI/plugins/openMCsquare/lib/Scanners/default",
+    "MCsqExecPath" : "D:/programs/openREGGUI/REGGUI/plugins/openMCsquare/lib"
+    },
+
+  "RTstruct": {
+    "ExternalROI" : "patient"
+  }
+}

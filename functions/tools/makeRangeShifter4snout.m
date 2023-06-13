@@ -73,6 +73,7 @@ end
         %Compute isocentre to range shifter distance
         Snout2RSOffset = param.snout.RangeShifterOffset(1) - Plan.Beams(b).RSinfo.RSslabThickness(1); %Distance between plane defining snout position and the downstream side of the range shifter
         Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance = getIsocenterToRangeShifterDistance(Plan.Beams(b) , Snout2RSOffset);
+        Plan.Beams(b).NumberOfRangeShifters = 1;
 
 
         fprintf('Isocenter To downstream side of Range Shifter : %3.2f mm\n',Plan.Beams(b).RSinfo.IsocenterToRangeShifterDistance)
