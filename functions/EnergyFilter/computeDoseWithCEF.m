@@ -97,9 +97,7 @@ function [Plan] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdos
     Zdistal = getZdistal(Body , handles.spacing , handles.origin , Plan.Beams); % |Zdistal| -_SCLAR_-  Z Coordinate (mm) in the IEC gantry CS of the deepest plane in which the dose is to be computed
 
     %REcord the parameters of the original CT scan
-    hCT.size = handles.size; %Make first a copy of the size of the original CT scan. We want the dose map to match this size
-    hCT.origin = handles.origin;
-    hCT.spacing = handles.spacing;
+    hCT = createREGGUIhandles(handles.size , handles.origin , handles.spacing); %Make first a copy of the size of the original CT scan. We want the dose map to match this size
 
     if ~FLAGdosePerSpot
         % Compute the dose in the whole volume in one go
@@ -107,9 +105,9 @@ function [Plan] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdos
         [DoseIECg , DoseFileName , handlesDoseIECg] = getHighResDose(Plan, outputPath , handles , CTName , 0 , minField , maxField , Zdistal , true);
         [iDoseGntX , iDoseGntY , iDoseGntZ ] = getCTaxes(handlesDoseIECg.origin , handlesDoseIECg.spacing , handlesDoseIECg.size , [0,0,0]); %Cooridnates of dose map aligned with IEC gantry
 
-        hD.spacing = handlesDoseIECg.spacing; %The final dose map will have the spatial resolution of |Plan.CEFDoseGrid|
-        hD.origin = hCT.origin;
-        hD.size = ceil(hCT.size .* hCT.spacing ./ handlesDoseIECg.spacing); %Compute the number of pixels at dose map resolution to fill the volume of original CT
+        hD = createREGGUIhandles(ceil(hCT.size .* hCT.spacing ./ handlesDoseIECg.spacing) , hCT.origin , handlesDoseIECg.spacing);
+                    %The final dose map will have the spatial resolution of |Plan.CEFDoseGrid|
+                    %Compute the number of pixels at dose map resolution to fill the volume of original CT
         [DoseOrig , handlesDose]  = doseIECg2DICOMcs(DoseIECg  , handlesDoseIECg , hD , Plan , outputPath); %Dose map aligned to orignal Ct with resolution of |Plan.CEFDoseGrid|
 
      else
@@ -119,7 +117,7 @@ function [Plan] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdos
     end
 
 
-    % Save to plan the Pij matrix with beamlets through CEM  
+    % Save to plan the Pij matrix with beamlets through CEM
     Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P = Pij;
 
 
@@ -160,9 +158,7 @@ function [Plan , iDoseGntX , iDoseGntY , iDoseGntZ, minField , maxField, hD] = g
   [minField , maxField] = getMaxBEVsize(Plan.Beams);
   [iDoseGntX , iDoseGntY , iDoseGntZ] =  getDoseMapCoordInIECg(Plan.Beams , Zdistal , handles.spacing , handles.origin , minField , maxField ,  Plan.Scoring_voxel_spacing);
 
-  hD.size = [numel(iDoseGntX) , numel(iDoseGntY) , numel(iDoseGntZ)];
-  hD.origin = [iDoseGntX(1) , iDoseGntY(1) , iDoseGntZ(1)];
-  hD.spacing = Plan.Scoring_voxel_spacing;
+  hD = createREGGUIhandles([numel(iDoseGntX) , numel(iDoseGntY) , numel(iDoseGntZ)] , [iDoseGntX(1) , iDoseGntY(1) , iDoseGntZ(1)] , Plan.Scoring_voxel_spacing);
 
 end
 
@@ -277,9 +273,10 @@ function [DoseOrigCT, DoseFileName , handlesDose , Pij] = getFullHighResDosemap(
   end %end for spt
 
   %Rotate the full dose map to make axes paralell to original CT scan
-  hD.spacing = hDoseIECg.spacing; %The final dose map will have the spatial resolution of |Plan.CEFDoseGrid|
-  hD.origin = hCT.origin;
-  hD.size = ceil(hCT.size .* hCT.spacing ./ hDoseIECg.spacing); %Compute the number of pixels at dose map resolution to fill the volume of original CT
+  hD = createREGGUIhandles(ceil(hCT.size .* hCT.spacing ./ hDoseIECg.spacing) , hCT.origin , hDoseIECg.spacing);
+            %The final dose map will have the spatial resolution of |Plan.CEFDoseGrid|
+            %Compute the number of pixels at dose map resolution to fill the volume of original CT
+
   [DoseOrigCT, handlesDose] = doseIECg2DICOMcs(DoseIECg  , hDoseIECg , hD , Plan , outputPath);
 
 end
@@ -310,6 +307,7 @@ function [DoseDCMcs, handlesDose] = doseIECg2DICOMcs(DoseIECg , handlesDoseIECg 
   handlesDose.spacing = hD.spacing;
   handlesDose.origin = hD.origin;
   handlesDose.size = hD.size ;
+  handlesDose.spatialpropsettled = true;
 
   %Compute the coordinate of all pixels of the full dose map
   %The DoseOrig dose map is aligned with the axes of the original DICOM CT
@@ -510,6 +508,7 @@ end
     DoseHR.origin = [DoseInfo.ImagePositionPatient(1) , DoseInfo.ImagePositionPatient(3) , origZ ]'; %Second index is minus (because flipped) Zg
     DoseHR.isocenter = [handlesHR.isocenter(1) , handlesHR.isocenter(3) , handlesHR.isocenter(2)]; %permuted the CT scan
     DoseHR.spacing = [ DoseInfo.Spacing(1) , DoseInfo.Spacing(3) , DoseInfo.Spacing(2)]'; %permutation has no effect here: all elements are identical
+    DoseHR.spatialpropsettled = true;
 
   end
 
@@ -787,4 +786,21 @@ function handlesHR = setApertureinHRCT(handlesHR , PlanHR , hrCTName)
   handlesHR = Set_reggui_data(handlesHR,hrCTName,CT,PlanHR.CTinfo,'images',1); %Create a new image with only the aperture
 
 
+end
+
+
+%------------------------------------
+% Create a new REGGUI handles with the apstial properties of the image
+%
+% INPUT
+% |size| -_SCALAR VECTOR_- [Nx , Ny , Nz] Number of voxel along each axis
+% |origin|  -_SCALAR VECTOR_- [x,y,z] coordiante of the first voxel of the images
+% |spacing| -_SCALAR VECTOR_- [dx , dy , dz] Dimension (mm) of each axis of the voxels
+%------------------------------------
+function handles = createREGGUIhandles(size , origin , spacing)
+  handles = struct;
+  handles.size = size; %Make first a copy of the size of the original CT scan. We want the dose map to match this size
+  handles.origin = origin;
+  handles.spacing = spacing;
+  handles.spatialpropsettled = true;
 end

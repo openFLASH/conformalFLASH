@@ -168,9 +168,6 @@ Plan.Beams(b).Layers
           Plan.SpotTrajectoryInfo.TimingMode = 'Model'; %The spot timing is from a model
         end
 
-Plan.SpotTrajectoryInfo
-pause
-
         if Plan.showGraph
           figure(100+b)
           hold on

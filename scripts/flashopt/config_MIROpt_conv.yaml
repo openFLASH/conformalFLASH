@@ -23,7 +23,7 @@ Plan:
   #PlanExistentFile: D:\programs\openREGGUI\REGGUI_userdata\miroptSTD      # If you already have pre-calculated beamlets, set the path here. The "output_path" variable needs to be commented out. To calculate from scratch comment out this line and re-enable "output_path".
   name: PBSplan               # Default plan name tag inside the plan file
   ScannerDirectory: D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib\Scanners\default   # Default value. Go to MCsquare/Scanners to check what are the other scanners implemented
-  BDL: D:\programs\openREGGUI\flash\openMCsquare\lib\BDL\BDL_default_UN1_G0_Al_RangeShifter_tilted.txt  # Beam model. Go to MCsquare/BDL directory to check what are the other possible models
+  BDL: D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib\BDL\BDL_default_DN_RangeShifter.txt  # Beam model. Go to MCsquare/BDL directory to check what are the other possible models
   MCsqExecPath : D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib
   BeamletsBy: MCsquare        # Algorithm used to compute the beamlets: Monte Carlo ('MCsquare') or Pencil Beam ('FoCa')
   Beams:
