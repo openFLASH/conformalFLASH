@@ -243,8 +243,12 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               %There is a range shifter
               Plan.Beams(b).RSinfo = monoPlan.IonBeamSequence.(itemBeam).RangeShifterSequence.Item_1;
               snout = getParamSnout(Plan.Beams(b).SnoutID);
-
-              Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.RangeShifterID));
+              if (isfield(Plan.Beams(b).RSinfo, 'RangeShifterID') && ~strcmp(Plan.Beams(b).RSinfo.RangeShifterID, Plan.Beams(b).RSinfo.AccessoryCode)) 
+                  nrSlabsStr = extractBefore(Plan.Beams(b).RSinfo.RangeShifterID, " [Al]");
+                  Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(nrSlabsStr));
+              else
+                Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.AccessoryCode));
+              end
               Plan.Beams(b).RSinfo.NbSlabs = numel(find(Plan.Beams(b).RSinfo.RSslabThickness));
               Plan.Beams(b).RSinfo.SlabOffset = snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - snout.RangeShifterOffset(1) + Plan.Beams(b).RSinfo.RSslabThickness(1) ; %Offset from |IsocenterToRangeShifterDistance| and the upstream side of the i-th slab
               fprintf('Range shifter thickness : %f mm \n', Plan.Beams(b).RSinfo.RSslabThickness)
