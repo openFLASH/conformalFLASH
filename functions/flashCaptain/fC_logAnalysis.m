@@ -57,7 +57,7 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
   %Compare plan and treatment record
   %Save in JSON file the spot position and MU differences
   %-------------------------------------------------------
-  Compare_plans('record' , 'plan' , handles , 0 , fullfile(config.files.output_path,config.files.ResultTXT) );
+  %Compare_plans('record' , 'plan' , handles , 0 , fullfile(config.files.output_path,config.files.ResultTXT) );
 
   %Compute the dose map
   %--------------------
@@ -71,8 +71,7 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
   BeamProp.CEFDoseGrid =  num2cell(BeamProp.CEFDoseGrid);
   CEMprop.makeSTL = false;
 
-
   %Load plan from TPS and create a MIROPT |PLan| structure with the monolayer plan
-  [~, Plan] = flashLoadAndCompute(RSplanFileName, CTname , rtstructFileName , config.files.output_path , BeamProp , config.RTstruct , CEMprop , [] , handles.plans.data{logID}{1});
+  [~, Plan] = flashLoadAndCompute(RSplanFileName, CTname , rtstructFileName , config.files.output_path , BeamProp , config.RTstruct.ExternalROI , CEMprop , [] , handles.plans.data{logID}{1});
 
 end

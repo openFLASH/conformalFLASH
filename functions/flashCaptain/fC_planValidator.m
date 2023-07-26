@@ -50,6 +50,6 @@ CEMprop.makeSTL = false;
 
 %Process the RayStation plan
 %---------------------------
-[handles, Plan] = flashLoadAndCompute(RSplanFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, DoseRate , CEMprop);
+[handles, Plan] = flashLoadAndCompute(RSplanFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct.ExternalROI, DoseRate , CEMprop);
 
 end

@@ -39,11 +39,27 @@ function Plan = overwriteWithLogs(Plan, spots)
 
   %Identify the beam in |Plan.Beams| with a name matching |spots.name|
   idxBeam = find(strcmp([Plan.Beams(:).name] , spots.name));
+  if isempty(idxBeam)
+    fprintf('Beam ID in logs : %s \n', spots.name)
+    fprintf('Beam IDs in plan : \n');
+    Plan.Beams(:).name
+    warning('Plan does not contain beam name with same ID as the logs')
+
+    if numel(Plan.Beams) == 1
+      warning('There is one single treatment beam in the plan. Assuming logs are for this beam')
+      idxBeam = 1;
+    else
+      error('Several treatment beams in the plan. Cannot identify to which beam the log should be assigned')
+    end
+  end
+
+
+
 
 % figure(20)
 % plot(Plan.Beams(idxBeam).Layers.nominalSpotPosition(:,1),Plan.Beams(idxBeam).Layers.nominalSpotPosition(:,2),'ob')
 
-  %Update the spot info in |Plan.Beams|
+  %Update the spot info in |Plan.Beams
   Plan.Beams(idxBeam).Layers.Energy = spots.spots(1).energy;
   Plan.Beams(idxBeam).Layers.nominalSpotPosition = spots.spots(1).xy;
   Plan.Beams(idxBeam).Layers.SpotPositions = spots.spots(1).xy;

@@ -37,6 +37,11 @@ function Plan = configMiropt_RS(BeamProp, CEMprop, output_path)
     Plan.SaveDoseBeamlets = true; % Do not save beamlet dose maps to save time
     Plan.SaveHighResCT = true; %Do not save the high resolution CT for each beamlet in the reference frame of the beamlet
 
+    if ~isfield(Plan , 'MCsqExecPath')
+      %No path to MCsqaure executable was provided. Add it now
+      [~ , Plan.MCsqExecPath ] = get_MCsquare_folders();
+    end
+
     %Beam properties
     %----------------
     BeamProp.FLAGOptimiseSpotOrder = false; %Do not optimise trajectory. Use the one read from logs

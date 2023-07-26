@@ -5,7 +5,10 @@
 %
 %
 %% Syntax
-% |[handles, Plan] = flashLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, DoseRate , CEMprop)|
+%
+% |[handles, Plan, doseRatesCreated] = flashLoadAndCompute(  planFileName , CTname , rtstructFileName , output_path , BeamProp , ExternalROI , CEMprop , scanAlgoGW ,  spots)|
+%
+% |[handles, Plan, doseRatesCreated] = flashLoadAndCompute(  planFileName , CTname , []               , output_path , BeamProp , ExternalROI , CEMprop , scanAlgoGW ,  spots  , handles)|
 %
 %
 %% Description
@@ -16,7 +19,8 @@
 %
 % |planFileName| -_STRING_- Full path and file name to the RT DICOM plan
 %
-% |CTname| -_STRING_- File name and full path to the CT scan
+% |CTname| -_STRING_- If handles = [] or missing , file name and full path to the CT scan
+%                     If handles is provided, name of the CT scan in |handles|
 %
 % |rtstructFileName| -_STRING_- File name and full path to the DICOM RT struct
 %
@@ -31,10 +35,7 @@
 %   *  |BeamProp.FLAGOptimiseSpotOrder| -_BOOL_- TRUE = Optimise the spot order in the plan. FALSE = use spot order form plan but check that this is the same spot order than MIROPT
 %   *  |BeamProp.FLAGcheckSpotOrdering| -_BOOL_- TRUE = Check that spot ordering in plan matches scanAlgo output
 %
-% |RTstruct| -_STRUCTURE_- Information about the RT structs used in the TPS
-%   * |RTstruct.selected_ROIs| -_CELL VECTOR_- |RTstruct.selected_ROIs{i}| is a stirng with the name of the i-th RT struct in which the dose rate is to be computed
-%   * |RTstruct.ExternalROI| -_STRING_- Name of the RT struct with the body contour
-%   * |RTstruct.TargetROI| -_STRING_- Name of the RT struct with the PTV
+% |ExternalROI| -_STRING_- Name of the RT struct with the body contour
 %
 % |CEMprop| -_STRUCTURE_- [OPTIONAL. If absent, no CEM is present in the plan] Information for the computation of the CEM
 %    * |makeSTL| -_BOOL_- If true, the STL file is saved in the output folder
@@ -52,6 +53,7 @@
 %     * |spots.spots.time| - _SCALAR_ - Time (in ms) at the begining of the delivery of the s-th spot
 %     * |spots.spots.duration| - _SCALAR_ - Time (in ms) at the end of the delivery of the s-th spot of the l-th energy layer
 %
+% |handles| -_STRUCT_- [OPTIONAL] REGGUI image handles. If provided, the CT scan and the Rt struct are read from handles. Otherwise, they are loaded  from disk
 %
 %% Output arguments
 %
@@ -59,16 +61,16 @@
 %
 % |handles| - _STRUCT_ - REGGUI data structure.
 %
+% |doseRatesCreated| -_CELL VECTOR of STRINGS_- List of names of dose rate maps saved to disk and in |handles|
 %
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [handles, Plan] = flashLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct, CEMprop , scanAlgoGW , spots)
+function [handles, Plan, doseRatesCreated] = flashLoadAndCompute(   planFileName          , CTname        , rtstructFileName , output_path               , BeamProp , ExternalROI         , CEMprop , scanAlgoGW ,  spots  , handles)
 
-  if nargin < 7
-    CEMprop = struct;
-  end
-
+if nargin < 7
+  CEMprop = struct;
+end
 
 if nargin < 8
   scanAlgoGW = [];
@@ -82,15 +84,24 @@ warning('on') %Turn on warning messages
 
 
 %Add MIROpt specific configuration
-%-------------
+%----------------------------------------------------------------------
 Plan = configMiropt_RS(BeamProp, CEMprop, output_path);
 
 %Load the CT scan and update the data
-%-------------------------------------
-[handles, Plan] =  loadRSctScan(CTname , [], Plan);
+%----------------------------------------------------------------------
+if nargin < 10 || isempty(handles)
+  %hanldes are not provided. Load CT from disk
+  % CTname is a file name
+  [handles, Plan] =  loadRSctScan(CTname , []      , Plan);
+else
+  %handles is provided. Do not load CT from disk
+  %CTname is the image name in |handles|
+  Plan.CTname = CTname;
+  [handles, Plan] =  loadRSctScan([]    , handles , Plan);
+end
 
 %Load the plan
-%-------------
+%----------------------------------------------------------------------
 if ~isempty(scanAlgoGW)
   %Define the parameters for the conextion to scnaAlgo gateway
   Plan.scanAlgoGW.scanalgoGateway_IP = scanAlgoGW.scanalgoGateway_IP;
@@ -123,7 +134,7 @@ end
 
 %Load the RT structures
 %----------------------
-[handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, RTstruct );
+[handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, ExternalROI );
 ROI = [];
 Plan  = updatePlanCTparam(handles , Plan  );
 
@@ -172,14 +183,11 @@ else
   end
 end
 
-PlanMono = Plan; %This is a Monolayer plan already
-
 %Compute dose map
 %-----------------
 % Compute the dose through the CEF using the high resolution CT scan
 %Save the high resolution dose map of each beamlet in separate files
 fprintf('Computing the dose map in high resolution CT scan \n')
-
 for b = 1:numel(Plan.Beams)
   %TODO deal with plan contianing setup beams
   fprintf('Beam %d \n' , b)
@@ -194,7 +202,7 @@ end
 %--------------------------------------------------
 
 %Compute dose rate in all structures
-handles = ComputeFinalDoseRate(Plan, handles, ROI);
+[handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI);
 
 
 end

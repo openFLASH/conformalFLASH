@@ -693,14 +693,17 @@ function Pij = addBeamlet2Pij(Pij , spt , DoseSptDCMcs , Plan , w)
 
     %If the matrix was not clipped with the mask, clip it with a dose threshold
     %This will save memory
-    if ~flagMasked
-      thresh = max(dose1D,[],'all') ./ 1000; %Threshold at 0.1% of the maximum dose of the spot
-      dose1D = sparse( (full(dose1D)>thresh) .* full(dose1D) );
-                %The product .* is applied to the full matrices
-                %when the product is appleid on the sparse matrices, the size of |dose1D| doubles instead of decreasinf (as there are more zeros).
-                %So the product is applied to double matrices. And then sparse is applied afterwards to remove all the zeros
+    if max(dose1D,[],'all')
+        %There is some dose in this bemalet. Add it to the full dose map
+        if ~flagMasked
+          thresh = max(dose1D,[],'all') ./ 1000; %Threshold at 0.1% of the maximum dose of the spot
+          dose1D = sparse( (full(dose1D)>thresh) .* full(dose1D) );
+                    %The product .* is applied to the full matrices
+                    %when the product is appleid on the sparse matrices, the size of |dose1D| doubles instead of decreasinf (as there are more zeros).
+                    %So the product is applied to double matrices. And then sparse is applied afterwards to remove all the zeros
+        end
+        Pij(:,spt) =  dose1D; %|Pij(vox,spot)|
     end
-    Pij(:,spt) =  dose1D; %|Pij(vox,spot)|
 end
 
 

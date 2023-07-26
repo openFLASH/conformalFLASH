@@ -56,7 +56,6 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
     setFlashDICOMdict(); %If not already defined, load the DICOM dictionary with private FLASH tags
     monoPlan = dicominfo(planFileName);
 
-
     %Check scanAlgo software version
     SWvPlan = split(monoPlan.SoftwareVersion,'\'); %Get the list of softare version
     foundFlag = false;
@@ -243,7 +242,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               %There is a range shifter
               Plan.Beams(b).RSinfo = monoPlan.IonBeamSequence.(itemBeam).RangeShifterSequence.Item_1;
               snout = getParamSnout(Plan.Beams(b).SnoutID);
-              if (isfield(Plan.Beams(b).RSinfo, 'RangeShifterID') && ~strcmp(Plan.Beams(b).RSinfo.RangeShifterID, Plan.Beams(b).RSinfo.AccessoryCode)) 
+              if (isfield(Plan.Beams(b).RSinfo, 'RangeShifterID') && ~strcmp(Plan.Beams(b).RSinfo.RangeShifterID, Plan.Beams(b).RSinfo.AccessoryCode))
                   nrSlabsStr = extractBefore(Plan.Beams(b).RSinfo.RangeShifterID, " [Al]");
                   Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(nrSlabsStr));
               else
