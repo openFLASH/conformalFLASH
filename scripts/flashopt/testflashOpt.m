@@ -7,7 +7,7 @@ rtstructFileName = 'D:\programs\openREGGUI\REGGUI_userdata\water_data\water15\rt
 CTname = 'D:\programs\openREGGUI\REGGUI_userdata\water_data\water15\water15_0001.dcm';
 output_path = 'D:\programs\openREGGUI\REGGUI_userdata\water_data\50_50_50\reloaded';
 
-RTstruct.ExternalROI = 'BODY'; %name for external ROI - the body contour
+ExternalROI = 'BODY'; %name for external ROI - the body contour
 
 BeamProp.CEFDoseGrid = {1, 1, 1}; % Size (mm) of final dose scoring grid. Compute the final dose through CEF on a different grid than the high-res
 BeamProp.protonsHighResDose = 1e4; %TODO Number of protons in the dose in high resolution CT
@@ -18,4 +18,4 @@ BeamProp.MCsqExecPath = 'D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib'
 CEMprop.makeSTL = false;
 
 
-[handles, Plan] = flashLoadAndCompute(planFileName, CTname , rtstructFileName , output_path , BeamProp , RTstruct.ExternalROI, CEMprop);
+[handles, Plan]                   = flashLoadAndCompute (planFileName, CTname , rtstructFileName , output_path , BeamProp , ExternalROI, CEMprop);

@@ -66,7 +66,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [handles, Plan, doseRatesCreated] = flashLoadAndCompute(   planFileName          , CTname        , rtstructFileName , output_path               , BeamProp , ExternalROI         , CEMprop , scanAlgoGW ,  spots  , handles)
+function [handles, Plan, doseRatesCreated] = flashLoadAndCompute( planFileName , CTname , rtstructFileName , output_path , BeamProp , ExternalROI , CEMprop , scanAlgoGW ,  spots  , handles)
 
 if nargin < 7
   CEMprop = struct;

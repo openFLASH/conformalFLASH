@@ -41,7 +41,8 @@ function [handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, 
   %Load the RT struct
   if ~isempty(rtstructFileName)
     %We received a file name. Load the RT strcut from file
-    [handles , Plan.ExternalROI] = Import_contour(rtstructFileName,{ExternalROI},Plan.CTname,1,handles);
+    [handles , structName] = Import_contour(rtstructFileName,{ExternalROI},Plan.CTname,1,handles);
+    Plan.ExternalROI = structName{1};
   else
     %We did not receive a file name. The structure is already loaded in handles. Just copy the name for future references
     Plan.ExternalROI = ExternalROI;

@@ -211,7 +211,6 @@ for b = 1:length(sobp) %Loop for each beam
 
         Dose = Dose'; %Dose(spot,pxl)
 
-
         if (verbose)
           fprintf('Beam %d : Dose per fraction per beamlet in %s : %f <= D(Gy) <= %f in %d pixels (out of %d) \n',b,ROIName,full(min(Dose,[],'all'))  ,full(max(Dose,[],'all')) , numel(find(sum(Dose,1))), NbPixels);
           fprintf('Beam %d : Dose per fraction             in %s : %f <= D(Gy) <= %f \n',b,ROIName,full(min(sum(Dose,1))),full(max(sum(Dose,1))));
