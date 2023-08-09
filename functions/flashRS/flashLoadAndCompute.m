@@ -128,7 +128,7 @@ if CEMprop.makeSTL
   %Export the STL file of the CEM
   path2beamResults = getOutputDir(Plan.output_path , 1);
   filename = fullfile(path2beamResults,[matlab.lang.makeValidName(Plan.Beams.RangeModulator.AccessoryCode),'.stl']);
-  exportCEM2STL(Plan.Beams.RangeModulator.CEMThicknessData  , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , Plan.Beams.RangeModulator.ModulatorOrigin , Plan.Beams.RangeModulator.AccessoryCode , Plan.Beams.RangeModulator.ModulatorMountingPosition , filename)
+  exportCEM2STL(Plan.Beams.RangeModulator.CEM3Dmask , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , Plan.Beams.RangeModulator.ModulatorOrigin , Plan.Beams.RangeModulator.AccessoryCode , Plan.Beams.RangeModulator.ModulatorMountingPosition , filename)
 end
 
 
