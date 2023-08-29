@@ -103,24 +103,24 @@
 %% Contributors
 % Author(s): Rudi Labarbe (for the FLASH part of the function)
 
-function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan,OptConfig, warm_start_in,s_nominal,handles)
+function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan, WorkFolder, OptConfig, warm_start_in,s_nominal,handles)
 
   loaded = false;
   if isfield(Plan,'PlanExistentFile')
-    if (exist(fullfile(Plan.PlanExistentFile,'x.mat'),'file') && exist(fullfile(Plan.PlanExistentFile,'info.mat'),'file'))
+    if (exist(fullfile(WorkFolder,'x.mat'),'file') && exist(fullfile(WorkFolder,'info.mat'),'file'))
       fprintf('Loading previously optimised weights ...')
-      data = load(fullfile(Plan.PlanExistentFile,'x'));
+      data = load(fullfile(WorkFolder,'x'));
       x = data.x;
-      data = load(fullfile(Plan.PlanExistentFile,'info'));
+      data = load(fullfile(WorkFolder,'info'));
       info = data.info;
       fprintf('done \n')
       loaded = true;
     end
   end
 
-  if exist(fullfile(Plan.PlanExistentFile,'spotSequence.mat'),'file')
+  if exist(fullfile(WorkFolder,'spotSequence.mat'),'file')
     fprintf('Loading previously optimised trajectory ...')
-    data = load(fullfile(Plan.PlanExistentFile,'spotSequence'));
+    data = load(fullfile(WorkFolder,'spotSequence'));
     Plan.SpotTrajectoryInfo = data.GBL_SpotTrajectoryInfo;
     fprintf('done \n')
   end
@@ -154,9 +154,9 @@ function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan,OptConfig, w
     GLB_SpotTiming=[];  %|SpotTiming{b}(i)| Time (ms) taken at the i-th pixel to deliver the |percentile| of the dose for the b-th beam
 
     %Loading pre-computed projection if they exists
-    if isfield(Plan,'PlanExistentFile') && (exist(fullfile(Plan.PlanExistentFile,'planRidge.mat'),'file'))
+    if isfield(Plan,'PlanExistentFile') && (exist(fullfile(WorkFolder,'planRidge.mat'),'file'))
           fprintf('Loading projection data \n')
-          data = load(fullfile(Plan.PlanExistentFile,'planRidge.mat'));
+          data = load(fullfile(WorkFolder,'planRidge.mat'));
           Plan.bevPTV = data.Plan.bevPTV;
           Plan.bev_x = data.Plan.bev_x;
           Plan.bevOAR = data.Plan.bevOAR;
@@ -324,7 +324,7 @@ function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan,OptConfig, w
 
     %% Print IPOPT options
 
-    save(fullfile(Plan.PlanExistentFile,'NLPsolver_options.mat'),'options', '-v7.3');
+    save(fullfile(WorkFolder,'NLPsolver_options.mat'),'options', '-v7.3');
 
 
     %% Callback functions.
@@ -361,11 +361,11 @@ function [x, info , Plan] = NLPsolver_double_matlabNative2(ROI,Plan,OptConfig, w
     warm_start_out(1).zu = info.zu;
     warm_start_out(1).lambda = info.lambda;
 
-    save(fullfile(Plan.PlanExistentFile,'warm_start_out'),'warm_start_out');
-    save(fullfile(Plan.PlanExistentFile,'x'),'x')
-    save(fullfile(Plan.PlanExistentFile,'info'),'info')
+    save(fullfile(WorkFolder,'warm_start_out'),'warm_start_out');
+    save(fullfile(WorkFolder,'x'),'x')
+    save(fullfile(WorkFolder,'info'),'info')
     if flagUseDoseRate
-      save(fullfile(Plan.PlanExistentFile,'spotSequence'),'GBL_SpotTrajectoryInfo')
+      save(fullfile(WorkFolder,'spotSequence'),'GBL_SpotTrajectoryInfo')
     end
 
 end %if (~loaded)
@@ -606,7 +606,7 @@ if (t == GLB_wBackUp_counter*GLB_wBackUp_Niter)
 
     %save w to file
     w = varstruct.x(2:end);
-    save(fullfile(Plan.PlanExistentFile,'w'),'w');
+    save(fullfile(WorkFolder,'w'),'w');
 
     % Plot target DVH in nominal case
     if (OptConfig.plotTargetDVH == 1)

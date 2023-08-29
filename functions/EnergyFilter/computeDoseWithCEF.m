@@ -109,7 +109,6 @@ function [Plan] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdos
                     %The final dose map will have the spatial resolution of |Plan.CEFDoseGrid|
                     %Compute the number of pixels at dose map resolution to fill the volume of original CT
         [DoseOrig , handlesDose]  = doseIECg2DICOMcs(DoseIECg  , handlesDoseIECg , hD , Plan , outputPath); %Dose map aligned to orignal Ct with resolution of |Plan.CEFDoseGrid|
-
      else
         % Compute the dose in one beamlet at a time
         fprintf('Computing high resolution dose map one spot at a time \n')
@@ -419,7 +418,7 @@ end
     %Add range shifter in the high resolution CT
     %This must be done in the high resolution CT to avoid the RS thickness to be aliased by the Z pixel resolution of the CT
     %As the CT is aligned with the IEC gantry CS, adding the RS can be done quickly by using the Matlab indexing.
-    fprintf('Adding Range shifter to low resolution CT \n')
+    fprintf('Adding Range shifter to high resolution CT \n')
     handlesHR = setRangeShifterinHRCT(handlesHR , PlanHR , hrCTName);
     PlanHR.Beams.NumberOfRangeShifters = 0;  %Remove the range shifter from the MCsquare beam model. The range shifter is now inserted in the CT scan
 

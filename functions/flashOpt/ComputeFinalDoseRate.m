@@ -69,9 +69,15 @@
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI)
+function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI, collectSpotsInBeamlets)
 
-    [~ , ~, ~, Plan] = collectSpotsinBeamlets(Plan, ROI); %display the BEV images
+    if nargin < 4
+        collectSpotsInBeamlets = true;
+    end
+
+    if collectSpotsInBeamlets
+        [~ , ~, ~, Plan] = collectSpotsinBeamlets(Plan, ROI); %display the BEV images
+    end
 
     Pij = Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P ; %The dose influence matrix for the nominal case of the first breathing phase
     if Plan.showGraph

@@ -37,7 +37,7 @@ function exportPlan2STL(plan_filename)
     %Plan.ScannerDirectory = 'default';
     Plan.ScannerDirectory = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib\Scanners\default';
     Plan.showGraph = true;
-    Plan.BDL = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib\BDL\BDL_default_UN3_Al_RangeShifter_tilted_IBA_FLASH_G0_round_UpennFlash_v02.txt';
+    Plan.BDL = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib\BDL\BDL_default_UN3_Al_RangeShifter_tilted_IBA_FLASH_2mm.txt';
     [handles, Plan] = parseFLASHplan(plan_filename, Plan, handles);
 
 
@@ -46,6 +46,7 @@ function exportPlan2STL(plan_filename)
     CEM3Dmask = zeros(size(CEM3Dmask1,1) + 2, size(CEM3Dmask1,2) + 2, size(CEM3Dmask1,3) + 2);
     CEM3Dmask(2:end-1, 2:end-1, 2:end-1) = CEM3Dmask1;
     origin = Plan.Beams.RangeModulator.ModulatorOrigin - Plan.Beams.RangeModulator.Modulator3DPixelSpacing;
+
 
     stl_filename = fullfile(plan_filepath, [plan_name '.stl']);
     exportCEM2STL(CEM3Dmask, Plan.Beams.RangeModulator.Modulator3DPixelSpacing, origin, Plan.Beams.RangeModulator.AccessoryCode, Plan.Beams.RangeModulator.ModulatorMountingPosition, stl_filename)
