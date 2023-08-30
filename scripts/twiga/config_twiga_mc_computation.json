@@ -29,7 +29,7 @@
 "Dose_Segmentation":"0",
 "Use_external_contour":"1",
 "Apply_HU_overwrites":"1",
-"Scoring_voxel_spacing":"[2,3,4]",
+"Scoring_voxel_spacing":"[2,2,2]",
 "TempDirectory":"D:/programs/openREGGUI/REGGUI_userdata/test_data/REGGUI-QA/twiga_testing_material_flash/temp",
 "OutputDirectory":"D:/programs/openREGGUI/REGGUI_userdata/test_data/REGGUI-QA/twiga_testing_material_flash/Results"
 }
