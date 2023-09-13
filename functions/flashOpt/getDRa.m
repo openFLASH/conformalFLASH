@@ -95,7 +95,7 @@
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function [dr, DRa, drm, DADR, DADRm, DRAD, DRADm, SpotTiming] = getDRa(SpotTrajectoryInfo , weightIN , Pij , Plan , Dref , ROImask , DoseAtPxl , DMF, DR50, percentile , ROIName , plotID )
+function [dr, DRa, drm, DADR, DADRm, DRAD, DRADm, SpotTiming , MPDR] = getDRa(SpotTrajectoryInfo , weightIN , Pij , Plan , Dref , ROImask , DoseAtPxl , DMF, DR50, percentile , ROIName , plotID )
 
 if nargin < 10
   percentile = [];
@@ -246,10 +246,10 @@ for b = 1:length(sobp) %Loop for each beam
         if (~isempty(plotID.plots_BEV))
 
           if isfield(plotID, 'pDR_D') & ~isempty(plotID.pDR_D)
-              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected , DRhisto] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected , MPDRb , DRhisto ] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
                   % If the BEV plot is displayed, then we also compute the  |DRhisto| dose rate vs dose histogram
           else
-              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected ]          = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected , MPDRb]          = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
               DRhisto = [];
           end
 
@@ -281,9 +281,9 @@ for b = 1:length(sobp) %Loop for each beam
 
         else
           if isfield(plotID , 'SaveHisto') & plotID.SaveHisto
-            [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b} , ~ , DRhisto] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, [] , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+            [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b} , ~ , MPDRb, DRhisto] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, [] , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
           else
-            [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b} ] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, [] , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+            [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b} , ~ , MPDRb] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, [] , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
           end
         end
 
@@ -321,6 +321,7 @@ for b = 1:length(sobp) %Loop for each beam
         %[i,j]= ind2sub(size(DoseAtPxl),T);
         DRa{b}  = sparse(full(i),full(j),tmp,size(DoseAtPxl,1),size(DoseAtPxl,2));
         DADR{b} = sparse(full(i),full(j),full(DADRtmp),size(DoseAtPxl,1),size(DoseAtPxl,2));
+        MPDR{b} = sparse(full(i),full(j),full(MPDRb),size(DoseAtPxl,1),size(DoseAtPxl,2));
 
         if numel(DRADtmp > 1)
           %If the DRAD has been computed, then process it
@@ -330,7 +331,8 @@ for b = 1:length(sobp) %Loop for each beam
         end
 
         if (verbose)
-          fprintf('Beam %d : Percentile Dose Rate in %s : %3.3g <= DRa = %3.3g (Gy/s) // DRm = %3.3g (Gy/s) <= %3.3g \n',b,ROIName,full(DRmin), full(dr(b)), full(drm(b)), full(DRmax));
+          fprintf('Beam %d : Percentile Dose Rate in %s : %3.3g <= DRa = %3.3g (Gy/s) // DRm = %3.3g (Gy/s) <= %3.3g \n',b,ROIName,full(DRmin)    , full(dr(b))       , full(drm(b))       , full(DRmax));
+          fprintf('Beam %d : MPDR                 in %s : %3.3g <= DRa = %3.3g (Gy/s) // DRm = %3.3g (Gy/s) <= %3.3g \n',b,ROIName,full(min(MPDRb)), full(mean(MPDRb)), full(median(MPDRb)), full(max(MPDRb)));
           fprintf('Beam %d : DADR                 in %s : %3.3g <= DADR(Gy/s)= %3.3g // DADRm = %3.3g (Gy/s)  <= %3.3g \n',b,ROIName,round(full(min(DADRtmp))),round(full(mean(DADRtmp))),full(DADRm(b)),round(full(max(DADRtmp))));
           if isfield(plotID, 'pDR_D') & ~isempty(plotID.pDR_D)
             fprintf('Beam %d : DRAD                 in %s : %3.3g <= DRAD(Gy)= %3.3g // DRADm = %3.3g (Gy)  <= %3.3g \n',b,ROIName,round(full(min(DRADtmp))),round(full(mean(DRADtmp))),full(DRADm(b)),round(full(max(DRADtmp))));

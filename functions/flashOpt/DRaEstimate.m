@@ -58,11 +58,12 @@
 % [1] Charlton, N., & Vukadinovi, D. (n.d.). On minimum cost local permutation problems and their application to smart meter data, 1–24. Retrieved from https://www.reading.ac.uk/web/files/maths/TechReport_2_13.pdf
 % [2] Folkerts, M., Abel, E., Busold, S., Perez, J., & Vidhya Krishnamurthi, C. C. L. (2020). A framework for defining FLASH dose rate for pencil beam scanning. Medical Physics. https://doi.org/10.1002/MP.14456
 % [3] van de Water, S., Safai, S., Schippers, J. M., Weber, D. C., & Lomax, A. J. (2019). Towards FLASH proton therapy: the impact of treatment planning and machine characteristics on achievable dose rates. Acta Oncologica, 58(10), 1463–1469. https://doi.org/10.1080/0284186X.2019.1627416
+% [4] Deffet, S., Hamaide, V. & Sterpin, E. Definition of dose rate for FLASH pencil-beam scanning proton therapy : A comparative study. Med. Phys. 1–9 (2023). doi:10.1002/mp.16607
 %
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function [DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DRAD, DRADm, SpotTiming , pxlSelected , DRhisto] = DRaEstimate(spotSequence , dT , TimePerSpot , Dose , DMF, DR50, fig , percentile)
+function [DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DRAD, DRADm, SpotTiming , pxlSelected , MPDR, DRhisto ] = DRaEstimate(spotSequence , dT , TimePerSpot , Dose , DMF, DR50, fig , percentile)
 
   if nargin < 5
     DMF = [];
@@ -105,6 +106,12 @@ function [DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DR
     %Re-order the dose in the same order as the spotTimingStart and spotTimingStop vectors
     [DoseRate  , SpotTiming] = GetPercentileDR(Dose(spotSequence,:) , spotTimingStart, spotTimingStop , percentile);
 
+
+    %Compute the maximum percentile dose rate
+    if nargout >= 14
+      MPDR = getMPDR(Dose(spotSequence,:) , spotTimingStart, spotTimingStop, percentile);
+    end
+
     %Compute dose averaged dose rate
     DADR = doseAveragedDoseRate(Dose(spotSequence,:) , spotTimingStart, spotTimingStop);
 
@@ -142,7 +149,7 @@ function [DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DR
       DRADm = 0;
     end
 
-    if nargout >= 14
+    if nargout >= 15
       %Compute the dose rate histogram only if required because it takes time
       DRhisto = peakDoseRateHistogram(Dose(spotSequence,:) , spotTimingStart, spotTimingStop);
     end
@@ -207,4 +214,45 @@ function DADR = doseAveragedDoseRate(Dose , spotTimingStart, spotTimingStop)
     DR = Dose ./ repmat(dT', 1,nBPxl); % DR(spot,pxl) Dose rate at pxl-th voxel and for delivery of spot
     Dtot = sum(Dose,1); %Dtot(pxl) Total dose delivered at pixel |pxl|
     DADR = 1000 .* sum(DR .* Dose ,1) ./ Dtot; %Convert into Gy/s from ms
+end
+
+
+%====================================
+% Compute the maximum percentile dose rate [4]
+% INPUT
+% |dosePerSpot| -_SCALAR MATRIX_- |dosePerSpot(spot,pxl)| Dose (Gy) delivered by spot number |spot| to the pixel |pxl|
+%
+% |spotTimingStart| -_SCALAR VECTOR_- |spotTimingStart(i)| Timing (ms) at the begining of the i-th spot delivery
+%
+% |spotTimingStop| -_SCALAR VECTOR_- |spotTimingStop(i)| Timing (ms) at the end of the i-th spot delivery
+%
+% |percentile| -_SCALAR_-  Define the lower and higher dose percentile to ignore to compute dose rate and delivery time (eg. 0.01 for the 98-percentile)
+%
+% OUTPUT
+% |MPDR| -_SCALAR VECTOR_- |DADR(pxl)| Maximum percentile dose rate (Gy/s) as defined in [4] delivered to the pxl-th pixel
+%====================================
+function MPDR = getMPDR(dosePerSpot , spotTimingStart, spotTimingStop, percentile)
+
+  MPDR = sparse(1, size(dosePerSpot,2));
+  fullDose = sum(dosePerSpot,1);
+  spotNb = size(dosePerSpot , 1);
+
+  for windowWidth = spotNb:-1:1
+
+      filt = ones(windowWidth , 1);
+
+      totalTime = spotTimingStop(windowWidth:end)-spotTimingStart(1:spotNb-windowWidth+1);
+      doseInIntervals = sconv2(dosePerSpot, filt,'valid');
+      doseRate = doseInIntervals ./ repmat(totalTime', [1, size(doseInIntervals,2)]);
+      dosePerc = doseInIntervals < ((1-2.*percentile) .* fullDose);
+      doseRate(dosePerc) = 0;  % dose rate not defined if self.percentile of total dose not received in that voxel
+      [maxDoseRate , imaxDoseRate] = max(doseRate, [] , 1);  % max across starting spot
+
+      cond = MPDR < maxDoseRate;
+      MPDR(cond) = maxDoseRate(cond);  % if current dose rate is higher --> replace in dr
+
+  end %for windowWidth
+
+  MPDR = 1000 .* MPDR;
+
 end

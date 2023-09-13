@@ -135,10 +135,10 @@ function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI)
             end
 
             if isfield(Plan.optFunction(optFidx), 'DMF') & isfield(Plan.optFunction(optFidx) , 'DR50') & ~isempty(plotID.pDR_D)
-              [~, DRaStru, ~, DADR, ~, DRAD]  = getDRa(Plan.SpotTrajectoryInfo, w, Pij, Plan, Plan.optFunction(optFidx).Dref,  ROImask, D, Plan.optFunction(optFidx).DMF, Plan.optFunction(optFidx).DR50, percentile, Plan.optFunction(optFidx).ROIname, plotID ) ;
+              [~, DRaStru, ~, DADR, ~, DRAD, ~, ~ , MPDR]  = getDRa(Plan.SpotTrajectoryInfo, w, Pij, Plan, Plan.optFunction(optFidx).Dref,  ROImask, D, Plan.optFunction(optFidx).DMF, Plan.optFunction(optFidx).DR50, percentile, Plan.optFunction(optFidx).ROIname, plotID ) ;
             else
               DRAD = [];
-              [~, DRaStru, ~, DADR]  = getDRa(Plan.SpotTrajectoryInfo, w, Pij, Plan, Plan.optFunction(optFidx).Dref,  ROImask, D, [], [] , percentile, Plan.optFunction(optFidx).ROIname, plotID ) ;
+              [~, DRaStru, ~, DADR, ~, ~, ~, ~ , MPDR]  = getDRa(Plan.SpotTrajectoryInfo, w, Pij, Plan, Plan.optFunction(optFidx).Dref,  ROImask, D, [], [] , percentile, Plan.optFunction(optFidx).ROIname, plotID ) ;
             end
 
 
@@ -151,6 +151,10 @@ function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI)
               %Save the percentile dose rate
               [handles, doseRateName] = save2Disk(handles, DRaStru{b}, Plan.DoseGrid.size, Plan.CTinfo, ['DRprct_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath ,'PERCENTILE');
               doseRatesCreated{1} = doseRateName;
+
+              %Save the maximum percentile dose rate
+              [handles, doseRateName] = save2Disk(handles, MPDR{b}, Plan.DoseGrid.size, Plan.CTinfo, ['maxDRprct_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath ,'MPDR');
+              doseRatesCreated{4} = doseRateName;
 
               %Save the dose averaged dose rate
               [handles, doseRateName] = save2Disk(handles, DADR{b}, Plan.DoseGrid.size, Plan.CTinfo, ['DADR_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath ,'DADR');
