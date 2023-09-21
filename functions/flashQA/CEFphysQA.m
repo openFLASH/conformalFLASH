@@ -13,21 +13,21 @@ close all;
 % -------------------------------------------------------------------------
 
 %Inputs / Outputs
-scanCEF_path = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\CT_CEM\reggui_20230201_zz_CEF\reggui_20230201_zz_CEF_0001.dcm';
-permOrder = [1,3,2]; %Permutation of the dimensiosn of CT scan to align it wiht plan
-flipAxis = 3; %Which axis index should be flipped (after permute)
+scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\D58_NO_bubbles\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
+permOrder = [1,3,2]; %Permutation of the dimensions of CT scan to align it with plan
+flipAxis = 2; %Which axis index should be flipped (after permute)
 
 %refCEF_path = 'E:\Lucian\Data\ScanCEFUpenn_sylvain\ctCEF505030_DCM\resample_333um\CEF_opt_resample.mhd';
 %stl_path = 'C:\Users\lhotoiu\Downloads\CEF1id_square_decimated_more.stl';
 
-CT_air_path = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\reggui_CT_air\reggui_CT_air_0001.dcm';
+CT_air_path = 'D:\MATLAB\Data\Tests\ct_air\reggui_CT_air\_CT_air_0001.dcm';
 
-RSplanFileName = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\D-58\RP_D58.dcm'
-Plan.BDL = 'D:\programs\openREGGUI\flash\openMCsquare\lib\BDL\BDL_default_UN1_G0_Al_RangeShifter_tilted.txt';
-Plan.ScannerDirectory = 'D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib\Scanners\default';
+RSplanFileName = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\RP-D58-FLASH-c0-c0.dcm';
+Plan.BDL = 'D:\MATLAB\flash\openMCsquare\lib\BDL\BDL_default_UN1_G0_Al_RangeShifter_tilted.txt';
+Plan.ScannerDirectory = 'D:\MATLAB\flash\openMCsquare\lib\Scanners\default';
 
 %outputPath = 'E:\Lucian\Data\ScanCEFUpenn_sylvain\OUTPUT2_RG35';
-outputPath = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\CEM_compare';
+outputPath = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\CEMQA_geom';
 
 % -------------------------------------------------------------------------
 
@@ -42,7 +42,6 @@ scan_CEF_imageName = 'scan_CEF';
 % Compute grid for resampling
 fprintf('Computing relevant region for probing and assesing scan object HU density \n');
 grid.origin = [1; 1; 1];
-
 grid.size = floor((size(pre_scan_cef_data)' ./ (pre_ref_cef_info.Spacing ./ pre_scan_cef_info.Spacing)));
 grid.spacing = pre_ref_cef_info.Spacing;
 
@@ -53,7 +52,7 @@ pre_handles = Resample_all(pre_handles, grid.origin, grid.size, grid.spacing);
 % Threshold, erode and intersect
 cef_mask = 'scan_cef_mask';
 pre_handles = AutoThreshold(scan_CEF_imageName, [128], cef_mask, pre_handles);
-pre_handles = Erosion(cef_mask, [4 4 4], 'eroded_cef_mask', pre_handles);
+pre_handles = Erosion(cef_mask, [3 3 3], 'eroded_cef_mask', pre_handles);
 [eroded_cef_mask_data, eroded_cef_mask_info, ~] = Get_reggui_data(pre_handles, 'eroded_cef_mask');
 %[cef_mask_data, cef_mask_info, ~] = Get_reggui_data(pre_handles, cef_mask);
 intersect_data = pre_scan_cef_data .* eroded_cef_mask_data;
@@ -71,9 +70,9 @@ max_HU_scan = max(intersect_HU_data, [], 'all', 'omitnan');
 
 
 nr_slices = size(intersect_data, 3);
-offset = 20; % 50
+offset = 0; % 50
 slice = offset + floor(nr_slices/10);
-slice_increment = 2; %1
+slice_increment = 4; %1
 
 figure(903);
 tiledlayout(3,3);
@@ -83,7 +82,7 @@ for idx = 1:9
     contourf(squeeze(intersect_data(:,:,slice)),100,'LineColor','none');
     %contourf(squeeze(intersect_data(:,slice,:)),100,'LineColor','none');
     colorbar;
-    caxis([(mean_HU_scan - 3*std_HU_scan) (mean_HU_scan + 3*std_HU_scan)]);
+    %caxis([(mean_HU_scan - 3*std_HU_scan) (mean_HU_scan + 3*std_HU_scan)]);
     xticklabels(xticks * pre_handles.spacing(3))
     yticklabels(yticks * pre_handles.spacing(3))
     xlabel('X (mm)');
@@ -313,7 +312,7 @@ fprintf('Thresholding out noise/artifacts/outliers \n');
 
 
 nr_slices = size(scan_cef_data, 3);
-offset = 60; %200
+offset = 20; %200
 slice = offset + floor(nr_slices/10);
 slice_increment = ceil((nr_slices - slice)./9);
 
@@ -325,7 +324,7 @@ for idx = 1:9
     contourf(squeeze(scan_cef_data(:,:,slice)),100,'LineColor','none');
     %contourf(squeeze(scan_cef_data(:,slice,:)),100,'LineColor','none');
     colorbar;
-    caxis([(mean_HU_scan - 3*std_HU_scan) (mean_HU_scan + 3*std_HU_scan)]);
+    %caxis([(mean_HU_scan - 3*std_HU_scan) (mean_HU_scan + 3*std_HU_scan)]);
     xticklabels(xticks * pxlSizeZ)
     yticklabels(yticks * pxlSizeZ)
     xlabel('X (mm)');
@@ -361,7 +360,7 @@ handles = Set_reggui_data(handles, outlier_scan_CEF_imageName, outlier_scan_cef_
 
 
 nr_slices = size(scan_cef_data, 3);
-offset = 60; %200
+offset = 20; %200
 slice = offset + floor(nr_slices/10);
 slice_increment = ceil((nr_slices - slice)./9);
 
@@ -500,132 +499,151 @@ toc
 %---------------------------------------------------------
 function pre_handles = loadAlldatasets(scanCEF_path , CT_air_path , RSplanFileName , outputPath , Plan , permOrder , flipAxis)
 
-  % Initialise reggui pre-handles
-  pre_handles = Initialize_reggui_handles();
-  pre_handles.dataPath = outputPath;
-
-
-  % Import reference CEF
-  %source = 'CT';
-  %source = 'STL';
-  source = 'Plan';
-
-  switch source
-      case 'CT'
-          ref_CEF_imageName = 'ref_CEF';
-          [ref_CEF_directory, ref_CEF_fileName, EXT] = fileparts(refCEF_path);
-          pre_handles = Import_data(ref_CEF_directory, [ref_CEF_fileName EXT], 1, ref_CEF_imageName, pre_handles);
-          [pre_ref_cef_data, pre_ref_cef_info, ~] = Get_reggui_data(pre_handles, ref_CEF_imageName);
-      case 'STL'
-          air_CT_imageName = 'air_CT';
-          [air_CT_directory, air_CT_fileName, EXT] = fileparts(CT_air_path);
-          pre_handles = Import_image(air_CT_directory, [air_CT_fileName EXT], 1, air_CT_imageName, pre_handles);
-          [pre_air_CT_data, pre_air_CT_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
-
-          fprintf('Read STL file and generate 3D mask...\n');
-          pre_handles.spacing = [0.5, 0.5, 0.5];
-          stlObject = stlread(stl_path);
-          CEMmask3D = stl2mask(stlObject, pre_handles.spacing);
-
-          Plan.Spike.MaterialID = 'ABS_Resin';
-          Plan.ScannerDirectory = 'default';
-
-          % Export CEF in CT
-          HU_air =  getMaterialPropCT('Schneider_Air', Plan.ScannerDirectory); %Hounsfield unit associated to air in the material file
-          HU_CEF = getMaterialPropCT(Plan.Spike.MaterialID, Plan.ScannerDirectory); %HU of the CEF
-          %CEF = double(CEMmask3D);
-          CEF = single(CEMmask3D);
-          CEF(CEF == 1) = HU_CEF;
-          CEF(CEF == 0) = HU_air;
-
-          % Instead of saving to disk you can add the new image to handles
-          % with set_reggui_data and carry on as if imported from file
-          %pre_handles = Set_reggui_data(pre_handles, 'CEF_in_CT', CEF, pre_air_CT_info, 'images', 1);
-          handles2 = save2Disk(pre_handles, CEF, size(CEF), pre_air_CT_info, 'CEF_in_CT', outputPath);
-          CEF = []; %free memory
-      case 'Plan'
-
-          air_CT_imageName = 'air_CT';
-          [air_CT_directory, air_CT_fileName, EXT] = fileparts(CT_air_path);
-          pre_handles = Import_image(air_CT_directory, [air_CT_fileName EXT], 1, air_CT_imageName, pre_handles);
-          [pre_air_CT_data, pre_air_CT_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
-
-          Plan.Spike.MaterialID = 'ABS_Resin';
-          Plan.showGraph = 'false';
-          Plan.CTname = air_CT_imageName;
-          [handles, Plan] = parseFLASHplan(RSplanFileName , Plan , pre_handles);
-
-          pre_handles.origin(2) = -Plan.Beams.RangeModulator.IsocenterToRangeModulatorDistance; %Move CT scan to the position of the CEM, to save memory space
-          PixelSize = Plan.Beams.RangeModulator.Modulator3DPixelSpacing ;
-
-          Plan.Beams.GantryAngle = 0;
-          Plan.Beams.Beam.PatientSupportAngle =0;
-          minField = Plan.Beams.RangeModulator.ModulatorOrigin;
-          maxField = Plan.Beams.RangeModulator.ModulatorOrigin + Plan.Beams.RangeModulator.Modulator3DPixelSpacing .* size(Plan.Beams.RangeModulator.CEM3Dmask);
-          Zdistal = Plan.Beams.RangeModulator.IsocenterToRangeModulatorDistance - Plan.Beams.RangeModulator.Modulator3DPixelSpacing(3) .* size(Plan.Beams.RangeModulator.CEM3Dmask,3) - 5;
-
-          %Create a high res CT scan
-          pre_handles  = createHighResCT(pre_handles , air_CT_imageName , air_CT_imageName , Plan.Beams , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , -1050 , minField , maxField , Zdistal , pre_air_CT_info);
-          [Plan, pre_handles] = setCEMinCT(pre_handles , Plan , air_CT_imageName );
-
-          %Rotate CT so that Z axis is paralell to spikes, i.e. paralell to Zg
-          pre_handles.images.data{2} = permute(pre_handles.images.data{2},[1,3,2]);
-          pre_handles.spacing = pre_handles.spacing([1,3,2]);
-          pre_handles.origin  = pre_handles.origin([1,3,2]);
-          pre_handles.size = size(pre_handles.images.data{2});
-          pre_handles.images.info{2}.Spacing = pre_handles.spacing;
-          pre_handles.images.info{2}.ImagePositionPatient = pre_handles.origin;
-
-
-          [pre_ref_cef_data, pre_ref_cef_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
-          pre_handles.origin(3) = -round(pre_handles.size(3) ./2); %Move origin back to middle of CEM
-
-  %Display one slice for information
-  minTot = min(pre_ref_cef_data,[],'all');
-  maxTot = max(pre_ref_cef_data,[],'all');
-
-   %for i = 1:size(pre_ref_cef_data,3)
-    i = 50;
-    figure(10)
-    imagf = squeeze(pre_ref_cef_data(:,:,i));
-    image((imagf - minTot) ./ (maxTot  - minTot) .* 255)
-    title(['Reference -- Slice = ' num2str(i)])
-     %pause
-   %end
-
-
-  end
-
-  % Import scanned CEF to apply median filter and erode
-  scan_CEF_imageName = 'scan_CEF';
-  [scan_CEF_directory, scan_CEF_fileName, EXT] = fileparts(scanCEF_path);
-  pre_handles = Import_data(scan_CEF_directory, [scan_CEF_fileName EXT],1,scan_CEF_imageName,pre_handles); %Load CEM image into handles.data
-
-  %permute the dimension of CEM image and flip some dimension
-  %in order to get the smae orientation for the reference CT and the meausrmenet CT
-  if ~isempty(permOrder)
-    pre_handles.mydata.data{2} = permute(pre_handles.mydata.data{2} , permOrder);
-    pre_handles.mydata.info{2}.Spacing = pre_handles.mydata.info{2}.Spacing(permOrder);
-  end
-  if flipAxis
-    pre_handles.mydata.data{2} = flipdim(pre_handles.mydata.data{2}, flipAxis);
-  end
-  spc = pre_handles.mydata.info{2}.Spacing;
-  pre_handles.mydata.info{2}.ImagePositionPatient = - round(size(pre_handles.mydata.data{2}) ./2) .* spc'; %Move origin back to middle of CEM
-
-  pre_handles = Data2image(scan_CEF_imageName,scan_CEF_imageName,pre_handles,0); %Load image in handles.data
-  [pre_scan_cef_data, pre_scan_cef_info, ~] = Get_reggui_data(pre_handles, scan_CEF_imageName); %resample the image and move it from handles.data to hansdles.image
-
-  %Display one slice for information
-  minTot = min(pre_scan_cef_data,[],'all');
-  maxTot = max(pre_scan_cef_data,[],'all');
-  %for i = 1:size(pre_scan_cef_data,3)
-    i=50;
+    % Initialise reggui pre-handles
+    pre_handles = Initialize_reggui_handles();
+    pre_handles.dataPath = outputPath;
+    
+    
+    % Import reference CEF
+    %source = 'CT';
+    %source = 'STL';
+    source = 'Plan';
+    
+    switch source
+        case 'CT'
+              ref_CEF_imageName = 'ref_CEF';
+              [ref_CEF_directory, ref_CEF_fileName, EXT] = fileparts(refCEF_path);
+              pre_handles = Import_data(ref_CEF_directory, [ref_CEF_fileName EXT], 1, ref_CEF_imageName, pre_handles);
+              [pre_ref_cef_data, pre_ref_cef_info, ~] = Get_reggui_data(pre_handles, ref_CEF_imageName);
+        case 'STL'
+              air_CT_imageName = 'air_CT';
+              [air_CT_directory, air_CT_fileName, EXT] = fileparts(CT_air_path);
+              pre_handles = Import_image(air_CT_directory, [air_CT_fileName EXT], 1, air_CT_imageName, pre_handles);
+              [pre_air_CT_data, pre_air_CT_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
+    
+              fprintf('Read STL file and generate 3D mask...\n');
+              pre_handles.spacing = [0.5, 0.5, 0.5];
+              stlObject = stlread(stl_path);
+              CEMmask3D = stl2mask(stlObject, pre_handles.spacing);
+    
+              Plan.Spike.MaterialID = 'ABS_Resin';
+              Plan.ScannerDirectory = 'default';
+    
+              % Export CEF in CT
+              HU_air =  getMaterialPropCT('Schneider_Air', Plan.ScannerDirectory); %Hounsfield unit associated to air in the material file
+              HU_CEF = getMaterialPropCT(Plan.Spike.MaterialID, Plan.ScannerDirectory); %HU of the CEF
+              %CEF = double(CEMmask3D);
+              CEF = single(CEMmask3D);
+              CEF(CEF == 1) = HU_CEF;
+              CEF(CEF == 0) = HU_air;
+    
+              % Instead of saving to disk you can add the new image to handles
+              % with set_reggui_data and carry on as if imported from file
+              %pre_handles = Set_reggui_data(pre_handles, 'CEF_in_CT', CEF, pre_air_CT_info, 'images', 1);
+              handles2 = save2Disk(pre_handles, CEF, size(CEF), pre_air_CT_info, 'CEF_in_CT', outputPath);
+              CEF = []; %free memory
+        case 'Plan'
+            air_CT_imageName = 'air_CT';
+            [air_CT_directory, air_CT_fileName, EXT] = fileparts(CT_air_path);
+            pre_handles = Import_image(air_CT_directory, [air_CT_fileName EXT], 1, air_CT_imageName, pre_handles);
+            [pre_air_CT_data, pre_air_CT_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
+            
+            Plan.Spike.MaterialID = 'ABS_Resin';
+            Plan.showGraph = 'false';
+            Plan.CTname = air_CT_imageName;
+            [handles, Plan] = parseFLASHplan(RSplanFileName , Plan , pre_handles);
+            
+            pre_handles.origin(2) = -Plan.Beams.RangeModulator.IsocenterToRangeModulatorDistance; %Move CT scan to the position of the CEM, to save memory space
+            PixelSize = Plan.Beams.RangeModulator.Modulator3DPixelSpacing ;
+            
+            Plan.Beams.GantryAngle = 0;
+            Plan.Beams.Beam.PatientSupportAngle =0;
+            minField = Plan.Beams.RangeModulator.ModulatorOrigin;
+            maxField = Plan.Beams.RangeModulator.ModulatorOrigin + Plan.Beams.RangeModulator.Modulator3DPixelSpacing .* size(Plan.Beams.RangeModulator.CEM3Dmask);
+            Zdistal = Plan.Beams.RangeModulator.IsocenterToRangeModulatorDistance - Plan.Beams.RangeModulator.Modulator3DPixelSpacing(3) .* size(Plan.Beams.RangeModulator.CEM3Dmask,3) - 5;
+            
+            %Create a high res CT scan
+            pre_handles  = createHighResCT(pre_handles , air_CT_imageName , air_CT_imageName , Plan.Beams , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , -1050 , minField , maxField , Zdistal , pre_air_CT_info);
+            [Plan, pre_handles] = setCEMinCT(pre_handles , Plan , air_CT_imageName );
+            
+            %Rotate CT so that Z axis is paralell to spikes, i.e. paralell to Zg
+            pre_handles.images.data{2} = permute(pre_handles.images.data{2},[1,3,2]);
+            %pre_handles.images.data{2} = flip(pre_handles.images.data{2}, 1);
+            pre_handles.spacing = pre_handles.spacing([1,3,2]);
+            pre_handles.origin  = pre_handles.origin([1,3,2]);
+            pre_handles.size = size(pre_handles.images.data{2});
+            pre_handles.images.info{2}.Spacing = pre_handles.spacing;
+            pre_handles.images.info{2}.ImagePositionPatient = pre_handles.origin;
+            
+            
+            [pre_ref_cef_data, pre_ref_cef_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
+            pre_handles.origin(3) = -round(pre_handles.size(3) ./2); %Move origin back to middle of CEM
+            pre_handles = Set_reggui_data(pre_handles,air_CT_imageName,pre_ref_cef_data,pre_ref_cef_info,'mydata');
+            
+            
+            pre_ref_cef_info.PatientOrientation = 'HFS';
+            pre_handles = save2Disk(pre_handles, pre_ref_cef_data, size(pre_ref_cef_data), pre_ref_cef_info, 'ref_CEF_image', fullfile(handles.dataPath));
+            
+            
+            
+            
+            % Clear the images
+            pre_handles = Remove_all_images(pre_handles,1);
+    
+    
+    
+    
+            %Display one slice for information
+            minTot = min(pre_ref_cef_data,[],'all');
+            maxTot = max(pre_ref_cef_data,[],'all');
+            
+            %for i = 1:size(pre_ref_cef_data,3)
+            i = 30;
+            figure(10)
+            imagf = squeeze(pre_ref_cef_data(:,:,i));
+            image((imagf - minTot) ./ (maxTot  - minTot) .* 255)
+            title(['Reference -- Slice = ' num2str(i)])
+            xlabel ("Y #voxels");
+            ylabel ("X #voxels");
+             %pause
+            %end
+    end
+    
+    % Import scanned CEF to apply median filter and erode
+    scan_CEF_imageName = 'scan_CEF';
+    [scan_CEF_directory, scan_CEF_fileName, EXT] = fileparts(scanCEF_path);
+    pre_handles = Import_image(scan_CEF_directory, [scan_CEF_fileName EXT],1,scan_CEF_imageName,pre_handles); %Load CEM image into handles.data
+    
+    %permute the dimension of CEM image and flip some dimension
+    %in order to get the smae orientation for the reference CT and the meausrmenet CT
+    if flipAxis
+    pre_handles.images.data{2} = flip(pre_handles.images.data{2}, flipAxis);
+    %pre_handles.images.data{2} = flip(pre_handles.images.data{2}, 2);
+    end
+    if ~isempty(permOrder)
+    pre_handles.images.data{2} = permute(pre_handles.images.data{2} , permOrder);
+    pre_handles.images.data{2} = permute(pre_handles.images.data{2} , [2,1,3]);
+    pre_handles.images.info{2}.Spacing = pre_handles.images.info{2}.Spacing(permOrder);
+    pre_handles.images.info{2}.Spacing = pre_handles.images.info{2}.Spacing([2,1,3]);
+    end
+    spc = pre_handles.mydata.info{2}.Spacing;
+    pre_handles.mydata.info{2}.ImagePositionPatient = (- round(size(pre_handles.mydata.data{2}) ./2) .* spc')'; %Move origin back to middle of CEM
+    
+    %pre_handles = Data2image(scan_CEF_imageName, scan_CEF_imageName, pre_handles); %Load image in handles.data
+    [pre_scan_cef_data, pre_scan_cef_info, ~] = Get_reggui_data(pre_handles, scan_CEF_imageName); %resample the image and move it from handles.data to hansdles.image
+    
+    %Display one slice for information
+    minTot = min(pre_scan_cef_data,[],'all');
+    maxTot = max(pre_scan_cef_data,[],'all');
+    %for i = 1:size(pre_scan_cef_data,3)
+    i=30;
     figure(11)
     imagf = squeeze(pre_scan_cef_data(:,:,i));
     image((imagf - minTot) ./ (maxTot  - minTot) .* 255)
     title(['Measurement -- Slice = ' num2str(i)])
+    xlabel ("Y #voxels");
+    ylabel ("X #voxels");
     %pause
-  %end
+    %end
 
 end
