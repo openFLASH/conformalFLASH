@@ -54,7 +54,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [SpotTrajectoryInfo , Plan] = optimizeTrajectory(Plan  , ROI , plots_BEV)
+function [SpotTrajectoryInfo , Plan] = optimizeTrajectory(Plan, ROI, plots_BEV, monoEnergyFlag)
 
   if (nargin < 3)
     for b = 1:size(Plan.Beams,2)
@@ -62,11 +62,23 @@ function [SpotTrajectoryInfo , Plan] = optimizeTrajectory(Plan  , ROI , plots_BE
     end
   end
 
-  %Convert the multi-layer plan into a single layer plan
-  [sobpPosition , weight2spot , DRcritical , Plan] =  collectSpotsinBeamlets(Plan , ROI); %Gather the spots into beamlets for form SOBP
+  if nargin < 4
+      monoEnergyFlag = true;
+  end
 
-  SpotTrajectoryInfo.sobpPosition =  sobpPosition;
-  SpotTrajectoryInfo.weight2spot = weight2spot;
+  if monoEnergyFlag
+      %Convert the multi-layer plan into a single layer plan
+      [sobpPosition , weight2spot , DRcritical , Plan] =  collectSpotsinBeamlets(Plan , ROI); %Gather the spots into beamlets for form SOBP
+    
+      SpotTrajectoryInfo.sobpPosition = sobpPosition;
+      SpotTrajectoryInfo.weight2spot = weight2spot;
+  else
+      for b = 1:size(Plan.Beams,2)
+          SpotTrajectoryInfo.sobpPosition = Plan.Beams(b).Layers.SpotPositions;
+          SpotTrajectoryInfo.weight2spot = Plan.Beams(b).Layers.SpotWeights;
+      end
+  end
+
 
   %Define the way the spot timing is computed
   if isfield(Plan , 'scanAlgoGW')
