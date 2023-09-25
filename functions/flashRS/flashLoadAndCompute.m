@@ -194,7 +194,7 @@ for b = 1:numel(Plan.Beams)
 
   %Compute the dose of each beamlet
   path2beamResults = getOutputDir(Plan.output_path , b);
-  Plan = computeDoseWithCEF(Plan , path2beamResults , handles , Plan.CTname , true);
+  [Plan , MinDose , MaxDose] = computeDoseWithCEF(Plan , path2beamResults , handles , Plan.CTname , true);
   movefile (fullfile(Plan.output_path,'Outputs','Plan.dcm') , fullfile(path2beamResults,'Plan_CEM.dcm'));
 end
 

@@ -93,6 +93,11 @@ function [handles, CorrectedName] = save2Disk(handles , Imatrix , imgsize , CTin
         info_out.OriginalHeader.DoseUnits = 'GY/S'; %This is a dose rate map. Change the default units (Gy) to Gy/s
         info_out.OriginalHeader.DoseComment = 'RTDOSERATE/PERCENTILE';
 
+    case 'MPDR' % for a percentile dose rate map: Modality = RTDOSERATE ; DoseType = PERCENTILE ;
+        info_out.OriginalHeader.Modality = 'RTDOSERATE'; %TODO This crashes in RaysTation and is therefore des-activated. Should be activated again when supported by RS
+        info_out.OriginalHeader.DoseType = 'MPDR';
+        info_out.OriginalHeader.DoseUnits = 'GY/S'; %This is a dose rate map. Change the default units (Gy) to Gy/s
+        info_out.OriginalHeader.DoseComment = 'RTDOSERATE/MPDR';
 
     case 'DADR' % for a dose averaged dose rate map: Modality = RTDOSERATE ; DoseType = DADR ;
         info_out.OriginalHeader.Modality = 'RTDOSERATE'; %TODO This crashes in RaysTation and is therefore des-activated. Should be activated again when supported by RS

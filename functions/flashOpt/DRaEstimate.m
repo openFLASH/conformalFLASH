@@ -2,7 +2,12 @@
 % Compute the different dose rates inside the organ receiving |Dose|.
 %
 %% Syntax
-% |[DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DRAD, DRADm, SpotTiming , pxlSelected , DRhisto] = DRaEstimate(spotSequence , dT , TimePerSpot , Dose , DMF, DR50, fig , percentile)|
+%
+% |[DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DRAD, DRADm, SpotTiming , pxlSelected  ] = DRaEstimate(spotSequence , dT , TimePerSpot , Dose , DMF, DR50, fig , percentile)|
+%
+% |[DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DRAD, DRADm, SpotTiming , pxlSelected , MPDR ] = DRaEstimate(spotSequence , dT , TimePerSpot , Dose , DMF, DR50, fig , percentile)|
+%
+% |[DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DRAD, DRADm, SpotTiming , pxlSelected , MPDR, DRhisto ] = DRaEstimate(spotSequence , dT , TimePerSpot , Dose , DMF, DR50, fig , percentile)|
 %
 %
 %% Description
@@ -52,6 +57,8 @@
 %
 % |pxlSelected| -_INTEGER_- Index of the pixel in |Dose(: , pxlSelected)| for which the dose rate vs time plot was drawn
 %
+% |MPDR(pxl)| -_SCALAR_- Maximum ^percentile dose rate (Gy/s) as defined in [4] at pixel |pxl|
+%
 % |DRhisto| -_STRUCT_- Structure with information to reconstruct the dose vs dose rate histogram
 %
 %% REFERENCE
@@ -63,7 +70,7 @@
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function [DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DRAD, DRADm, SpotTiming , pxlSelected , MPDR, DRhisto ] = DRaEstimate(spotSequence , dT , TimePerSpot , Dose , DMF, DR50, fig , percentile)
+function [DoseRate , DRa , DRmin, DRmax , DRm , Tstart , Tend , DADR , DADRm, DRAD, DRADm, SpotTiming , pxlSelected , MPDR, DRhisto ] = DRaEstimate(spotSequence , dT , TimePerSpot , Dose , DMF, DR50, fig , percentile, Nmaps)
 
   if nargin < 5
     DMF = [];
@@ -230,6 +237,9 @@ end
 %
 % OUTPUT
 % |MPDR| -_SCALAR VECTOR_- |DADR(pxl)| Maximum percentile dose rate (Gy/s) as defined in [4] delivered to the pxl-th pixel
+%
+% Code translated from
+% https://gitlab.com/flash-tps/flash-tps/-/blob/main/FLASH/opentps_flash/core/processing/doseRate/percentileDoseRateCalculator.py?ref_type=heads
 %====================================
 function MPDR = getMPDR(dosePerSpot , spotTimingStart, spotTimingStop, percentile)
 
@@ -250,9 +260,14 @@ function MPDR = getMPDR(dosePerSpot , spotTimingStart, spotTimingStop, percentil
 
       cond = MPDR < maxDoseRate;
       MPDR(cond) = maxDoseRate(cond);  % if current dose rate is higher --> replace in dr
+      windSize(cond) = windowWidth;
 
+      % If all dose intervals are smaller than percentile of total dose there is no need to further decrease the interval
+      if sum(~dosePerc , 'all') == 0
+          break
+      end
   end %for windowWidth
 
-  MPDR = 1000 .* MPDR;
+  MPDR = 1000 .* MPDR; %From ms to s
 
 end

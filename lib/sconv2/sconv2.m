@@ -1,4 +1,4 @@
-function C = sconv2(A, B, shape)
+function C  = sconv2(A, B, shape)
 % C = sconv2(A, B, shape)
 %
 % Like conv2 but suitable for convolution of sparse matrices
@@ -31,13 +31,13 @@ switch lower(shape)
         j = J(:)+L(:)-q;
         b = i > 0 & i <= mnc(1) & ...
             j > 0 & j <= mnc(2);
-        C = sparse(i(b), j(b), C(b), mnc(1), mnc(2));
+        C = sparse(i(b), j(b), C(b), mnc(1), mnc(2)); %The function sparse ADDS the elements of the vector C if there are seveal elements assigned to the same cell i(b), j(b)
      case 'same'
         i = I(:)+K(:)-ceil((p+1)/2);
         j = J(:)+L(:)-ceil((q+1)/2);
         b = i > 0 & i <= m & ...
             j > 0 & j <= n;
-        C = sparse(i(b), j(b), C(b), m, n);       
+        C = sparse(i(b), j(b), C(b), m, n);
 end
 
 end % sconv2

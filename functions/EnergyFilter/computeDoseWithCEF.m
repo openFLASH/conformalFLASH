@@ -37,11 +37,14 @@
 %
 % |Pij| -_SCALAR MATRIX_- [OPTIONAL] dose influence matrix: |Pij(vox,spot)| The dose contribution to voxel |vox| of the spot number |spot|
 %
+% |MinDose| -_SCALAR_- Dose (Gy) of the 0.1% lower percentile
+%
+% |MaxDose| -_SCALAR_- Dose (Gy) of the 0.1% higher percentile
 %
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function [Plan] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)
+function [Plan , MinDose , MaxDose] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)
 
     global g_HUair;
     global g_HUbrass;
@@ -116,6 +119,8 @@ function [Plan] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdos
         [DoseOrig, DoseFileName , handlesDose, Pij] = getFullHighResDosemap(Plan , handles , Zdistal , outputPath, CTName , PijFlag , hCT);
     end
 
+    %Find the intensity of the 0 99.9% percentile dose
+    [MinDose , MaxDose] = get_image_scale({DoseOrig},0.1);
 
     % Save to plan the Pij matrix with beamlets through CEM
     Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P = Pij;

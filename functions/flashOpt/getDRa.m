@@ -246,10 +246,11 @@ for b = 1:length(sobp) %Loop for each beam
         if (~isempty(plotID.plots_BEV))
 
           if isfield(plotID, 'pDR_D') & ~isempty(plotID.pDR_D)
-              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected , MPDRb , DRhisto ] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+
+              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected , MPDRb , DRhisto ] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile , Nmaps , SpotTrajectoryInfo.beam{b}.Nmaps); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
                   % If the BEV plot is displayed, then we also compute the  |DRhisto| dose rate vs dose histogram
           else
-              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected , MPDRb]          = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+              [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b}, pxlSelected , MPDRb]          = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, plotID.plot_DR , percentile , SpotTrajectoryInfo.beam{b}.Nmaps); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
               DRhisto = [];
           end
 
@@ -281,9 +282,9 @@ for b = 1:length(sobp) %Loop for each beam
 
         else
           if isfield(plotID , 'SaveHisto') & plotID.SaveHisto
-            [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b} , ~ , MPDRb, DRhisto] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, [] , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+            [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b} , ~ , MPDRb, DRhisto] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, [] , percentile , SpotTrajectoryInfo.beam{b}.Nmaps); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
           else
-            [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b} , ~ , MPDRb] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, [] , percentile); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
+            [tmp , dr(b) , DRmin, DRmax, drm(b), Tstart , Tend , DADRtmp , DADRm(b), DRADtmp, DRADm(b), SpotTiming{b} , ~ , MPDRb] = DRaEstimate(sobpSequence , dT , TimePerSpot , Dose , DMF, DR50, [] , percentile , SpotTrajectoryInfo.beam{b}.Nmaps); %Average dose rate at several measurement point (MP) in ROI. The MP are located at the centre of the spot. Same order than |weight|
           end
         end
 
