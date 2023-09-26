@@ -2,7 +2,7 @@ clear
 close all
 
 dataFolder = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\D-58';
-planFileName = 'D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/RP_D58.dcm';
+planFileName = 'D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/FP-D58.dcm';
 rtstructFileName = fullfile(dataFolder , 'RS1.2.752.243.1.1.20230220152044639.1200.30532.dcm');
 CTname = fullfile('D:\programs\openREGGUI\REGGUI_userdata\raystation\D-58\reggui_CT' , 'reggui_CT_0001.dcm');
 output_path = 'D:\programs\openREGGUI\REGGUI_userdata\raystation\D-58_output';

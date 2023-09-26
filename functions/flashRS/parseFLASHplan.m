@@ -242,14 +242,8 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               %There is a range shifter
               Plan.Beams(b).RSinfo = monoPlan.IonBeamSequence.(itemBeam).RangeShifterSequence.Item_1;
               snout = getParamSnout(Plan.Beams(b).SnoutID);
-              if (isfield(Plan.Beams(b).RSinfo, 'RangeShifterID') && ~strcmp(Plan.Beams(b).RSinfo.RangeShifterID, Plan.Beams(b).RSinfo.AccessoryCode)) 
-                  nrSlabsStr = extractBefore(Plan.Beams(b).RSinfo.RangeShifterID, " [Al]");
-                  Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(nrSlabsStr));
-              else
-                  Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.AccessoryCode));
-              end
-              
-              Plan.Beams(b).RSinfo.NbSlabs = numel(find(Plan.Beams(b).RSinfo.RSslabThickness));              
+              Plan.Beams(b).RSinfo.RSslabThickness = snout.RSslabThickness(snout.RangeShifterSlabs(Plan.Beams(b).RSinfo.RangeShifterID));
+              Plan.Beams(b).RSinfo.NbSlabs = numel(find(Plan.Beams(b).RSinfo.RSslabThickness));
               Plan.Beams(b).RSinfo.SlabOffset = snout.RangeShifterOffset(1:Plan.Beams(b).RSinfo.NbSlabs) - snout.RangeShifterOffset(1) + Plan.Beams(b).RSinfo.RSslabThickness(1) ; %Offset from |IsocenterToRangeShifterDistance| and the upstream side of the i-th slab
               fprintf('Range shifter thickness : %f mm \n', Plan.Beams(b).RSinfo.RSslabThickness)
               fprintf('Number of slabs : %d \n', Plan.Beams(b).RSinfo.NbSlabs)
@@ -297,7 +291,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               Plan.Beams(b).RangeModulator.RangeModulatorType
               error('Wrong type of ConformalFLASH energy modulator')
             end
-            Plan.Spike.MaterialID = getPrivateTag('300D' , '0018' , 'IBA ConformalFLASH energy modulator'  , monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorMaterialID');
+            Plan.Spike.MaterialID = remove_bad_chars(getPrivateTag('300D' , '0018' , 'IBA ConformalFLASH energy modulator'  , monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorMaterialID'));
             Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance = Plan.Beams(b).SnoutPosition + snout.CEMOffset ; %| -_SCALAR_- Distance (mm) from isocentre to the base of the CEF.
             fprintf('Distance isocenter to base of CEM : %3.1f mm \n',Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance)
 
