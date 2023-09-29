@@ -116,6 +116,7 @@ end
 % with the log records
 if ~isempty(spots)
   fprintf('Overwriting spot info with record from logs \n')
+  spots = mergeSeqSpots(spots);
   Plan = overwriteWithLogs(Plan, spots);
 end
 
@@ -162,6 +163,10 @@ else
     Plan.SpotTrajectoryInfo.beam{b}.sobpSequence  = weight2spot(:,2);
 
     if isfield(Plan.Beams(b).Layers ,'time') && isfield(Plan.Beams(b).Layers ,'duration')
+
+      [sobpPosition , weight2spot ] =  collectSpotsinBeamlets(Plan , []);
+      Plan.SpotTrajectoryInfo.beam{b}.Nmaps = getTopologicalMaps(sobpPosition{b} , Plan.BDL , Plan.Beams(b).spotSigma(b) ); %Get the topological map to be used for the MPDR
+
       %Spot timing provided from log. We will use the logs
       Plan.SpotTrajectoryInfo.beam{b}.TimePerSpot = Plan.Beams(b).Layers.duration'; %|TimePerSpot(s)| Duration (ms) of the s-th spot
       deltaT = diff(Plan.Beams(b).Layers.time); %time difference between spots
@@ -203,6 +208,5 @@ end
 
 %Compute dose rate in all structures
 [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI);
-
 
 end

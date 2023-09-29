@@ -160,16 +160,16 @@ function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI, 
 
               %Save the maximum percentile dose rate
               [handles, doseRateName] = save2Disk(handles, MPDR{b}, Plan.DoseGrid.size, Plan.CTinfo, ['maxDRprct_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath ,'MPDR');
-              doseRatesCreated{4} = doseRateName;
+              doseRatesCreated{end+1} = doseRateName;
 
               %Save the dose averaged dose rate
               [handles, doseRateName] = save2Disk(handles, DADR{b}, Plan.DoseGrid.size, Plan.CTinfo, ['DADR_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath ,'DADR');
-              doseRatesCreated{2} = doseRateName;
+              doseRatesCreated{end+1} = doseRateName;
 
               %Save the dose-rate averaged dose
               if ~isempty(DRAD)
                 [handles, doseRateName] = save2Disk(handles, DRAD{b}, Plan.DoseGrid.size, Plan.CTinfo, ['DRAD_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath , 'DRAD');
-                doseRatesCreated{3} = doseRateName;
+                doseRatesCreated{end+1} = doseRateName;
               end
 
               %NB: the file name must be less than 64 characters, otherwise (0008,103E)	SeriesDescription will rise a warning at export
