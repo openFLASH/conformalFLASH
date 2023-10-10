@@ -152,18 +152,17 @@ cts_handles = loadCTDataSets(cts_handles, scanCEF_path, scan_CEF_imageName);
 %handles.mydata.info = trans_handles.images.info;
 
 
-
 %Compute the dose through the reference CEM
 %-------------------------------------
-% Compute the dose through the CEM using the high resolution CT scan
-fprintf('Computing dose map in high resolution CT using reference CEM \n')
-for b = 1:numel(Plan.Beams)
-  fprintf('Beam %d \n' , b)
-   
-  %Compute the dose
-  path2beamResults_ref = getOutputDir(fullfile(Plan.output_path, 'Ref'), b);
-  Plan = computeDoseWithCEF(Plan, path2beamResults_ref, handles, Plan.CTname, true);
-end
+% % Compute the dose through the CEM using the high resolution CT scan
+% fprintf('Computing dose map in high resolution CT using reference CEM \n')
+% for b = 1:numel(Plan.Beams)
+%   fprintf('Beam %d \n' , b)
+%    
+%   %Compute the dose
+%   path2beamResults_ref = getOutputDir(fullfile(Plan.output_path, 'Ref'), b);
+%   Plan = computeDoseWithCEF(Plan, path2beamResults_ref, handles, Plan.CTname, true);
+% end
 % -------------------------------------------------------------------------
 
 
@@ -176,6 +175,9 @@ for b = 1:numel(Plan.Beams)
   
   % Replace reference CEM with mask of 3D_printed scan  
   Plan = addCEMScanToPlan(cts_handles, Plan, scan_CEF_imageName, b);
+  
+  % Visualise the mask volume for orientation
+  % volumeViewer(Plan.Beams(b).RangeModulator.CEM3Dmask);
 
   %Compute the dose
   path2beamResults_scan = getOutputDir(fullfile(Plan.output_path, 'Scan'), b);
@@ -226,28 +228,44 @@ function Plan = addCEMScanToPlan(handles, Plan, scanImageName, b)
     handles = AutoThreshold(scanImageName, [128], scan_cef_mask, handles);
     [scan_cef_mask_data, scan_cef_mask_info, ~] = Get_reggui_data(handles, scan_cef_mask);
 
+    grid.origin = [1; 1; 1];
+    grid.spacing = [0.6,0.6,1];
+    down_factor = grid.spacing' ./ scan_cef_mask_info.Spacing;
+    grid.size = floor((size(scan_cef_mask_data)' ./ down_factor));
+    
+    handles = Resample_all(handles, grid.origin, grid.size, grid.spacing);
+    [scan_cef_mask_data, scan_cef_mask_info, ~] = Get_reggui_data(handles, scan_cef_mask);
+
     % Rotate scan CEM to align with reference
     permOrder1 = [1,3,2]; %Permutation 1 of the dimensions of CT scan to align it with plan
-    permOrder2 = [2,1,3]; %Permutation 2 of the dimensions of CT scan to align it with plan
-    permOrder = [permOrder1; permOrder2];
-    flipAxis = 2; %Which axis index should be flipped (after permute)
+    %permOrder2 = [2,1,3]; %Permutation 2 of the dimensions of CT scan to align it with plan
+    %permOrder = [permOrder1; permOrder2];
+    permOrder = permOrder1;
+    
+    flipAxis2 = 2; %Which axis index should be flipped (after permute)
+    %flipAxis3 = 3;
+    %flipAxis = [flipAxis2; flipAxis3];
+    flipAxis = flipAxis2;
 
     % Permute the dimension of CEM image and flip some dimension
     % in order to get the smae orientation for the reference CT and the meausrmenet CT
-    if flipAxis
-        scan_cef_mask_data = flip(scan_cef_mask_data, flipAxis);
+    if ~isempty(flipAxis)
+        for j = 1:size(flipAxis, 1)
+            scan_cef_mask_data = flip(scan_cef_mask_data, flipAxis(j));
+        end
     end
     if ~isempty(permOrder)
         for i = 1:size(permOrder, 1)
             scan_cef_mask_data = permute(scan_cef_mask_data , permOrder(i,:));
-            mask_spacing = scan_cef_mask_info.Spacing(permOrder(i,:));
+            mask_spacing = round(scan_cef_mask_info.Spacing(permOrder(i,:)), 1);
         end
     end
-    origin = (- round(size(handles.images.data{2}) ./2) .* mask_spacing')'; %Move origin back to middle of CEM   
+    %origin = (- round(size(handles.images.data{3}) ./2) .* mask_spacing'); %Move origin back to xy middle of CEM   
+    %origin(2) = 0; 
 
     Plan.Beams(b).RangeModulator.CEM3Dmask = scan_cef_mask_data;
     Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing = mask_spacing;
-    Plan.Beams(b).RangeModulator.ModulatorOrigin = origin;
+    %Plan.Beams(b).RangeModulator.ModulatorOrigin = origin;
 end
 %--------------------------------------------------------------------------
 
@@ -283,7 +301,7 @@ end
 
 function Plan = configPlan(output_path)
 
-    BeamProp.protonsHighResDose = 1e2; % Number of protons in the dose in high resolution CT    
+    BeamProp.protonsHighResDose = 5e6; % Number of protons in the dose in high resolution CT    
     BeamProp.NbScarves = 1; % Number of scarves to paint on the BEV
     BeamProp.CEFDoseGrid = {3, 3, 3}; % Size (mm) of final dose scoring grid. Compute the final dose through CEF on a different grid than the high-res
     BeamProp.FLAGOptimiseSpotOrder = false;
