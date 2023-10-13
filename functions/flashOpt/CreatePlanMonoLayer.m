@@ -155,7 +155,7 @@ function PlanMono = CreatePlanMonoLayer(Plan , filename , protonsFullDose)
         % From a philosophical point of view it is debatable whether it should be a compensaotr or a modulator.
         % Indeed, the CEF is doing both compensator and modulator.
         PlanMono.Beams(b).NumberOfRangeModulators = 1;
-        PlanMono.Beams(b).RangeModulator.IBA_ConformalFLASH_energy_modulator = 'IBA ConformalFLASH energy modulator'; %Private Creator identifier
+        PlanMono.Beams(b).RangeModulator.IBA_ConformalFLASH_energy_modulator = 'IBA'; %Private Creator identifier
         PlanMono.Beams(b).RangeModulator.RangeModulatorType = '3D_PRINTED';
                                                         %NB: The term '3D_PRINTED' is not in the list of Defined Terms of the DICOM standard.
                                                         %We define a new term as none of these are reflecting the situation of a “variable modulation according to position��?

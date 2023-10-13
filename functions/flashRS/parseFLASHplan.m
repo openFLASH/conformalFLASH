@@ -291,18 +291,18 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               Plan.Beams(b).RangeModulator.RangeModulatorType
               error('Wrong type of ConformalFLASH energy modulator')
             end
-            Plan.Spike.MaterialID = remove_bad_chars(getPrivateTag('300D' , '0018' , 'IBA ConformalFLASH energy modulator'  , monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorMaterialID'));
+            Plan.Spike.MaterialID = remove_bad_chars(getPrivateTag('300D' , '0018' , 'IBA'  , monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorMaterialID'));
             Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance = Plan.Beams(b).SnoutPosition + snout.CEMOffset ; %| -_SCALAR_- Distance (mm) from isocentre to the base of the CEF.
             fprintf('Distance isocenter to base of CEM : %3.1f mm \n',Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance)
 
-            nrPixelsY = double(getPrivateTag('300D' , '0013' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorRows'));
-            nrPixelsX = double(getPrivateTag('300D' , '0014' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorColumns'));
+            nrPixelsY = double(getPrivateTag('300D' , '0013' , 'IBA'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorRows'));
+            nrPixelsX = double(getPrivateTag('300D' , '0014' , 'IBA'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorColumns'));
 
-            ModulatorPixelSpacing =  getPrivateTag('300D' , '0015' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorPixelSpacing'); %pixel spacing in the plane of the CEM
+            ModulatorPixelSpacing =  getPrivateTag('300D' , '0015' , 'IBA'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorPixelSpacing'); %pixel spacing in the plane of the CEM
             ModulatorPixelSpacing = flip(ModulatorPixelSpacing,2); %Stored in DICOM as [Y,X]
 
             %Define Z resolution: this is the smallest dZ step between two terraces of the tower
-            %Z = getPrivateTag('300D' , '0010' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData');
+            %Z = getPrivateTag('300D' , '0010' , 'IBA'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData');
             %dZ = double(min(diff(unique(Z)))); %Smallest Z step in the elevation map
             z_unif_val = 1; % we consider 1 mm as uniform step value in tower
             Modulator3DPixelSpacing = round(double([ModulatorPixelSpacing', z_unif_val]),1); %| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix in the plane of the CEM
@@ -315,15 +315,15 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
 
             %Convert the 3D elevation map from DICOM file into a 3D mask.
             %elvMap2mask takes care of the flip of the Y axis
-            [CEM3Dmask1 , CEMThicknessData] = elvMap2mask(double( getPrivateTag('300D' , '0020' , 'IBA ConformalFLASH energy modulator', monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorThicknessData') ) , nrPixelsX , nrPixelsY , Modulator3DPixelSpacing);
+            [CEM3Dmask1 , CEMThicknessData] = elvMap2mask(double( getPrivateTag('300D' , '0020' , 'IBA', monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorThicknessData') ) , nrPixelsX , nrPixelsY , Modulator3DPixelSpacing);
 
-            ModulatorPosition = getPrivateTag('300D' , '0016' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorPosition');
+            ModulatorPosition = getPrivateTag('300D' , '0016' , 'IBA'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorPosition');
             Plan.Beams(b).RangeModulator.ModulatorOrigin = [ModulatorPosition' , 0]; %| -_SCALAR VECTOR_- Physical coordinate [x,y,z] the voxel |CompensatorThicknessData(1,1)| and |hedgehog3D(1,1,1)| for beam b  in the plane of the CEF.
             Plan.Beams(b).RangeModulator.ModulatorOrigin(2) = Plan.Beams(b).RangeModulator.ModulatorOrigin(2) - (nrPixelsY-1) .* Modulator3DPixelSpacing(2); %We will flip the Y axis, so change sign of origin
 
             if isfield(monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorMountingPosition')
-              Plan.Beams(b).RangeModulator.ModulatorMountingPosition = getPrivateTag('300D' , '0030' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorMountingPosition');
-              if ~strcmp(getPrivateTag('300D' , '0030' , 'IBA ConformalFLASH energy modulator'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorMountingPosition') , 'PATIENT_SIDE')
+              Plan.Beams(b).RangeModulator.ModulatorMountingPosition = getPrivateTag('300D' , '0030' , 'IBA'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorMountingPosition');
+              if ~strcmp(getPrivateTag('300D' , '0030' , 'IBA'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorMountingPosition') , 'PATIENT_SIDE')
                 error('ModulatorMountingPosition must be PATIENT_SIDE')
               end
             else
