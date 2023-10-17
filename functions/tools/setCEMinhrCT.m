@@ -87,7 +87,6 @@ function handles = setCEMinhrCT(handles , Plan , CTname , HUcem , HUair)
           %the origin of the 3D image is now at the tip of the CEM
   end
 
-
   %Re-interpolate the CEM at the resolution of the CT scan
   M = matDICOM2IECgantry(Plan.Beams.GantryAngle , Plan.Beams.PatientSupportAngle , Plan.Beams.isocenter); %Rotate around isocentre
   ZgVec = M * [0,0,0,1 ; 0,0,Plan.Beams.RangeModulator.Modulator3DPixelSpacing(3),1]'; %Define the orientation and length the Zg vector in the CT scan CS

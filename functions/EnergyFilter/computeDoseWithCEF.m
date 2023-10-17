@@ -41,10 +41,12 @@
 %
 % |MaxDose| -_SCALAR_- Dose (Gy) of the 0.1% higher percentile
 %
+% |DoseOrig| -_SCALAR MATRIX_- Dose map (Gy) will have the spatial resolution of |Plan.CEFDoseGrid|
+%
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
 
-function [Plan , MinDose , MaxDose] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)
+function [Plan , MinDose , MaxDose , DoseOrig] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)
 
     global g_HUair;
     global g_HUbrass;
@@ -403,9 +405,11 @@ end
     % Therefore with Z resolution 0.5mm, we can describes the fine structures of the CEM and range shifter.
     CTresolution = Plan.Beams.RangeModulator.Modulator3DPixelSpacing;
     CTresolution(3) = 0.5; %mm
+
     fprintf('Interpolating CT with pixels [%f , %f , %f ] mm \n', CTresolution(1) , CTresolution(2) , CTresolution(3))
 
     [handlesHR , BeamHR ] = createHighResCT(handles , CTName , hrCTName , Plan.Beams , CTresolution , g_HUair , minField , maxField , Zdistal , Plan.CTinfo);
+
     PlanHR.Beams = BeamHR;
     PlanHR = copyFields(PlanHR , Plan);
     PlanHR.CTname =  hrCTName;
@@ -488,10 +492,12 @@ end
         %The user does not want to save the high resolution dose map in IEC gantry
         handlesHR = ComputeFinalDose(Plan2, handlesHR , []);
       end
+
       [Dose , DoseInfo ] = Get_reggui_data(handlesHR,'dose_final_miropt');
                       %Get the image from handlesHR.myData. This is the idx-th element with |handlesHR.myData.name{idx} = 'dose_final_miropt'|
                       %This is an image at the resolution of the scoring grid defined in |CEFDoseGrid|
                       %It has not been resampled at the resolution of the HR CT scan.
+
     else
       %The output folder exists. Skip dose computation. Simply relaod the file
       fprintf('File %s .dcm already exists. Skipping dose computation \n' , DoseFileName)
@@ -745,11 +751,12 @@ function handlesHR = setRangeShifterinHRCT(handlesHR , PlanHR , hrCTName)
 
           %%Compute Zg of upstream side of range shifter
           ZgUp =  PlanHR.Beams.RSinfo.IsocenterToRangeShifterDistance +  ... %Donwstream side of slab close to isocenter
-                 PlanHR.Beams.RSinfo.SlabOffset(slab); %distance from downstream side of 1st slab to upstream side of |slab|
+                 PlanHR.Beams.RSinfo.SlabOffset(slab) - ...  %distance from downstream side of 1st slab to upstream side of |slab|
+                 handlesHR.spacing(3) ./2 ; %Remove half a pixel to getthe coordinate of the center of last pixel
 
           %+Zg is aligned with -Y CT
           [ ~, ~ , Zup ]= DICOM2PXLindex([] , handlesHR.spacing , handlesHR.origin , true, 0 , -ZgUp , 0 );
-          ZgDwn = ZgUp -  PlanHR.Beams.RSinfo.RSslabThickness(slab);
+          ZgDwn = ZgUp -  PlanHR.Beams.RSinfo.RSslabThickness(slab) + handlesHR.spacing(3) ./2; %Add half a pixel to get coordinate of center of first pixel
           [ ~, ~ , Zdn ]= DICOM2PXLindex([] , handlesHR.spacing , handlesHR.origin , true, 0 , -ZgDwn , 0 );
 
           stp = 1 .* sign(Zup-Zdn) ;
