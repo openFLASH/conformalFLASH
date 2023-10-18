@@ -10,26 +10,52 @@ close all
 %Inputs / Outputs
 
 % CEF images
-scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\D58_NO_bubbles\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
 %refCEF_path = 'C:\Users\lhotoiu\Downloads\ctCEF505030_DCM\CEF505030_90degrees\reggui_CEF_origin_rot3_0001.dcm';
+scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\D58_NO_bubbles\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
+%scanCEF_path = '/localhome/lucian/Dataruns/cemDosiQA/D58_NO_bubbles/CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
+
 
 % CEM image names in reggui handles
 scan_CEF_imageName = 'scan_CEF';
 %ref_CEF_imageName = 'ref_CEF';
 
+
 % Patient CT, Plan, RTstructs
 path_patientCT = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\CT_air\CT_air_0001.dcm';
 path_rtstructs = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\CT_air\RS1.2.752.243.1.1.20230221164349509.2960.70223.dcm';
 path_RS_plan = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\D_shape_matrix_measurements_14092023\Plan\FP-D58.dcm';
+%path_patientCT ='/localhome/lucian/Dataruns/cemDosiQA/rhombus/reggui_CT2_air_water/reggui_CT2_0001.dcm';
+%path_rtstructs = '/localhome/lucian/Dataruns/cemDosiQA/rhombus/reggui_CT2_air_water/RS1.2.752.243.1.1.20220901143815251.5500.21320.dcm';
+%path_RS_plan = '/localhome/lucian/Dataruns/cemDosiQA/rhombus/FP-Rhombus.dcm';
+%path_patientCT ='/localhome/lucian/Dataruns/cemDosiQA/CT_air/CT_air_0001.dcm';
+%path_rtstructs = '/localhome/lucian/Dataruns/cemDosiQA/CT_air/RS1.2.752.243.1.1.20230221164349509.2960.70223.dcm';
+%path_RS_plan = '/localhome/lucian/Dataruns/cemDosiQA/FP-D58.dcm';
+
 
 % Output path
 outputPath = 'D:\MATLAB\Data\Tests\CEFQA\OUTPUT_dosi_test';
+%outputPath = '/localhome/lucian/Dataruns/cemDosiQA/rhombus/OUTPUT_rhombus';
+%outputPath = '/localhome/lucian/Dataruns/cemDosiQA/OUTPUT_dosi_test';
+
 
 % Get structs
 RTstruct.selected_ROIs = {'WaterCube'}; %Name of the RT structs for which the gamma index is to be computed
 RTstruct.ExternalROI = 'WaterCube'; %name for external ROI - the body contour
 RTstruct.TargetROI = 'D58'; %name for target ROI
+%RTstruct.TargetROI = 'rombus'; %name for target ROI
+
+
+% Mcsquare config
+BDL = 'D:\MATLAB\flash\openMCsquare\lib\BDL\BDL_default_UN1_G0_Al_RangeShifter_tilted.txt';
+ScannerDirectory = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib\Scanners\default';
+MCsqExecPath = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib';
+nrProtons = 5e5;
+%BDL = '/localhome/lucian/Projects/flash/openMCsquare/lib/BDL/BDL_default_UN1_G0_Al_RangeShifter_tilted.txt';
+%ScannerDirectory = '/localhome/lucian/Projects/REGGUI/plugins/openMCsquare/lib/Scanners/default';
+%MCsqExecPath = '/localhome/lucian/REGGUI/plugins/openMCsquare/lib';
+%nrProtons = 1e7;
 % -------------------------------------------------------------------------
+
 
 %Config code flags
 %saveFilesToDisk = false;
@@ -51,7 +77,7 @@ cts_handles.dataPath = outputPath;
 
 
 % Config Plan variable to run dose with cef in MIROpt
-Plan = configPlan(outputPath);
+Plan = configPlan(outputPath, BDL, ScannerDirectory, MCsqExecPath, nrProtons);
 
 % Get the pre-calculated patient plan, CT, RTstructs
 % Import plan
@@ -154,15 +180,15 @@ cts_handles = loadCTDataSets(cts_handles, scanCEF_path, scan_CEF_imageName);
 
 %Compute the dose through the reference CEM
 %-------------------------------------
-% % Compute the dose through the CEM using the high resolution CT scan
-% fprintf('Computing dose map in high resolution CT using reference CEM \n')
-% for b = 1:numel(Plan.Beams)
-%   fprintf('Beam %d \n' , b)
-%    
-%   %Compute the dose
-%   path2beamResults_ref = getOutputDir(fullfile(Plan.output_path, 'Ref'), b);
-%   Plan = computeDoseWithCEF(Plan, path2beamResults_ref, handles, Plan.CTname, true);
-% end
+% Compute the dose through the CEM using the high resolution CT scan
+fprintf('Computing dose map in high resolution CT using reference CEM \n')
+for b = 1:numel(Plan.Beams)
+  fprintf('Beam %d \n' , b)
+   
+  %Compute the dose
+  path2beamResults_ref = getOutputDir(fullfile(Plan.output_path, 'Ref'), b);
+  Plan = computeDoseWithCEF(Plan, path2beamResults_ref, handles, Plan.CTname, true);
+end
 % -------------------------------------------------------------------------
 
 
@@ -299,16 +325,16 @@ end
 %--------------------------------------------------------------------------
 
 
-function Plan = configPlan(output_path)
+function Plan = configPlan(output_path, BDL, ScannerDirectory, MCsquarePath, nrProtons)
 
-    BeamProp.protonsHighResDose = 5e6; % Number of protons in the dose in high resolution CT    
+    BeamProp.protonsHighResDose = nrProtons; % Number of protons in the dose in high resolution CT    
     BeamProp.NbScarves = 1; % Number of scarves to paint on the BEV
     BeamProp.CEFDoseGrid = {3, 3, 3}; % Size (mm) of final dose scoring grid. Compute the final dose through CEF on a different grid than the high-res
     BeamProp.FLAGOptimiseSpotOrder = false;
     BeamProp.FLAGcheckSpotOrdering = false;
-    BeamProp.BDL = 'D:\MATLAB\flash\openMCsquare\lib\BDL\BDL_default_UN1_G0_Al_RangeShifter_tilted.txt';
-    BeamProp.ScannerDirectory = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib\Scanners\default';
-    BeamProp.MCsqExecPath = 'D:\MATLAB\REGGUI\plugins\openMCsquare\lib';
+    BeamProp.BDL = BDL;
+    BeamProp.ScannerDirectory = ScannerDirectory;
+    BeamProp.MCsqExecPath = MCsquarePath;
 
     CEMprop.makeSTL = false;
 
