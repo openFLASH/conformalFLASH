@@ -1,6 +1,6 @@
 %% createHighResCT
-% Create a high resolution CT with the Z axis aligned on the proton beam axis
-% from a low resolution CT
+% Create a high resolution CT with the **Y axis** aligned on the proton beam axis
+% from a low resolution CT : Xg = Xct; Yct = -Zg ; Zct = Yg
 % |minField| and |maxField| define the beam)s eye view dimension of the high resolution CT.
 % The position of the CEM block and isocentre define the length of the high resolution CT scan
 % The high res CT is rotated the interpolated CT so that its the Zg axis points towards the Ydicom axis
@@ -101,6 +101,7 @@ function [handlesHR , BeamHR , iCTgntY , iCTgntX , iCTgntZ] = createHighResCT(ha
 
   %Rotate the interpolated CT so that its the Zg axis points towards the Ydicom axis
   %In this way, we will shoot with a virtual gantry at 0° into the interpolated CT
+  %Xg = Xct; Yct = -Zg ; Zct = Yg
   CTintrp = permute(CTintrp,[1,3,2]);
   CTintrp = flip(CTintrp,2); %NB: flip (C code) is faster than flipdim (.m).
 

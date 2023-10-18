@@ -398,10 +398,10 @@ end
     end
 
     %Generate the high resolution CT scan
-    %The IEC gantry is aligned with the Y axis of the CT scan
-    % The X-Y spatial resolution of the Ct is the same as CEM to avoid aliasing problems when inserting CEM in high res CT
-    % The Z resolution is 0.5mm. The CEM height is a multiple of 1mm and the rnage shifter are also multiple of 1mm
-    % The dose map and original CT scna resolution are coarser tan 0.5mm.
+    %The proton beam is aligned with the **Y axis** of the CT scan : Xg = Xct; Yct = -Zg ; Zct = Yg
+    % The X-Z spatial resolution of the Ct is the same as CEM to avoid aliasing problems when inserting CEM in high res CT
+    % The Y resolution is 0.5mm. The CEM height is a multiple of 1mm and the rnage shifter are also multiple of 1mm
+    % The dose map and original CT scan resolution are coarser tan 0.5mm.
     % Therefore with Z resolution 0.5mm, we can describes the fine structures of the CEM and range shifter.
     CTresolution = Plan.Beams.RangeModulator.Modulator3DPixelSpacing;
     CTresolution(3) = 0.5; %mm
@@ -780,25 +780,28 @@ function handlesHR = setApertureinHRCT(handlesHR , PlanHR , hrCTName)
   global g_HUbrass;
 
   CT = Get_reggui_data(handlesHR,hrCTName,'images'); %Update the CT scan with the aperture block in handles
+        %The proton beam is aligned with the **Y axis** of the CT scan : Xg = Xct; Yct = -Zg ; Zct = Yg
   CTsize = size(CT);
   ImagePositionPatient = handlesHR.origin;
 
   if PlanHR.Beams.ApertureBlock
 
         Abrass  = apertureContour2Block(PlanHR.Beams ,  handlesHR.spacing  , PlanHR.BDL); %Coordinate of the brass voxels in IEC gantry
+
+        %Xg = Xct; Yct = -Zg ; Zct = Yg
         MinC = ImagePositionPatient;
         MaxC = ImagePositionPatient + (CTsize'-1) .* handlesHR.spacing;
-        GoodIdx = find((Abrass(:,1) > MinC(1)) .* (Abrass(:,2) > MinC(2)) .* (Abrass(:,3) > MinC(3)) .* (Abrass(:,1) <= MaxC(1)) .* (Abrass(:,2) <= MaxC(2)) .* (Abrass(:,3) <= MaxC(3)) ); %This is the list of indices that fit in the CT
-        [~, X , Y , Z] = DICOM2PXLindex([] , handlesHR.spacing , ImagePositionPatient , 1, Abrass(GoodIdx,1) , Abrass(GoodIdx,2) , Abrass(GoodIdx,3));
+
+        %                      Xg = Xct                    Yg = Zct                 Zg  = -Yct                 Xg = Xct                    Yg = Zct                 Zg  = -Yct (inverse min and max because of - sign)
+        GoodIdx = find((Abrass(:,1) > MinC(1)) .* (Abrass(:,2) > MinC(3)) .* (Abrass(:,3) > -MaxC(2)) .* (Abrass(:,1) <= MaxC(1)) .* (Abrass(:,2) <= MaxC(3)) .* (Abrass(:,3) <= -MinC(2)) ); %This is the list of indices that fit in the CT
+        [~, X , Y , Z] = DICOM2PXLindex([] , handlesHR.spacing , ImagePositionPatient , 1, Abrass(GoodIdx,1) , -Abrass(GoodIdx,3) , Abrass(GoodIdx,2));
         Aidx = sub2ind(size(CT) , X , Y , Z); %Only get the indices of the aperture that fits in the CT scan
         CT(Aidx) = g_HUbrass; %Put Hu of the device in the voxels of the device
 
   end
 
-
   %Update the handles and plan
   handlesHR = Set_reggui_data(handlesHR,hrCTName,CT,PlanHR.CTinfo,'images',1); %Create a new image with only the aperture
-
 
 end
 
