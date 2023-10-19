@@ -156,7 +156,7 @@ function [Plan , iDoseGntX , iDoseGntY , iDoseGntZ, minField , maxField, hD] = g
 
   % Set coarse grid for dose calculation.
   Plan.Independent_scoring_grid = 1; % Enable a different scoring grid than the base CT for the dose calculation
-  Plan.resampleScoringGrid = false; %Do not resample the dose map. Leave it on the coarse scoring grid
+  Plan.resampleScoringGrid = false; %Do not resample the dose map in MC_compute. Leave it on the coarse scoring grid
   Plan.Scoring_voxel_spacing = cell2mat(Plan.CEFDoseGrid); % In [mm]. Set dose calcuation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
   fprintf('Dose scoring grid: [%f , %f , %f ] mm \n',Plan.Scoring_voxel_spacing(1),Plan.Scoring_voxel_spacing(2),Plan.Scoring_voxel_spacing(3));
 
@@ -227,15 +227,18 @@ function [DoseOrigCT, DoseFileName , handlesDose , Pij] = getFullHighResDosemap(
       SptPos = Plan.Beams.Layers(1).SpotPositions(spt,:);
 
       %Define a field size that match the pixel position of the CEM
+      %The CEM can be copied pixel wise from the mask into the high resolution CT
       %This will avoid the alising problems when accumulating the dose
       minField = alignFieldWithCEM(SptPos - FieldSize , Plan.Beams.RangeModulator);
       maxField = SptPos + FieldSize; %The maxfield will be automatically aligned with the CEM pixel when calling minField:step:maxfield
-      Zdistal = getClosePixel(iDoseGntZ , Zdistal);
+      Zdistal = getClosePixel(iDoseGntZ , Zdistal);  %Zdistal is aligned on the global dose map grid
 
       fprintf('Computing dose for PBS spots %d of %d at [%f mm, %f mm] \n',spt,NbBeamlets,SptPos(1),SptPos(2))
-      [doseSpt, DoseFileName , hDoseSpt] = getHighResDose(Plan, outputPath, handles, CTName, spt, minField , maxField , Zdistal , false); %Add the dose of each spot to the global high resolution dose map
+      [doseSpt, DoseFileName , hDoseSpt] = getHighResDose(Plan, outputPath, handles, CTName, spt, minField , maxField , Zdistal , false , iDoseGntX , iDoseGntY , iDoseGntZ); %Add the dose of each spot to the global high resolution dose map
 
       %Align the partial dose map on the pixel of the full dose map
+      % The center of the voxels of the  partial dose map are already aligned with the voxels of the global dose map. 
+      %We only need to find the index of the voxel where to add the partial dose map
       [~ , IndexStart(1)] = getClosePixel(iDoseGntX , hDoseSpt.origin(1));
       [~ , IndexStart(2)] = getClosePixel(iDoseGntY , hDoseSpt.origin(2));
       [~ , IndexStart(3)] = getClosePixel(iDoseGntZ , hDoseSpt.origin(3));
@@ -359,6 +362,10 @@ end
   %
   % |WholeField| -_BOOLEAN_- |true| if the dose is to be computed for the all bemalets. |false| if the dose is to be computed for one isngle beamlet
   %
+  % |iDoseGntX| -_SCALAR VECTOR_- |iDoseGntX(i)| X coordinate (mm) in IEC gantry CS of the i-th voxel of the DOSE MAP
+  % |iDoseGntY| -_SCALAR VECTOR_- |iDoseGntY(i)| Y coordinate (mm) in IEC gantry CS of the i-th voxel of the DOSE MAP
+  % |iDoseGntZ| -_SCALAR VECTOR_- |iDoseGntZ(i)| Z coordinate (mm) in IEC gantry CS of the i-th voxel of the DOSE MAP
+  %
   % OUTPUT
   %
   % |Dose| -_SCALAR MATRIX_- Dose(x,y,z) Dose (Gy) at the pixel [x,y,z]. Matrix axes are aligned with IEC gantry CS
@@ -368,7 +375,7 @@ end
   % |DoseHR| -_STRUCTURE_- Handles with the image properties of the dose map at the resolution |scoring_voxel_spacing| and in the IEC gantry CS
   %===========================================================
 
-  function [Dose, DoseFileName , DoseHR] = getHighResDose(Plan, outputPath , handles , CTName , spt , minField , maxField , Zdistal , WholeField)
+  function [Dose, DoseFileName , DoseHR] = getHighResDose(Plan, outputPath , handles , CTName , spt , minField , maxField , Zdistal , WholeField , iDoseGntX , iDoseGntY , iDoseGntZ)
 
     global g_HUair;
     global g_HUcem; %Define HU as a global variable that will be visible inside the function getHighResDose
@@ -476,10 +483,20 @@ end
     %Compute the dose using MCsquare on the high resolution CT scan
     %Define the MCsquare parameter to do the dose scoring on a different pixel size than the high resolution CT scan
     Plan2.Independent_scoring_grid = Plan.Independent_scoring_grid; % Enable a different scoring grid than the base CT for the dose calculation
-    Plan2.resampleScoringGrid = Plan.resampleScoringGrid;
+    Plan2.resampleScoringGrid = Plan.resampleScoringGrid; %Do not resample the dose map in MC_compute. Leave it on the coarse scoring grid. This save time in MC_compute
     Plan2.Scoring_voxel_spacing = [Plan.Scoring_voxel_spacing(1) , Plan.Scoring_voxel_spacing(3) , Plan.Scoring_voxel_spacing(2)];
                 % In [mm]. Set dose calculation scorinng grid to 1mm spacing and overwrite the CT grid. This would reduce computation time if the CT resolution is very high.
                                 %Plan.Scoring_voxel_spacing dimension are along the high res CT scan CS. The Zg is the Y axis of the Ct CS
+
+    %Define the origin of the dose map scoring grid so that it is aligned with the voxels of the global dose map
+    %This will avoid aliasing problem when copyting the spot dose map into the global dose map
+    DoseMapOrig(1) = getClosePixel(iDoseGntX , handlesHR.origin(1));
+    DoseMapOrig(2) = getClosePixel(-iDoseGntZ , handlesHR.origin(2));
+    DoseMapOrig(3) = getClosePixel(iDoseGntY , handlesHR.origin(3));
+    Plan2.Scoring_origin = [DoseMapOrig(1) , DoseMapOrig(2) , DoseMapOrig(3)]; %The first pixel of the spot dose map is algined with the pixels of the global dose map
+
+    %Make the dose scoring grid as large as possible to fit into the high resolution CT scan
+    Plan2.Scoring_grid_size =  round(((handlesHR.origin'  + handlesHR.spacing' .* (handlesHR.size - 1) ) - DoseMapOrig ) ./ Plan2.Scoring_voxel_spacing);
 
     % Compute the dose map if no dose file already exists
     if (~exist(DoseFullFileName))
@@ -621,7 +638,7 @@ function [iDoseGntX , iDoseGntY , iDoseGntZ ] =  getDoseMapCoordInIECg(Beam , Zd
   %Make the dose map a bit larger to be sire to fit all bemalets
   iDoseGntX = (minField(1) - 15 .* PixelSizeIECg(1) )      : PixelSizeIECg(1) : (maxField(1) + 15 .* PixelSizeIECg(1));
   iDoseGntY = (minField(2) - 15 .* PixelSizeIECg(2) )      : PixelSizeIECg(2) : (maxField(2) + 15 .* PixelSizeIECg(2));
-  iDoseGntZ = double( (Zdistal - 15 .* PixelSizeIECg(3) )  : PixelSizeIECg(3) : maxCEF + 30 .* PixelSizeIECg(3));
+  iDoseGntZ = double( (Zdistal - 15 .* PixelSizeIECg(3) )  : PixelSizeIECg(3) : maxCEF       + 30 .* PixelSizeIECg(3));
 
 end
 

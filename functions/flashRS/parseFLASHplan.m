@@ -291,7 +291,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
               Plan.Beams(b).RangeModulator.RangeModulatorType
               error('Wrong type of ConformalFLASH energy modulator')
             end
-            Plan.Spike.MaterialID = remove_bad_chars(getPrivateTag('300D' , '0018' , 'IBA'  , monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorMaterialID'));
+            Plan.Spike.MaterialID = remove_bad_chars(getPrivateTag('300D' , '0018' , 'IBA'  , monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorMaterialID'));            
             Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance = Plan.Beams(b).SnoutPosition + snout.CEMOffset ; %| -_SCALAR_- Distance (mm) from isocentre to the base of the CEF.
             fprintf('Distance isocenter to base of CEM : %3.1f mm \n',Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance)
 

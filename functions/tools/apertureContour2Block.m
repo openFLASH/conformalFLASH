@@ -80,7 +80,6 @@ function [Abrass , Rmax] = apertureContour2Block(Beam ,  Spacing  , BDL_file)
   Yvec =  minSize(2) + Yvec .* pxlSize;
   [Y,X] = meshgrid(Yvec,Xvec);
 
-  %Find the voxels where air should be removed out of the brass
   % Apmask is the mask of the brass block
   Ind = find(Apmask); %Coordinate of the voxels containing brass
   Xa = X(Ind);
