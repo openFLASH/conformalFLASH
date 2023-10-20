@@ -11,19 +11,23 @@ close all
 
 % CEF images
 %refCEF_path = 'C:\Users\lhotoiu\Downloads\ctCEF505030_DCM\CEF505030_90degrees\reggui_CEF_origin_rot3_0001.dcm';
-scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\D58_NO_bubbles\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
+%scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\D58_NO_bubbles\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
+scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\Rhombus\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003011.dcm';
 %scanCEF_path = '/localhome/lucian/Dataruns/cemDosiQA/D58_NO_bubbles/CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
+%scanCEF_path = '/localhome/lucian/Dataruns/cemDosiQA/rhombus/Rhombus/CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003011.dcm';
 
 
 % CEM image names in reggui handles
 scan_CEF_imageName = 'scan_CEF';
-%ref_CEF_imageName = 'ref_CEF';
 
 
 % Patient CT, Plan, RTstructs
-path_patientCT = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\CT_air\CT_air_0001.dcm';
-path_rtstructs = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\CT_air\RS1.2.752.243.1.1.20230221164349509.2960.70223.dcm';
-path_RS_plan = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\D_shape_matrix_measurements_14092023\Plan\FP-D58.dcm';
+%path_patientCT = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\CT_air\CT_air_0001.dcm';
+%path_rtstructs = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\CT_air\RS1.2.752.243.1.1.20230221164349509.2960.70223.dcm';
+%path_RS_plan = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\D_shape_matrix_measurements_14092023\Plan\FP-D58.dcm';
+path_patientCT = 'D:\MATLAB\Data\Tests\Raysearch\Rhombus\CT2_air\reggui_CT2_air_water\reggui_CT2_0001.dcm';
+path_rtstructs = 'D:\MATLAB\Data\Tests\Raysearch\Rhombus\CT2_air\reggui_CT2_air_water\RS1.2.752.243.1.1.20220901143815251.5500.21320.dcm';
+path_RS_plan = 'D:\MATLAB\Data\Tests\Raysearch\Rhombus\Digiphant_measurements_25092023\FP-Rhombus.dcm';
 %path_patientCT ='/localhome/lucian/Dataruns/cemDosiQA/rhombus/reggui_CT2_air_water/reggui_CT2_0001.dcm';
 %path_rtstructs = '/localhome/lucian/Dataruns/cemDosiQA/rhombus/reggui_CT2_air_water/RS1.2.752.243.1.1.20220901143815251.5500.21320.dcm';
 %path_RS_plan = '/localhome/lucian/Dataruns/cemDosiQA/rhombus/FP-Rhombus.dcm';
@@ -33,7 +37,8 @@ path_RS_plan = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\D_shape_matrix_measurement
 
 
 % Output path
-outputPath = 'D:\MATLAB\Data\Tests\CEFQA\OUTPUT_dosi_test';
+%outputPath = 'D:\MATLAB\Data\Tests\CEFQA\OUTPUT_dosi_test';
+outputPath = 'D:\MATLAB\Data\Tests\Raysearch\Rhombus\CEMDosiQA\Output_test';
 %outputPath = '/localhome/lucian/Dataruns/cemDosiQA/rhombus/OUTPUT_rhombus';
 %outputPath = '/localhome/lucian/Dataruns/cemDosiQA/OUTPUT_dosi_test';
 
@@ -41,8 +46,8 @@ outputPath = 'D:\MATLAB\Data\Tests\CEFQA\OUTPUT_dosi_test';
 % Get structs
 RTstruct.selected_ROIs = {'WaterCube'}; %Name of the RT structs for which the gamma index is to be computed
 RTstruct.ExternalROI = 'WaterCube'; %name for external ROI - the body contour
-RTstruct.TargetROI = 'D58'; %name for target ROI
-%RTstruct.TargetROI = 'rombus'; %name for target ROI
+%RTstruct.TargetROI = 'D58'; %name for target ROI
+RTstruct.TargetROI = 'rombus'; %name for target ROI
 
 
 % Mcsquare config
@@ -180,7 +185,7 @@ cts_handles = loadCTDataSets(cts_handles, scanCEF_path, scan_CEF_imageName);
 
 %Compute the dose through the reference CEM
 %-------------------------------------
-% Compute the dose through the CEM using the high resolution CT scan
+%Compute the dose through the CEM using the high resolution CT scan
 fprintf('Computing dose map in high resolution CT using reference CEM \n')
 for b = 1:numel(Plan.Beams)
   fprintf('Beam %d \n' , b)
@@ -195,20 +200,20 @@ end
 % Compute the dose through the scan CEM
 %-------------------------------------
 % Compute the dose through the CEM using the high resolution CT scan
-fprintf('Computing dose map in high resolution CT using 3D-printed CEM scan \n')
-for b = 1:numel(Plan.Beams)
-  fprintf('Beam %d \n' , b)
-  
-  % Replace reference CEM with mask of 3D_printed scan  
-  Plan = addCEMScanToPlan(cts_handles, Plan, scan_CEF_imageName, b);
-  
-  % Visualise the mask volume for orientation
-  % volumeViewer(Plan.Beams(b).RangeModulator.CEM3Dmask);
-
-  %Compute the dose
-  path2beamResults_scan = getOutputDir(fullfile(Plan.output_path, 'Scan'), b);
-  Plan = computeDoseWithCEF(Plan, path2beamResults_scan, handles, Plan.CTname, true);
-end
+% fprintf('Computing dose map in high resolution CT using 3D-printed CEM scan \n')
+% for b = 1:numel(Plan.Beams)
+%   fprintf('Beam %d \n' , b)
+%   
+%   % Replace reference CEM with mask of 3D_printed scan  
+%   Plan = addCEMScanToPlan(cts_handles, Plan, scan_CEF_imageName, b);
+%   
+%   % Visualise the mask volume for orientation
+%   %volumeViewer(Plan.Beams(b).RangeModulator.CEM3Dmask);
+% 
+%   %Compute the dose
+%   path2beamResults_scan = getOutputDir(fullfile(Plan.output_path, 'Scan'), b);
+%   Plan = computeDoseWithCEF(Plan, path2beamResults_scan, handles, Plan.CTname, true);
+% end
 % -------------------------------------------------------------------------
 
 
@@ -250,48 +255,126 @@ toc
 
 function Plan = addCEMScanToPlan(handles, Plan, scanImageName, b)
     
+    % create mask
     scan_cef_mask = 'scan_cef_mask';
     handles = AutoThreshold(scanImageName, [128], scan_cef_mask, handles);
     [scan_cef_mask_data, scan_cef_mask_info, ~] = Get_reggui_data(handles, scan_cef_mask);
 
-    grid.origin = [1; 1; 1];
-    grid.spacing = [0.6,0.6,1];
-    down_factor = grid.spacing' ./ scan_cef_mask_info.Spacing;
-    grid.size = floor((size(scan_cef_mask_data)' ./ down_factor));
+    % Resample to plan resolution
+    scan.origin = [1; 1; 1];
+    scan.spacing = Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing;
+    scan.spacing = scan.spacing([1,3,2])'; % Z is the second index in reggui; convert the spacing
+    down_factor = scan.spacing ./ scan_cef_mask_info.Spacing;
+    scan.size = floor((size(scan_cef_mask_data)' ./ down_factor));
     
-    handles = Resample_all(handles, grid.origin, grid.size, grid.spacing);
+    handles = Resample_all(handles, scan.origin, scan.size, scan.spacing);
+    %[scan_cef_mask_data, scan_cef_mask_info, ~] = Get_reggui_data(handles, scan_cef_mask);
+
+    % Crop from mask to remove extra space from the scan CT
+    handles = Resample_all(handles,scan_cef_mask,[0],scan.spacing,'from_mask');
     [scan_cef_mask_data, scan_cef_mask_info, ~] = Get_reggui_data(handles, scan_cef_mask);
+
 
     % Rotate scan CEM to align with reference
     permOrder1 = [1,3,2]; %Permutation 1 of the dimensions of CT scan to align it with plan
-    %permOrder2 = [2,1,3]; %Permutation 2 of the dimensions of CT scan to align it with plan
-    %permOrder = [permOrder1; permOrder2];
-    permOrder = permOrder1;
+    permOrder2 = [2,1,3]; %Permutation 2 of the dimensions of CT scan to align it with plan
+    permOrder = [permOrder1; permOrder2];
+    %permOrder = [permOrder1];
     
-    flipAxis2 = 2; %Which axis index should be flipped (after permute)
-    %flipAxis3 = 3;
-    %flipAxis = [flipAxis2; flipAxis3];
-    flipAxis = flipAxis2;
-
     % Permute the dimension of CEM image and flip some dimension
     % in order to get the smae orientation for the reference CT and the meausrmenet CT
+    if ~isempty(permOrder)
+        for i = 1:size(permOrder, 1)
+            scan_cef_mask_data = permute(scan_cef_mask_data, permOrder(i,:));
+        end
+    end
+
+    %flipAxis2 = 2; %Which axis index should be flipped (after permute)
+    flipAxis3 = 3;
+    %flipAxis = [flipAxis2; flipAxis3];
+    flipAxis = [flipAxis3];
+    
     if ~isempty(flipAxis)
         for j = 1:size(flipAxis, 1)
             scan_cef_mask_data = flip(scan_cef_mask_data, flipAxis(j));
         end
     end
-    if ~isempty(permOrder)
-        for i = 1:size(permOrder, 1)
-            scan_cef_mask_data = permute(scan_cef_mask_data , permOrder(i,:));
-            mask_spacing = round(scan_cef_mask_info.Spacing(permOrder(i,:)), 1);
-        end
-    end
-    %origin = (- round(size(handles.images.data{3}) ./2) .* mask_spacing'); %Move origin back to xy middle of CEM   
-    %origin(2) = 0; 
 
+
+    % Check that the ref CEM is oriented the same way as the scan
+    mid_slice_ref = round(size(Plan.Beams(b).RangeModulator.CEM3Dmask, 3) / 2);
+
+    figure(1009)
+    imagesc(Plan.Beams(b).RangeModulator.CEM3Dmask(:,:,mid_slice_ref)); % take a mid-height slice
+    xticklabels(xticks * Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(1))
+    yticklabels(yticks * Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(2))
+    xlabel ('X (mm)');
+    ylabel ('Y (mm)');
+    title  ('Refeference CEM - mid slice');
+    grid on
+
+
+    mid_slice_scan = round(size(scan_cef_mask_data, 3) / 2);
+
+    figure(1010)
+    imagesc(scan_cef_mask_data(:,:,mid_slice_scan)) % take a mid-height slice
+    xticklabels(xticks * Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(1))
+    yticklabels(yticks * Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing(2))
+    xlabel ('X (mm)');
+    ylabel ('Y (mm)');
+    title  ('Scan CEM - mid slice');
+    grid on
+
+
+    % Register the scan onto the reference cem mask to find the correct alignment
+    scan_cef_mask_data = alignCEM(Plan.Beams(b).RangeModulator.CEM3Dmask, scan_cef_mask_data, Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing, handles.dataPath);
+
+
+    % Set scan CEM origin so that central CEM voxel is at (0,0,0)  
+    origin = (-round(size(scan_cef_mask_data)./2) .* Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing); %Move origin back to xy middle of CEM   
+    origin(3) = 0; 
+
+
+    % Add/replace scan to Plan var
     Plan.Beams(b).RangeModulator.CEM3Dmask = scan_cef_mask_data;
-    Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing = mask_spacing;
-    %Plan.Beams(b).RangeModulator.ModulatorOrigin = origin;
+    %Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing = mask_spacing; % this commented out, keeps the original spacing as we've resampled the scan to match it.
+    Plan.Beams(b).RangeModulator.ModulatorOrigin = origin;
+end
+%--------------------------------------------------------------------------
+
+
+function aligned_data = alignCEM(ref_cem_mask, scan_cem_mask, imposed_spacing, outputPath)
+
+    % Initialise reggui local handles for registration only
+    handles = Initialize_reggui_handles();
+    handles.dataPath = outputPath;
+
+    ref_mask_name = 'ref_cem_mask';
+    scan_mask_name = 'scan_cem_mask';
+
+    % Add reference cem mask to handles 
+    handles.mydata.data{1} = ref_cem_mask;
+    handles.mydata.name{1} = ref_mask_name;
+    handles.mydata.info{1}.Type = 'image';
+    handles.mydata.info{1}.Spacing = imposed_spacing';
+    handles.mydata.info{1}.ImagePositionPatient = [1;1;1];
+
+    % Convert data to fixed image
+    handles = Data2image(ref_mask_name, ref_mask_name, handles);
+
+    % Add scan cem mask to handles as movingimage data
+    handles.mydata.data{2} = scan_cem_mask;
+    handles.mydata.name{2} = scan_mask_name;
+    handles.mydata.info{2}.Type = 'image';
+    handles.mydata.info{2}.Spacing = imposed_spacing';
+    handles.mydata.info{2}.ImagePositionPatient = [1;1;1];
+
+
+    % Register the scan onto the reference cem mask to find the correct alignment
+    scan_rigid_def = 'scan_rigid_def';
+    scan_rigid_trans = 'scan_rigid_trans';
+    handles = Registration_ITK_rigid_multimodal(ref_mask_name, scan_mask_name, scan_rigid_def, scan_rigid_trans,handles);
+    [aligned_data, ~, ~] = Get_reggui_data(handles, scan_rigid_def);
 end
 %--------------------------------------------------------------------------
 
