@@ -1,23 +1,27 @@
 %% computeDoseWithCEF
 % Compute the dose distribution using MCsquare for a plan with a single beam and a single energy layer
 % and a conformal energy modulator.
-% The planning CT scan is re-interpolated on a pixel grid with the pixel size of the CEM in order to properly model the CEM.
-% The dose is tallied on a grid with resolution |Plan.CEFDoseGrid|.
-% The dose map is saved with the resolution |Plan.CEFDoseGrid|
+% The planning CT scan is re-interpolated on a pixel grid with the pixel size of the CEM in order to properly model the CEM and with the axes oriented along the IEC gantry CS.
+% In order to save memory and avoid out-of-memory errors, the interpolation of the high resolution CT is done around each PBS bemlet sequentially.
+% The dose delivered by each beamlet is tallied on a grid with resolution |Plan.CEFDoseGrid| and with ortientation ofthe IEC gantry CS.
+% The dose of each beamlet is then added to the global dose map (a grid with resolution |Plan.CEFDoseGrid|) and with axes oriented along the IEC gantry CS.
+% Note that for this intermediate dose computation, the 3 components of |Plan.CEFDoseGrid| represent pixels sizer in IEC gantry CS.
 %
-% The intermediate high resolution dose map and high resolution CT scan are optionally saved.
-% The final dose map is saved in a DICOM file in the folder |outputPath| and a DICOM plan is saved in the folder to which the dose map are referenced
+% The global dose map is then rotated (re-interpolated) to have pixels aligned with the DICOM axes of the original CT scan and with pixel resolution |Plan.CEFDoseGrid|.
+% Note that following this re-interpolation the 3 components of |Plan.CEFDoseGrid| represent pixels sizer along the axes of the DICOM CS of the original Ct scan.
+% Note therefore that |Plan.CEFDoseGrid| define the spatial resolution of two different dose map, aligned along different coordinate systems.
+%
+% The intermediate PBS beamlet dose map (aligned with IEC gantry) is optionally saved depending on the flag  |Plan.SaveHighResDoseMap|
+% The intermediate  high resolution CT scan (aligned with IEC gantry) is optionally saved depending on the flag |Plan.SaveHighResCT|.
+% If is possible to save intermediate PBS beamlet resolution dose map (aligned with axes of the original CT scan) with the flag |Plan.SaveDoseBeamlets = 'dcm'|. NOgte however that this increases the computation time.
+% Note that saving the intermediate dose maps and CT scan increase the execution time of the function.
 %
 %% Syntax
-% |computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)|
-%
-% |Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)|
+% |[Plan , MinDose , MaxDose , DoseOrig] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)|
 %
 %
 %% Description
-% |computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)| Compute dose maps and save them to disk
-%
-% |Pij = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)| Compute and save dose map and return the dose influence matrix
+% |[Plan , MinDose , MaxDose , DoseOrig] = computeDoseWithCEF(Plan, outputPath, handles, CTName , FLAGdosePerSpot)| Compute dose maps and save them to disk
 %
 %
 %% Input arguments
@@ -35,13 +39,13 @@
 %
 %% Output arguments
 %
-% |Pij| -_SCALAR MATRIX_- [OPTIONAL] dose influence matrix: |Pij(vox,spot)| The dose contribution to voxel |vox| of the spot number |spot|
+% |Plan| -_SCALAR MATRIX_- Update the value of |Plan.Scenario4D(1).RandomScenario(Plan.rr_nominal).RangeScenario(Plan.rs_nominal).P| with the dose influence matrix: |Pij(vox,spot)| The dose contribution to voxel |vox| of the spot number |spot|
 %
 % |MinDose| -_SCALAR_- Dose (Gy) of the 0.1% lower percentile
 %
 % |MaxDose| -_SCALAR_- Dose (Gy) of the 0.1% higher percentile
 %
-% |DoseOrig| -_SCALAR MATRIX_- Dose map (Gy) will have the spatial resolution of |Plan.CEFDoseGrid|
+% |DoseOrig| -_SCALAR MATRIX_- Dose map (Gy) with the spatial resolution of |Plan.CEFDoseGrid| and with pixels aligned with the DICOM CS of the original CT scan
 %
 %% Contributors
 % Authors : R. Labarbe, Lucian Hotoiu (open.reggui@gmail.com)
@@ -237,7 +241,7 @@ function [DoseOrigCT, DoseFileName , handlesDose , Pij] = getFullHighResDosemap(
       [doseSpt, DoseFileName , hDoseSpt] = getHighResDose(Plan, outputPath, handles, CTName, spt, minField , maxField , Zdistal , false , iDoseGntX , iDoseGntY , iDoseGntZ); %Add the dose of each spot to the global high resolution dose map
 
       %Align the partial dose map on the pixel of the full dose map
-      % The center of the voxels of the  partial dose map are already aligned with the voxels of the global dose map. 
+      % The center of the voxels of the  partial dose map are already aligned with the voxels of the global dose map.
       %We only need to find the index of the voxel where to add the partial dose map
       [~ , IndexStart(1)] = getClosePixel(iDoseGntX , hDoseSpt.origin(1));
       [~ , IndexStart(2)] = getClosePixel(iDoseGntY , hDoseSpt.origin(2));
