@@ -170,7 +170,7 @@ else
       %Spot timing provided from log. We will use the logs
       Plan.SpotTrajectoryInfo.beam{b}.TimePerSpot = Plan.Beams(b).Layers.duration'; %|TimePerSpot(s)| Duration (ms) of the s-th spot
       deltaT = diff(Plan.Beams(b).Layers.time); %time difference between spots
-      deltaT = deltaT - Plan.Beams(b).Layers.duration(2:end);
+      deltaT = deltaT - Plan.Beams(b).Layers.duration(1:end-1);
       Plan.SpotTrajectoryInfo.beam{b}.dT = deltaT; %|dT(st)| Sweep (ms) to move from the s-1-th spot to the s-th spot. dT has one less element than |Plan.SpotTrajectoryInfo.beam{b}.TimePerSpot| because it does not have the sweep time of the first spot
       Plan.SpotTrajectoryInfo.TimingMode = 'Record'; %The spot timing is recovered from logs
 
