@@ -1,7 +1,7 @@
 {
  "files" : {
-   "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/RP_D58.dcm",
-   "RecordName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/logs/CEM01-01-20230325_112741_256.PBS.2.7.zip",
+   "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/FP-D58.dcm",
+   "RecordName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/logs/D58_700nA_20231102_024734_266.PBS.2.7.zip",
    "rtstructFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/RS1.2.752.243.1.1.20230220152044639.1200.30532.dcm",
    "CTname" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/reggui_CT/reggui_CT_0001.dcm",
    "AggregatePaintings" : 0,

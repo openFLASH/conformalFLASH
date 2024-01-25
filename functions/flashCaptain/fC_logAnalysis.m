@@ -52,7 +52,9 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
   %Load irradiation logs
   %---------------------
   [record_dir,record_file] = fileparts2(config.files.RecordName);
-  handles = Import_tx_records(record_dir,record_file,'iba','record',handles,'plan',config.files.AggregatePaintings);
+  %handles = Import_tx_records(record_dir,record_file,'iba','record',handles,'plan',config.files.AggregatePaintings);
+  handles = Import_tx_records(record_dir,record_file,'iba','logs',handles,'plan',config.files.AggregatePaintings);
+
 
   %Compare plan and treatment record
   %Save in JSON file the spot position and MU differences
@@ -61,7 +63,8 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
 
   %Compute the dose map
   %--------------------
-  logID = find(strcmp(handles.plans.name , 'record')); %identify the logs in handles
+  %logID = find(strcmp(handles.plans.name , 'record')); %identify the logs in handles
+  logID = find(strcmp(handles.plans.name , 'logs')); %identify the logs in handles
 
   BeamProp.NbScarves = 1; %umber of scarves to paint on the BEV
   BeamProp.FLAGOptimiseSpotOrder = false; %Do not optimise trajectory. Use the one read from logs

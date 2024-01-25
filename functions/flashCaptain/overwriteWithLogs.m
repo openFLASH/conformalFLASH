@@ -18,8 +18,9 @@
 %     * |spots.spots.energy| -_SCALAR_- Energy (Mev) of the layer
 %     * |spots.spots.xy| - _SCALAR VECTOR_ - Average spot position (x,y) at isocenter over the delivery of the s-th spot
 %     * |spots.spots.weight| - _SCALAR VECTOR_ - Monitor unit of the s-th spot
-%     * |spots.spots.time| - _SCALAR VECTOR_ - Time (in ms) at the begining of the delivery of the s-th spot
-%     * |spots.spots.duration| - _SCALARVECTOR_ - Time (in ms) at the end of the delivery of the s-th spot
+%     * |spots.spots.time(s)| - _SCALAR_ - Time (in [us]) of the 'center of mass' of the spot (dose weighted time average)
+%     * |spots.spots.effectiveDuration(s)| - _SCALAR_ - Durartion (in [us]) of the spot delivery with a higher resolution than the log period. Estimated from the average current during spot delivery
+
 %
 %% Output arguments
 %
@@ -64,8 +65,8 @@ function Plan = overwriteWithLogs(Plan, spots)
   Plan.Beams(idxBeam).Layers.nominalSpotPosition = spots.spots(1).xy;
   Plan.Beams(idxBeam).Layers.SpotPositions = spots.spots(1).xy;
   Plan.Beams(idxBeam).Layers.SpotWeights = spots.spots(1).weight';
-  Plan.Beams(idxBeam).Layers.time = spots.spots(1).time .* 1000; %convert into ms
-  Plan.Beams(idxBeam).Layers.duration = spots.spots(1).duration .* 1000; %convert into ms
+  Plan.Beams(idxBeam).Layers.time =  (spots.spots(1).time - 0.5 .* spots.spots(1).effectiveDuration) .* 1000; %convert into ms
+  Plan.Beams(idxBeam).Layers.duration = spots.spots(1).effectiveDuration .* 1000; %convert into ms
 
 % figure(20)
 % hold on
