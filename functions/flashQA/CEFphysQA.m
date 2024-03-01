@@ -42,16 +42,16 @@ scan_mask_high_thres = config.ct_scan_operations.maskHighThres;
 
 % Dshape scan orientation
 % % scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\D58_NO_bubbles\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
-permOrder1 = [1,3,2]; %Permutation 1 of the dimensions of CT scan to align it with plan
-permOrder2 = [2,1,3]; %Permutation 2 of the dimensions of CT scan to align it with plan
-permOrder = [permOrder1; permOrder2]; % input permutations in [perm1; perm3; etc] order
-flipAxis = [2]; %Which axis index should be flipped (after permute); % input flips in [dim1; dim2; dim3] order
+%permOrder1 = [1,3,2]; %Permutation 1 of the dimensions of CT scan to align it with plan
+%permOrder2 = [2,1,3]; %Permutation 2 of the dimensions of CT scan to align it with plan
+%permOrder = [permOrder1; permOrder2]; % input permutations in [perm1; perm3; etc] order
+%flipAxis = [2]; %Which axis index should be flipped (after permute); % input flips in [dim1; dim2; dim3] order
 
 % Dog Ruthie Fowler scan orientation
 % % scanCEF_path = 'D:\MATLAB\Data\Tests\Upenn\CanineTrial\CEMQA\geomQA\CEM_CT_RuthieFowler\CEM_CT_RuthieFowler\FOV_CEM1\2.16.840.1.114362.1.12209795.22564599136.663717879.118.3255.dcm';
-% permOrder1 = [1,3,2]; %Permutation 1 of the dimensions of CT scan to align it with plan
-% permOrder = [permOrder1]; % input permutations in [perm1; perm3; etc] order
-% flipAxis = [3; 2]; %Which axis index should be flipped (after permute); input flips in [dim1; dim2; dim3] order
+permOrder1 = [1,3,2]; %Permutation 1 of the dimensions of CT scan to align it with plan
+permOrder = [permOrder1]; % input permutations in [perm1; perm3; etc] order
+flipAxis = [3; 2]; %Which axis index should be flipped (after permute); input flips in [dim1; dim2; dim3] order
 
 % %refCEF_path = 'E:\Lucian\Data\ScanCEFUpenn_sylvain\ctCEF505030_DCM\resample_333um\CEF_opt_resample.mhd';
 % %stl_path = 'C:\Users\lhotoiu\Downloads\CEF1id_square_decimated_more.stl';
