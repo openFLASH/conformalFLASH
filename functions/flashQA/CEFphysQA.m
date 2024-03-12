@@ -1,64 +1,89 @@
 % Contributors
-% Authors : :Lucian Hotoiu (open.reggui@gmail.com)
+% Authors : Lucian Hotoiu (open.reggui@gmail.com)
 % -------------------------------------------------------------------------
 
-tic
-clearvars;
-close all;
+
 
 % !!!!!!!! README !!!!!!!! ------------------------------------------------
+%
 % Prior to running the script we must rotate and crop the two images to be 
 % compared. The object in the two images should have roughly the same 
 % orientation, position and occupy similar areas in the image. These
 % operations have to be well defined before running. 
 %
-% Note: If the scan is taken in the same agreed-to position then the 
-% code will perform the needed operations automatically.
-% -------------------------------------------------------------------------
+% Note: If the scan is taken in the agreed-upon position then the code will 
+% perform the needed operations automatically.
+%
+% !!!!!!!! README !!!!!!!! ------------------------------------------------
+
+
+
+function CEFphysQA(configFile)
+
+tic
+
 
 %Inputs / Outputs
-scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\D58_NO_bubbles\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
+
+% Load the JSON file with the parameters for the computation
+%-----------------------------------------------------------
+config = loadjson(configFile);
+
+scanCEF_path = config.files.scanCEF_path;
+CT_air_path = config.files.ct_air_path;
+RSplanFileName = config.files.RS_plan_fileName;
+Plan.BDL = config.files.BDL;
+Plan.ScannerDirectory = config.files.scanner_directory;
+outputPath = config.files.outputPath;
+
+PSF_FWHM = config.ct_scan_operations.PSF_FWHM; % in [mm]. Point Spread Function size as measured for the used CT scanner.
+scan_mask_low_thres = config.ct_scan_operations.maskLowThres;
+scan_mask_high_thres = config.ct_scan_operations.maskHighThres;
+
+% Dshape scan orientation
+% % scanCEF_path = 'C:\Users\lhotoiu\Downloads\20230628\D58_NO_bubbles\CT.1.3.12.2.1107.5.1.4.83552.30000023062822093699000003556.dcm';
+%permOrder1 = [1,3,2]; %Permutation 1 of the dimensions of CT scan to align it with plan
+%permOrder2 = [2,1,3]; %Permutation 2 of the dimensions of CT scan to align it with plan
+%permOrder = [permOrder1; permOrder2]; % input permutations in [perm1; perm3; etc] order
+%flipAxis = [2]; %Which axis index should be flipped (after permute); % input flips in [dim1; dim2; dim3] order
+
+% Dog Ruthie Fowler scan orientation
+% % scanCEF_path = 'D:\MATLAB\Data\Tests\Upenn\CanineTrial\CEMQA\geomQA\CEM_CT_RuthieFowler\CEM_CT_RuthieFowler\FOV_CEM1\2.16.840.1.114362.1.12209795.22564599136.663717879.118.3255.dcm';
 permOrder1 = [1,3,2]; %Permutation 1 of the dimensions of CT scan to align it with plan
-permOrder2 = [2,1,3]; %Permutation 2 of the dimensions of CT scan to align it with plan
-permOrder = [permOrder1; permOrder2];
-flipAxis = 2; %Which axis index should be flipped (after permute)
+permOrder = [permOrder1]; % input permutations in [perm1; perm3; etc] order
+flipAxis = [3; 2]; %Which axis index should be flipped (after permute); input flips in [dim1; dim2; dim3] order
 
-%refCEF_path = 'E:\Lucian\Data\ScanCEFUpenn_sylvain\ctCEF505030_DCM\resample_333um\CEF_opt_resample.mhd';
-%stl_path = 'C:\Users\lhotoiu\Downloads\CEF1id_square_decimated_more.stl';
-
-CT_air_path = 'D:\MATLAB\Data\Tests\ct_air\reggui_CT_air\_CT_air_0001.dcm';
-RSplanFileName = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\RP-D58-FLASH-c0-c0.dcm';
-Plan.BDL = 'D:\MATLAB\flash\openMCsquare\lib\BDL\BDL_default_UN1_G0_Al_RangeShifter_tilted.txt';
-Plan.ScannerDirectory = 'D:\MATLAB\flash\openMCsquare\lib\Scanners\default';
-
-outputPath = 'D:\MATLAB\Data\Tests\Raysearch\Dshape\CEMQA_geom';
+% %refCEF_path = 'E:\Lucian\Data\ScanCEFUpenn_sylvain\ctCEF505030_DCM\resample_333um\CEF_opt_resample.mhd';
+% %stl_path = 'C:\Users\lhotoiu\Downloads\CEF1id_square_decimated_more.stl';
 % -------------------------------------------------------------------------
+
 
 
 % Enable additional functionalities
-weplAnalysis = false;
-gammaIndexAnalysis = false;
+geomGammaIndexAnalysis = config.flags.geomGammaIndexAnalysis;
+weplGammaIndexAnalysis = config.flags.weplGammaIndexAnalysis;
 
 
 % Import reference CEF
-%source = 'CT';
-%source = 'STL';
-source = 'Plan';
-
-
-% HU density analysis
+source = 'Plan'; % 'CT'; 'STL';
 % #########################################################################
 
-%Load the data
+
+
+
+% Initial image orientation assessment 
+% #########################################################################
+
+% Load the data
 pre_handles = loadAlldatasets(scanCEF_path , CT_air_path , RSplanFileName , outputPath , Plan , permOrder, flipAxis, source);
 
-air_CT_imageName = 'air_CT';
+% Define image names
 scan_CEF_imageName = 'scan_CEF';
+air_CT_imageName = 'air_CT';
 
-
+% Display one slice of plan CEM for information
 [pre_ref_cef_data, pre_ref_cef_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
 
-%Display one slice of plan CEM for information
 minTot = min(pre_ref_cef_data,[],'all');
 maxTot = max(pre_ref_cef_data,[],'all');
 
@@ -74,13 +99,13 @@ ylabel ("X #voxels");
 %end
 
 
+% Display one scan slice for information
 [pre_scan_cef_data, pre_scan_cef_info, ~] = Get_reggui_data(pre_handles, scan_CEF_imageName);
 
-%Display one slice for information
 minTot = min(pre_scan_cef_data,[],'all');
 maxTot = max(pre_scan_cef_data,[],'all');
 %for i = 1:size(pre_scan_cef_data,3)
-i=160;
+i=150;
 figure(11)
 imagf = squeeze(pre_scan_cef_data(:,:,i));
 image((imagf - minTot) ./ (maxTot  - minTot) .* 255)
@@ -89,14 +114,27 @@ xlabel ("Y #voxels");
 ylabel ("X #voxels");
 %pause
 %end
+% #########################################################################
 
+
+
+
+% HU density analysis
+% #########################################################################
 
 
 % Compute grid for resampling
 fprintf('Computing relevant region for probing and assesing scan object HU density \n');
+pre_ref_cef_info.Spacing = pre_ref_cef_info.Spacing([1,3,2]); % invert 3 and 2 dimension according to reggui handles
+pre_scan_cef_info.Spacing = pre_scan_cef_info.Spacing([1,3,2]); % invert 3 and 2 dimension according to reggui handles
+
 grid.origin = [1; 1; 1];
 grid.size = floor((size(pre_scan_cef_data)' ./ (pre_ref_cef_info.Spacing ./ pre_scan_cef_info.Spacing)));
 grid.spacing = pre_ref_cef_info.Spacing;
+
+
+%handles = Resample_all(handles,[1;1;1],[318;125;298],[0.6;0.5;0.6]); 
+
 
 pre_handles = Resample_all(pre_handles, grid.origin, grid.size, grid.spacing);
 [pre_scan_cef_data, pre_scan_cef_info, ~] = Get_reggui_data(pre_handles, scan_CEF_imageName);
@@ -104,9 +142,11 @@ pre_handles = Resample_all(pre_handles, grid.origin, grid.size, grid.spacing);
 
 % Threshold, erode and intersect
 cef_mask = 'scan_cef_mask';
-pre_handles = AutoThreshold(scan_CEF_imageName, [128], cef_mask, pre_handles);
-pre_handles = Erosion(cef_mask, [2.5 2.5 2.5], 'eroded_cef_mask', pre_handles);
-[eroded_cef_mask_data, eroded_cef_mask_info, ~] = Get_reggui_data(pre_handles, 'eroded_cef_mask');
+%pre_handles = AutoThreshold(scan_CEF_imageName, [128], cef_mask, pre_handles);
+pre_handles = ManualThreshold(scan_CEF_imageName, [scan_mask_low_thres scan_mask_high_thres], cef_mask, pre_handles);
+%pre_handles = Erosion(cef_mask, [2.5 2.5 2.5], 'eroded_cef_mask', pre_handles);
+pre_handles = Erosion(cef_mask, [2.2 2.2 2.2], 'eroded_cef_mask', pre_handles);
+[eroded_cef_mask_data, ~, ~] = Get_reggui_data(pre_handles, 'eroded_cef_mask');
 %[cef_mask_data, cef_mask_info, ~] = Get_reggui_data(pre_handles, cef_mask);
 intersect_data = pre_scan_cef_data .* eroded_cef_mask_data;
 pre_handles = Set_reggui_data(pre_handles, 'intersect', intersect_data, pre_scan_cef_info, 'images', 1);
@@ -124,20 +164,22 @@ max_HU_scan = max(intersect_HU_data, [], 'all', 'omitnan');
 
 
 nr_slices = size(intersect_data, 3);
-offset = 5; % 50
+offset = 15; % 50
+%offset = 42; % 50
 slice = offset + floor(nr_slices/10);
-slice_increment = 2; %1
+slice_increment = 3; %1
+%slice_increment = 4; %1
 
 figure(903);
-tiledlayout(3,3);
+tiledlayout(2,2);
 
-for idx = 1:9
+for idx = 1:4
     nexttile
     contourf(squeeze(intersect_data(:,:,slice)),100,'LineColor','none');
     %contourf(squeeze(intersect_data(:,slice,:)),100,'LineColor','none');
     colorbar;
     %caxis([(mean_HU_scan - 3*std_HU_scan) (mean_HU_scan + 3*std_HU_scan)]);
-    xticklabels(xticks * pre_handles.spacing(3))
+    xticklabels(xticks * pre_handles.spacing(1))
     yticklabels(yticks * pre_handles.spacing(3))
     xlabel('X (mm)');
     ylabel('Y (mm)');
@@ -157,7 +199,9 @@ xlabel('HU');
 ylabel('# of voxels');
 title('Resampled/eroded scan - HU histogram inside object only');
 set(gca,'YScale','log')
-% -------------------------------------------------------------------------
+% #########################################################################
+
+
 
 
 % Geometrical analysis
@@ -169,61 +213,65 @@ handles = loadAlldatasets(scanCEF_path , CT_air_path , RSplanFileName , outputPa
 % Import scanned CEF
 [scan_cef_data, scan_cef_info, ~] = Get_reggui_data(handles, scan_CEF_imageName);
 
-
-% Normalise scan CEF hi-res image
-% min_intensity_scan_cef = min(min(min(scan_cef_data, [], 'omitnan')));
-% max_intensity_scan_cef = max(max(max(scan_cef_data, [], 'omitnan')));
-% norm_scan_scan_cef_data = (scan_cef_data - min_intensity_scan_cef)./ (max_intensity_scan_cef - min_intensity_scan_cef);
-%
-% handles = Set_reggui_data(handles, scan_CEF_imageName, norm_scan_scan_cef_data, scan_CEF_info, 'images', 1);
+% Save scan to disk
+handles = save2Disk(handles, scan_cef_data, size(scan_cef_data), scan_cef_info, 'scan_CEF_image', outputPath);           
 
 
-
-% % Import opt CEF
+% Import ref CEF
 ref_CEF_imageName = 'air_CT';
-[ref_cef_data, ref_cef_info, ~] = Get_reggui_data(handles, ref_CEF_imageName);
+[ref_cef_data, ~, ~] = Get_reggui_data(handles, ref_CEF_imageName);
 
-
-% Normalise reference CEF low-res image
-% min_intensity_ref_cef = min(min(min(ref_cef_data)));
-% max_intensity_ref_cef = max(max(max(ref_cef_data)));
-% norm_ref_cef_data = (ref_cef_data - min_intensity_ref_cef)./ (max_intensity_ref_cef - min_intensity_ref_cef);
-%
-% handles = Set_reggui_data(handles, ref_CEF_imageName, norm_ref_cef_data, ref_CEF_info, 'images', 1);
-
+figure(9977)
+histogram(ref_cef_data,255);
+xlabel('HU');
+ylabel('# of voxels');
+title('HU histogram reference image, before registration');
+set(gca,'YScale','log')
 
 
 % Rigid registration normalised scan and reference cef
 fprintf('Computing rigid registration between scan (fixed) and reference (moving) images \n');
 ref_rigid_def = 'ref_rigid_def';
 ref_rigid_trans = 'ref_rigid_trans';
-handles = Registration_ITK_rigid_multimodal(scan_CEF_imageName, ref_CEF_imageName, ref_rigid_def, ref_rigid_trans,handles);
+handles = Registration_ITK_rigid_multimodal(scan_CEF_imageName, ref_CEF_imageName, ref_rigid_def, ref_rigid_trans, handles);
+
+
+pxlSizeXY = scan_cef_info.Spacing(2);
+pxlSizeZ = scan_cef_info.Spacing(3); % we approximate here that the voxels are isotropical. In reality there is a 0.001mm difference in X&Y compared to Z resolution of the scan.
+
+[ref_rigid_def_data, ref_rigid_def_info, ~] = Get_reggui_data(handles, ref_rigid_def);
+
+figure(9978)
+histogram(ref_rigid_def_data,255);
+xlabel('HU');
+ylabel('# of voxels');
+title('HU histogram reference image, after registration');
+set(gca,'YScale','log')
+
+
+% Apply Point Spread Function measured on CT scanner to reference CEM
+sigma = PSF_FWHM/2.355; % mm
+%sigma_pxl = ceil([sigma/pxlSizeXY, sigma/pxlSizeXY, sigma/pxlSizeZ]); % in pxl
+sigma_pxl = sigma/pxlSizeXY;
+fprintf('Convolving registered reference CEM by PSF \n');
+ref_rigid_def_data = imgaussfilt3(ref_rigid_def_data, sigma_pxl, "Padding","circular","FilterDomain","auto");
+handles = Set_reggui_data(handles, ref_rigid_def, ref_rigid_def_data, ref_rigid_def_info, 'images', 1);
 
 
 % Save registered images to disk
-[ref_rigid_def_data, ref_rigid_def_info, ~] = Get_reggui_data(handles, ref_rigid_def);
 handles = save2Disk(handles, ref_rigid_def_data, size(ref_rigid_def_data), ref_rigid_def_info, ref_rigid_def, fullfile(handles.dataPath));
 [ref_rigid_trans_data, ref_rigid_trans_info, ~] = Get_reggui_data(handles, ref_rigid_trans);
-ref_rigid_trans_info.PatientOrientation = 'HFS';
 handles = save2Disk(handles, ref_rigid_trans_data, size(ref_rigid_trans_data), ref_rigid_trans_info, ref_rigid_trans, fullfile(handles.dataPath));
 
 
 % Autothresold normalised image for better spatial dimensional preservation
 fprintf('Computing scan and reference binary images \n');
 scan_cef_mask = 'scan_cef_mask';
-handles = AutoThreshold(scan_CEF_imageName, [128], scan_cef_mask, handles);
+%handles = AutoThreshold(scan_CEF_imageName, [128], scan_cef_mask, handles);
+handles = ManualThreshold(scan_CEF_imageName, [scan_mask_low_thres scan_mask_high_thres], cef_mask, handles);
 ref_cef_mask = 'ref_cef_mask';
-handles = AutoThreshold(ref_rigid_def, [128], ref_cef_mask, handles);
-
-
-
-%Autothreshold does not work in scripting in this particular case for the
-%registered ref cef
-% Load it from disk instead
-% defCEFmask_path = 'C:\Users\lhotoiu\Downloads\reggui_def_cef_mask\reggui_def_cef_mask_0001.dcm';
-% [def_CEFmask_directory, def_CEFmask_fileName, EXT] = fileparts(defCEFmask_path);
-% handles = Import_data(def_CEFmask_directory, [def_CEFmask_fileName EXT], 1, ref_cef_mask, handles);
-
+%handles = AutoThreshold(ref_rigid_def, [128], ref_cef_mask, handles);
+handles = ManualThreshold(ref_rigid_def, [-220 scan_mask_high_thres], ref_cef_mask, handles);
 
 
 
@@ -234,32 +282,6 @@ handles = save2Disk(handles, scan_cef_mask_data, size(scan_cef_mask_data), scan_
 handles = save2Disk(handles, ref_cef_mask_data, size(ref_cef_mask_data), ref_CEF_mask_info, ref_cef_mask, fullfile(handles.dataPath));
 
 
-% Compute distance distribution between the optimised CEF and the scanned CEF
-% [indicators, distances1D, distances3D] = Contour_distance(scan_cef_mask, ref_cef_mask, handles); %0.333 (limit for which distance calculation still works) is the isotropic size of the mesh to compute the distances
-
-
-% Crop sides of scan image to remove artefacts
-%scan_cef_data_crop = imcrop3(scan_cef_data, [1 1 1 500 570 700]); % the cuboid inverts x and y coordinates of the initial image to crop
-%scan_cef_data_crop = imcrop3(scan_cef_data_crop, [20 5 20 110 180 190]); % the cuboid inverts x and y coordinates of the initial image to crop
-%handles = Set_reggui_data(handles, scan_CEF_imageName, scan_cef_data_crop, scanCEF_info, 'images', 1);
-
-
-% Resample opt image to same spacing as scan - nearest interpolation to avoid smoothing
-% cur_sz = size(opt_cef_data);
-% target_sz = cur_sz .* (ref_CEF_info.Spacing./scan_CEF_info.Spacing)';
-% [X, Y, Z] = meshgrid(linspace(1,cur_sz(2),target_sz(2)),linspace(1,cur_sz(1),target_sz(1)),linspace(1,cur_sz(3),target_sz(3)));
-% X = single(X);
-% Y = single(Y);
-% Z = single(Z);
-% opt_cef_data_resample = interp3(opt_cef_data,X,Y,Z,'nearest');
-% optCEF_info = scanCEF_info;
-% %handles = Set_reggui_data(handles, 'opt_resampled', opt_cef_data_resample, optCEF_info, 'images', 1); %Add the interpolated CT scan to the list of CT scan
-% handles = Set_reggui_data(handles, opt_CEF_imageName, opt_cef_data_resample, optCEF_info, 'images', 1); %Add the interpolated CT scan to the list of CT scan
-
-% opt_cef_data_crop = imcrop3(opt_cef_data_resample, [1 1 1 500 570 700]); % the cuboid inverts x and y coordinates of the initial image to crop
-% handles = Set_reggui_data(handles, opt_CEF_imageName, opt_cef_data_crop, optCEF_info, 'images', 1);
-
-
 
 % Compute binary difference between masks
 % [scan_cef_contour,~,~] = Get_reggui_data(handles, scan_cef_mask,'images');
@@ -267,10 +289,9 @@ handles = save2Disk(handles, ref_cef_mask_data, size(ref_cef_mask_data), ref_CEF
 % mask_difference_3D = scan_cef_contour - ref_cef_contour;
 mask_difference_3D = scan_cef_mask_data - ref_cef_mask_data;
 
-pxlSizeZ = scan_cef_info.Spacing(3); % we approximate here that the mm are isotropical. In reality there is a 0.001mm difference in X&Y compared to Z resolution of the scan.
-fprintf('Computing geometrical differences (scan - ref) \n');
 
 % Scan geometrical dimensions
+fprintf('Computing geometrical differences (scan - ref) \n');
 scan_distance_map2D = squeeze(sum(scan_cef_mask_data, 3)).* pxlSizeZ;
 
 figure(998)
@@ -280,8 +301,9 @@ colorbar;
 xlabel('Y (mm)');
 ylabel('X (mm)');
 title('Scan geometrical dimensions in Z direction (mm)');
-xticklabels(xticks * pxlSizeZ)
-yticklabels(yticks * pxlSizeZ)
+xticklabels(xticks * pxlSizeXY)
+yticklabels(yticks * pxlSizeXY)
+
 
 
 % Reference geometrical dimensions
@@ -294,17 +316,17 @@ colorbar;
 xlabel('Y (mm)');
 ylabel('X (mm)');
 title('Ref geometrical dimensions in Z direction (mm)');
-xticklabels(xticks * pxlSizeZ)
-yticklabels(yticks * pxlSizeZ)
+xticklabels(xticks * pxlSizeXY)
+yticklabels(yticks * pxlSizeXY)
+
 
 
 % Get mean and std of geometrical differences of scan - ref
-dist_diff3D = mask_difference_3D .* pxlSizeZ;
-dist_diff2D = squeeze(sum(mask_difference_3D, 3)).* pxlSizeZ; % makes more sense to compute it on the cumulated distance than per voxel as per previous line.
-mean_dist_diff_scan_ref = mean(dist_diff2D, 'all', 'omitnan');
-std_dist_diff_scan_ref = std(dist_diff2D, [], 'all', 'omitnan');
-min_dist_diff_scan_ref = min(dist_diff2D, [], 'all', 'omitnan');
-max_dist_diff_scan_ref = max(dist_diff2D, [], 'all', 'omitnan');
+dist_diff2D_map = squeeze(sum(mask_difference_3D, 3)).* pxlSizeZ; % makes more sense to compute it on the cumulated distance than per voxel as per previous line.
+mean_dist_diff_scan_ref = mean(dist_diff2D_map, 'all', 'omitnan');
+std_dist_diff_scan_ref = std(dist_diff2D_map, [], 'all', 'omitnan');
+min_dist_diff_scan_ref = min(dist_diff2D_map, [], 'all', 'omitnan');
+max_dist_diff_scan_ref = max(dist_diff2D_map, [], 'all', 'omitnan');
 fprintf('Mean distance difference scan-ref (mm): %d. \n', mean_dist_diff_scan_ref);
 fprintf('STD distance difference scan-ref (mm): %d. \n', std_dist_diff_scan_ref);
 fprintf('Min distance difference scan-ref (mm): %d. \n', min_dist_diff_scan_ref);
@@ -322,28 +344,63 @@ fprintf(fileID,'Max distance difference scan-ref (mm): %d. \n', max_dist_diff_sc
 distance_diff_map2D = squeeze(sum(mask_difference_3D, 3)).* pxlSizeZ;
 
 figure(1000)
-contourf(distance_diff_map2D, 100, 'LineColor', 'none');
+%axx = gca;
+[~,cc] = contourf(distance_diff_map2D, 100, 'LineColor', 'none');
 colorbar;
-%caxis([-40 40]);
+%xlabel('Y (# voxels)');
+%ylabel('X (# voxels)');
+title('Map of distance differences in Z direction (scan - ref)(mm)');
 xlabel('Y (mm)');
 ylabel('X (mm)');
-title('Map of distance differences in Z direction (scan - ref)(mm)');
-xticklabels(xticks * pxlSizeZ)
-yticklabels(yticks * pxlSizeZ)
+xticklabels(xticks .* pxlSizeXY)
+yticklabels(yticks .* pxlSizeXY)
+
+
 
 % Save binary mask difference = scan - ref
 difference3D_mask_name = 'scan-ref_cef_mask_diff';
 difference3D_CT_info = handles.images.info{2}; % copy CT info from CEF if existent
 handles = Set_reggui_data(handles, difference3D_mask_name, mask_difference_3D, difference3D_CT_info, 'images', 1); %Add the interpolated CT scan to the list of CT scan
-difference3D_CT_info.PatientOrientation = 'HFS';
 handles = save2Disk(handles, mask_difference_3D, size(mask_difference_3D), difference3D_CT_info, difference3D_mask_name, fullfile(handles.dataPath));
-
-
-% Save 3D distance between contours = scan - opt
-difference3D_dist_heatmap_name = 'scan-ref_cef_dist_diff_map';
-handles = Set_reggui_data(handles, difference3D_dist_heatmap_name, dist_diff3D, difference3D_CT_info, 'images', 1); %Add the interpolated CT scan to the list of CT scan
-handles = save2Disk(handles, dist_diff3D, size(dist_diff3D), difference3D_CT_info, difference3D_dist_heatmap_name, fullfile(handles.dataPath));
 %--------------------------------------------------------------------------
+
+
+
+
+% Gamma analysis distance difference
+% #########################################################################
+if(geomGammaIndexAnalysis)
+    options.dd = config.flags.geom_dd; % (mm)
+    options.DD = config.flags.geom_DD; % (%)
+    options.FI = 5; % number of points for internal interpolation
+    options.global_ref = 1; % local (0) or global (1 - default) WET difference will be used
+    options.threshold = 5; % (% unit) specify a WET threshold (in % of the reference WET) under which the gamma is not computed
+    options.search_distance = 5; % specify a reference WET to be used for global WET computation and thresholding instead of the max WET
+    fprintf('Computing distance gamma index (ref - scan) \n');
+    [gamma, myMask, myIm1_resampled] = gamma_2D(ref_distance_map2D, ref_CEF_mask_info, scan_distance_map2D, scan_CEF_mask_info, [], options);
+    
+    
+    figure(10003)
+    contourf(gamma,100,'LineColor','none');
+    colorbar;
+    clim([0 5]); % limited to meaningful gamma index of 2. The actual values may go higher in certain areas...
+    xlabel('X (mm)');
+    ylabel('Y (mm)');
+    title('Gamma index (ref-scan) Z direction');
+    xticklabels(xticks * pxlSizeXY)
+    yticklabels(yticks * pxlSizeXY)
+    
+    
+    % Compute passing rate
+    gamma = single(gamma);
+    passing_rate = length(gamma(gamma<1 & myMask>=0.5))/length(gamma(myMask>=0.5)); % global passing rate (union of masks + threshold)
+    average_gamma = mean(gamma(myMask>=0.5)); % average gamma (union of masks + threshold)
+    disp(['Average gamma: ',num2str(round(average_gamma,2))])
+    disp(['General passing rate: ',num2str(round(passing_rate*100,2)),'%'])
+end
+% #########################################################################
+
+
 
 
 % HU distribution analysis
@@ -378,21 +435,21 @@ fprintf('Thresholding out noise/artifacts/outliers \n');
 
 
 nr_slices = size(scan_cef_data, 3);
-offset = 20; %200
+offset = 60; %200
 slice = offset + floor(nr_slices/10);
 slice_increment = ceil((nr_slices - slice)./9);
 
 
 figure(1003);
-tiledlayout(3,3);
-for idx = 1:9
+tiledlayout(2,2);
+for idx = 1:4
     nexttile
     contourf(squeeze(scan_cef_data(:,:,slice)),100,'LineColor','none');
     %contourf(squeeze(scan_cef_data(:,slice,:)),100,'LineColor','none');
     colorbar;
     %caxis([(mean_HU_scan - 3*std_HU_scan) (mean_HU_scan + 3*std_HU_scan)]);
-    xticklabels(xticks * pxlSizeZ)
-    yticklabels(yticks * pxlSizeZ)
+    xticklabels(xticks * pxlSizeXY)
+    yticklabels(yticks * pxlSizeXY)
     xlabel('X (mm)');
     ylabel('Y (mm)');
     title(['Z plane ' num2str(slice)]);
@@ -425,21 +482,21 @@ handles = Set_reggui_data(handles, outlier_scan_CEF_imageName, outlier_scan_cef_
 
 
 nr_slices = size(scan_cef_data, 3);
-offset = 20; %200
+offset = 130; %200
 slice = offset + floor(nr_slices/10);
 slice_increment = ceil((nr_slices - slice)./9);
 
 
 figure(1004);
-tiledlayout(3,3);
-for idx = 1:9
+tiledlayout(2,2);
+for idx = 1:4
     nexttile
     contourf(squeeze(outlier_scan_cef_data(:,:,slice)),100,'LineColor','none');
     %contourf(squeeze(outlier_scan_cef_data(:,slice,:)),100,'LineColor','none');
     colorbar;
     %caxis([(mean_HU_scan - 3*std_HU_scan) (mean_HU_scan + 3*std_HU_scan)]);
-    xticklabels(xticks * pxlSizeZ)
-    yticklabels(yticks * pxlSizeZ)
+    xticklabels(xticks * pxlSizeXY)
+    yticklabels(yticks * pxlSizeXY)
     xlabel('X (mm)');
     ylabel('Y (mm)');
     title(['Z plane ' num2str(slice)]);
@@ -457,14 +514,14 @@ xlabel('HU');
 ylabel('# of voxels');
 title('Outliers/noise scan HU histogram');
 set(gca,'YScale','log')
-%--------------------------------------------------------------------------
-
-
-
-% WEPL analysis
 % #########################################################################
 
-if (weplAnalysis)
+
+
+
+% WEPL Gamma index analysis
+% #########################################################################
+if (weplGammaIndexAnalysis)
     [def_ref_cef_data, def_ref_cef_info, ~] = Get_reggui_data(handles, ref_rigid_def);
     %def_ref_cef_data(def_ref_cef_data < mean_HU_scan) = mean_HU_scan;
     %def_ref_cef_data(def_ref_cef_data > max_HU_scan) = max_HU_scan;
@@ -476,19 +533,18 @@ if (weplAnalysis)
     WEPL_Z_CEF_scan = hu_to_we(scan_cef_data, 'reggui_material_pmma_phantom.txt');
     WEPL_scan_2Dmap = sum(WEPL_Z_CEF_scan, 3, 'omitnan').* pxlSizeZ;
     
-    handles = save2Disk(handles, WEPL_scan_2Dmap, size(WEPL_scan_2Dmap), difference3D_CT_info, 'scan_CEF_WEPL_2D', fullfile(handles.dataPath));
+    handles = save2Disk(handles, WEPL_Z_CEF_scan, size(WEPL_Z_CEF_scan), difference3D_CT_info, 'scan_CEF_WEPL_3D', fullfile(handles.dataPath));
     
     
     WEPL_Z_CEF_ref = hu_to_we(def_ref_cef_data, 'reggui_material_pmma_phantom.txt');
     WEPL_ref_2Dmap = sum(WEPL_Z_CEF_ref, 3, 'omitnan').* pxlSizeZ;
     
-    handles = save2Disk(handles, WEPL_ref_2Dmap, size(WEPL_ref_2Dmap), difference3D_CT_info, 'ref_CEF_WEPL_2D', fullfile(handles.dataPath));
+    handles = save2Disk(handles, WEPL_Z_CEF_ref, size(WEPL_Z_CEF_ref), difference3D_CT_info, 'ref_CEF_WEPL_3D', fullfile(handles.dataPath));
     
-    
-    WEPL_diff = (WEPL_Z_CEF_scan - WEPL_Z_CEF_ref).* pxlSizeZ;
+    WEPL_diff_3Dmap = (WEPL_Z_CEF_scan - WEPL_Z_CEF_ref);
     WEPL_diff_2Dmap = WEPL_scan_2Dmap - WEPL_ref_2Dmap;
     
-    handles = save2Disk(handles, WEPL_diff, size(WEPL_diff), difference3D_CT_info, 'scan_ref_CEF_WEPL_diff_3D', fullfile(handles.dataPath));
+    handles = save2Disk(handles, WEPL_diff_3Dmap, size(WEPL_diff_3Dmap), difference3D_CT_info, 'scan_ref_CEF_WEPL_diff_3D', fullfile(handles.dataPath));
     
     
     %WEPL_diff_2Dmap = sum(WEPL_diff, 3, 'omitnan').* handles.spacing(2);
@@ -498,8 +554,8 @@ if (weplAnalysis)
     xlabel('X (mm)');
     ylabel('Y (mm)');
     title('WET difference Z direction (scan - ref)(mm)');
-    xticklabels(xticks * pxlSizeZ)
-    yticklabels(yticks * pxlSizeZ)
+    xticklabels(xticks * pxlSizeXY)
+    yticklabels(yticks * pxlSizeXY)
     
     %WEPL_scan_2Dmap = sum(WEPL_Z_CEF_scan, 3, 'omitnan').* handles.spacing(2);
     figure(1009);
@@ -508,8 +564,9 @@ if (weplAnalysis)
     xlabel('X (mm)');
     ylabel('Y (mm)');
     title('WET scan Z direction (mm)');
-    xticklabels(xticks * pxlSizeZ)
-    yticklabels(yticks * pxlSizeZ)
+    xticklabels(xticks * pxlSizeXY)
+    yticklabels(yticks * pxlSizeXY)
+
     
     %WEPL_opt_2Dmap = sum(WEPL_Z_CEF_ref, 3, 'omitnan').* handles.spacing(2);
     figure(1011);
@@ -518,20 +575,13 @@ if (weplAnalysis)
     xlabel('X (mm)');
     ylabel('Y (mm)');
     title('WET ref Z direction (mm)');
-    xticklabels(xticks * pxlSizeZ)
-    yticklabels(yticks * pxlSizeZ)
-end
-%--------------------------------------------------------------------------
+    xticklabels(xticks * pxlSizeXY)
+    yticklabels(yticks * pxlSizeXY)
 
-
-% Gamma index analysis
-% #########################################################################
-
-if (gammaIndexAnalysis)
 
     % Compute gamma index in between the scan and the ref WEPL maps
-    options.dd = 0.4; % (mm)
-    options.DD = 1; % (%)
+    options.dd = config.flags.wepl_dd; % (mm)
+    options.DD = config.flags.wepl_DD; % (%)
     options.FI = 5; % number of points for internal interpolation
     options.global_ref = 1; % local (0) or global (1 - default) WET difference will be used
     options.threshold = 5; % (% unit) specify a WET threshold (in % of the reference WET) under which the gamma is not computed
@@ -547,11 +597,11 @@ if (gammaIndexAnalysis)
     xlabel('X (mm)');
     ylabel('Y (mm)');
     title('Gamma index (ref-scan WEPL) Z direction');
-    xticklabels(xticks * pxlSizeZ)
-    yticklabels(yticks * pxlSizeZ)
+    xticklabels(xticks * pxlSizeXY)
+    yticklabels(yticks * pxlSizeXY)
     
     
-    Compute passing rate
+    % Compute passing rate
     gamma = single(gamma);
     passing_rate = length(gamma(gamma<1 & myMask>=0.5))/length(gamma(myMask>=0.5)); % global passing rate (union of masks + threshold)
     average_gamma = mean(gamma(myMask>=0.5)); % average gamma (union of masks + threshold)
@@ -563,59 +613,62 @@ end
 %start_reggui_GUI(handles);
 
 toc
+end
+% =========================================================================
 
 
-%---------------------------------------------------------
+
+
 % Loads the datasets from disk
-% Rotate the measured CT scan to place it in same orientation as the plan CEM
-%---------------------------------------------------------
+% #########################################################################
 function pre_handles = loadAlldatasets(scanCEF_path, CT_air_path, RSplanFileName, outputPath, Plan, permOrder, flipAxis, source)
 
     % Initialise reggui pre-handles
     pre_handles = Initialize_reggui_handles();
     pre_handles.dataPath = outputPath;
-    
-        
+            
     switch source
         case 'CT'
-              ref_CEF_imageName = 'ref_CEF';
-              [ref_CEF_directory, ref_CEF_fileName, EXT] = fileparts(refCEF_path);
-              pre_handles = Import_data(ref_CEF_directory, [ref_CEF_fileName EXT], 1, ref_CEF_imageName, pre_handles);
-              [pre_ref_cef_data, pre_ref_cef_info, ~] = Get_reggui_data(pre_handles, ref_CEF_imageName);
+            ref_CEF_imageName = 'ref_CEF';
+            [ref_CEF_directory, ref_CEF_fileName, EXT] = fileparts(refCEF_path);
+            pre_handles = Import_data(ref_CEF_directory, [ref_CEF_fileName EXT], 1, ref_CEF_imageName, pre_handles);
+            [pre_ref_cef_data, pre_ref_cef_info, ~] = Get_reggui_data(pre_handles, ref_CEF_imageName);
+
         case 'STL'
-              air_CT_imageName = 'air_CT';
-              [air_CT_directory, air_CT_fileName, EXT] = fileparts(CT_air_path);
-              pre_handles = Import_image(air_CT_directory, [air_CT_fileName EXT], 1, air_CT_imageName, pre_handles);
-              [pre_air_CT_data, pre_air_CT_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
-    
-              fprintf('Read STL file and generate 3D mask...\n');
-              pre_handles.spacing = [0.5, 0.5, 0.5];
-              stlObject = stlread(stl_path);
-              CEMmask3D = stl2mask(stlObject, pre_handles.spacing);
-    
-              Plan.Spike.MaterialID = 'ABS_Resin';
-              Plan.ScannerDirectory = 'default';
-    
-              % Export CEF in CT
-              HU_air =  getMaterialPropCT('Schneider_Air', Plan.ScannerDirectory); %Hounsfield unit associated to air in the material file
-              HU_CEF = getMaterialPropCT(Plan.Spike.MaterialID, Plan.ScannerDirectory); %HU of the CEF
-              %CEF = double(CEMmask3D);
-              CEF = single(CEMmask3D);
-              CEF(CEF == 1) = HU_CEF;
-              CEF(CEF == 0) = HU_air;
-    
-              % Instead of saving to disk you can add the new image to handles
-              % with set_reggui_data and carry on as if imported from file
-              %pre_handles = Set_reggui_data(pre_handles, 'CEF_in_CT', CEF, pre_air_CT_info, 'images', 1);
-              handles2 = save2Disk(pre_handles, CEF, size(CEF), pre_air_CT_info, 'CEF_in_CT', outputPath);
-              CEF = []; %free memory
+            air_CT_imageName = 'air_CT';
+            [air_CT_directory, air_CT_fileName, EXT] = fileparts(CT_air_path);
+            pre_handles = Import_image(air_CT_directory, [air_CT_fileName EXT], 1, air_CT_imageName, pre_handles);
+            [pre_air_CT_data, pre_air_CT_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
+            
+            fprintf('Read STL file and generate 3D mask...\n');
+            pre_handles.spacing = [0.5, 0.5, 0.5];
+            stlObject = stlread(stl_path);
+            CEMmask3D = stl2mask(stlObject, pre_handles.spacing);
+            
+            Plan.Spike.MaterialID = 'Accura_ClearVue';
+            Plan.ScannerDirectory = 'default';
+            
+            % Export CEF in CT
+            HU_air =  getMaterialPropCT('Schneider_Air', Plan.ScannerDirectory); %Hounsfield unit associated to air in the material file
+            HU_CEF = getMaterialPropCT(Plan.Spike.MaterialID, Plan.ScannerDirectory); %HU of the CEF
+            %CEF = double(CEMmask3D);
+            CEF = single(CEMmask3D);
+            CEF(CEF == 1) = HU_CEF;
+            CEF(CEF == 0) = HU_air;
+            
+            % Instead of saving to disk you can add the new image to handles
+            % with set_reggui_data and carry on as if imported from file
+            %pre_handles = Set_reggui_data(pre_handles, 'CEF_in_CT', CEF, pre_air_CT_info, 'images', 1);
+            handles2 = save2Disk(pre_handles, CEF, size(CEF), pre_air_CT_info, 'CEF_in_CT', outputPath);
+            CEF = []; %free memory
+
         case 'Plan'
             air_CT_imageName = 'air_CT';
             [air_CT_directory, air_CT_fileName, EXT] = fileparts(CT_air_path);
             pre_handles = Import_image(air_CT_directory, [air_CT_fileName EXT], 1, air_CT_imageName, pre_handles);
             [pre_air_CT_data, pre_air_CT_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
             
-            Plan.Spike.MaterialID = 'ABS_Resin';
+            Plan.Spike.MaterialID = 'Accura_ClearVue';
             Plan.showGraph = 'false';
             Plan.CTname = air_CT_imageName;
             [handles, Plan] = parseFLASHplan(RSplanFileName , Plan , pre_handles);
@@ -631,39 +684,42 @@ function pre_handles = loadAlldatasets(scanCEF_path, CT_air_path, RSplanFileName
             
             %Create a high res CT scan
             pre_handles  = createHighResCT(pre_handles , air_CT_imageName , air_CT_imageName , Plan.Beams , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , -1050 , minField , maxField , Zdistal , pre_air_CT_info);
-            [Plan, pre_handles] = setCEMinCT(pre_handles , Plan , air_CT_imageName );
+            [Plan, pre_handles] = setCEMinCT(pre_handles, Plan, air_CT_imageName);
             
             %Rotate CT so that Z axis is paralell to spikes, i.e. paralell to Zg
             pre_handles.images.data{2} = permute(pre_handles.images.data{2},[1,3,2]);
             %pre_handles.images.data{2} = flip(pre_handles.images.data{2}, 1);
             pre_handles.spacing = pre_handles.spacing([1,3,2]);
-            pre_handles.origin  = pre_handles.origin([1,3,2]);
+            pre_handles.origin = pre_handles.origin([1,3,2]);
             pre_handles.size = size(pre_handles.images.data{2});
             pre_handles.images.info{2}.Spacing = pre_handles.spacing;
             pre_handles.images.info{2}.ImagePositionPatient = pre_handles.origin;
-            
-            
-            [pre_ref_cef_data, pre_ref_cef_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
+                  
+            [pre_ref_cef_data, pre_ref_cef_data_info, ~] = Get_reggui_data(pre_handles, air_CT_imageName);
             pre_handles.origin(3) = -round(pre_handles.size(3) ./2); %Move origin back to middle of CEM
-            pre_handles = Set_reggui_data(pre_handles,air_CT_imageName,pre_ref_cef_data,pre_ref_cef_info,'mydata');
+            pre_ref_cef_data_info.PatientOrientation = pre_air_CT_info.PatientOrientation;
+            pre_handles = Set_reggui_data(pre_handles, air_CT_imageName, pre_ref_cef_data, pre_ref_cef_data_info, 'mydata');
             
-            pre_ref_cef_info.PatientOrientation = 'HFS';
-            pre_handles = save2Disk(pre_handles, pre_ref_cef_data, size(pre_ref_cef_data), pre_ref_cef_info, 'ref_CEF_image', outputPath);
+            % Save reference CEM image to disc
+            pre_handles = save2Disk(pre_handles, pre_ref_cef_data, size(pre_ref_cef_data), pre_ref_cef_data_info, 'ref_CEF_image', outputPath);
             
             % Clear the images from handles as the reference needs to be 
             % imported as data (not image) for rigid registration
             pre_handles = Remove_all_images(pre_handles,1);
     end
     
-    % Import scanned CEF to apply median filter and erode
+    % Import scanned CEF 
     scan_CEF_imageName = 'scan_CEF';
     [scan_CEF_directory, scan_CEF_fileName, EXT] = fileparts(scanCEF_path);
     pre_handles = Import_image(scan_CEF_directory, [scan_CEF_fileName EXT],1,scan_CEF_imageName,pre_handles); %Load CEM image into handles.data
-    
-    %permute the dimension of CEM image and flip some dimension
-    %in order to get the smae orientation for the reference CT and the meausrmenet CT
-    if flipAxis
-        pre_handles.images.data{2} = flip(pre_handles.images.data{2}, flipAxis);
+    [pre_scan_cef_data, pre_scan_cef_info, ~] = Get_reggui_data(pre_handles, scan_CEF_imageName);
+
+    % Rotate the measured CT scan to place it in same orientation as the plan CEM
+    % Permute the dimension of CEM image and flip some dimension to get the same orientation for the reference CT and the mesurement CT
+    if ~isempty(flipAxis)
+        for i = 1:size(flipAxis, 1)
+            pre_handles.images.data{2} = flip(pre_handles.images.data{2}, flipAxis(i,:));
+        end
     end
     if ~isempty(permOrder)
         for i = 1:size(permOrder, 1)
@@ -671,6 +727,19 @@ function pre_handles = loadAlldatasets(scanCEF_path, CT_air_path, RSplanFileName
             pre_handles.images.info{2}.Spacing = pre_handles.images.info{2}.Spacing(permOrder(i,:));
         end
     end
-    spc = pre_handles.mydata.info{2}.Spacing;
-    pre_handles.mydata.info{2}.ImagePositionPatient = (- round(size(pre_handles.mydata.data{2}) ./2) .* spc')'; %Move origin back to middle of CEM   
+    spc = pre_handles.images.info{2}.Spacing;
+    pre_handles.images.info{2}.ImagePositionPatient = (- round(size(pre_handles.images.data{2}) ./2) .* spc')'; %Move origin back to middle of CEM 
 end
+% =========================================================================
+
+
+
+function [crop_image, crop_image_info, handles] = cropDData(image_name, scan_mask_low_thres, scan_mask_high_thres, handles)
+
+    image_mask = [image_name '_mask'];
+    %handles = AutoThreshold(image_name, [128], image_mask, handles);
+    handles = ManualThreshold(image_name, [scan_mask_low_thres scan_mask_high_thres], image_mask, handles);
+    handles = Resample_all(handles, image_mask, [0], handles.spacing,'from_mask');
+    [crop_image, crop_image_info, ~] = Get_reggui_data(handles, image_name);
+end
+% =========================================================================
