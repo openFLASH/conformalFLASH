@@ -135,7 +135,14 @@ end
 
 %Load the RT structures
 %----------------------
-[handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, ExternalROI );
+if isfield(BeamProp , 'DRPercentile')
+  %The percentile is provided. Copy it in the plan
+  [handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, ExternalROI ,BeamProp.DRPercentile);
+else
+  %No percentile provided. Will use default
+  [handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, ExternalROI );
+end
+
 ROI = [];
 Plan  = updatePlanCTparam(handles , Plan  );
 

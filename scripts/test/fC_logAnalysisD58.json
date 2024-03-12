@@ -1,7 +1,7 @@
 {
  "files" : {
    "planFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/FP-D58.dcm",
-   "RecordName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/logs/D58_700nA_20231102_024734_266.PBS.2.7.zip",
+   "RecordName" : "D:/programs/openREGGUI/REGGUI_userdata/test_data/REGGUI-QA/twiga_testing_material_flash/logs/CEM01-02-20230325_114047_977.PBS.2.7.zip",
    "rtstructFileName" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/RS1.2.752.243.1.1.20230220152044639.1200.30532.dcm",
    "CTname" : "D:/programs/openREGGUI/REGGUI_userdata/raystation/D-58/reggui_CT/reggui_CT_0001.dcm",
    "AggregatePaintings" : 0,
@@ -10,14 +10,15 @@
   },
 
   "BeamProp" : {
-    "protonsHighResDose" : 1e4,
-    "CEFDoseGrid" : [1, 1, 1],
-    "BDL" : "D:/programs/openREGGUI/flash/openMCsquare/lib/BDL/BDL_default_UN1_G0_Al_RangeShifter_tilted.txt",
-    "ScannerDirectory" : "D:/programs/openREGGUI/REGGUI/plugins/openMCsquare/lib/Scanners/default",
-    "MCsqExecPath" : "D:/programs/openREGGUI/REGGUI/plugins/openMCsquare/lib"
+    "protonsHighResDose" : 1e5,
+    "CEFDoseGrid" : [3, 3, 3],
+    "BDL" : "D:/programs/openREGGUI/flash/openMCsquare_ROT/lib/BDL/BDL_default_UN3_Al_RangeShifter_tilted.txt",
+    "ScannerDirectory" : "D:/programs/openREGGUI/flash/openMCsquare_ROT/lib/Scanners/accura",
+    "MCsqExecPath" : "D:/programs/openREGGUI/flash/openMCsquare/lib"
     },
 
   "RTstruct": {
+    "DRPercentile": 0.95,
     "ExternalROI" : "WaterCube"
   }
 

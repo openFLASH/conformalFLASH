@@ -202,7 +202,7 @@ end
 %================================================
 function [DoseOrigCT, DoseFileName , handlesDose , Pij] = getFullHighResDosemap(Plan , handles , Zdistal, outputPath , CTName , PijFlag, hCT)
 
-  FieldSize = 40; % mm This radius must be larger than the spot radius at the distal surface of PTV. Otherwise the lattice structure will be visible in the dose map
+  FieldSize = 60; % mm This radius must be larger than the spot radius at the distal surface of PTV. Otherwise the lattice structure will be visible in the dose map
 
   NbBeamlets = numel(Plan.Beams.Layers(1).SpotWeights); %Number of PBS spots in plan with energy monolayer
 

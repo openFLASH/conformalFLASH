@@ -72,6 +72,10 @@ function   [handles, Plan] = fC_logAnalysis(configFile)
 
   BeamProp = copyFields(config.BeamProp , BeamProp);
   BeamProp.CEFDoseGrid =  num2cell(BeamProp.CEFDoseGrid);
+  if isfield(config.RTstruct , 'DRPercentile')
+    %If the percentile is provided copy it.
+    BeamProp.DRPercentile = config.RTstruct.DRPercentile;
+  end
   CEMprop.makeSTL = false;
 
   %Load plan from TPS and create a MIROPT |PLan| structure with the monolayer plan
