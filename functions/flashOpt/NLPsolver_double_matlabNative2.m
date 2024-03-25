@@ -383,7 +383,7 @@ end %if (~loaded)
 % -----------------------------------------------------------------------
 function checkBackUp(x)
 
-w = x(2:end); %During the optimization, the spot weight is the weight for ALL fraction.
+w = x(2:end); %During the optimization, the spot weight is the weight for ALL fractions.
       %It is at the end of the optimization that the spot weight are recomputed per fractions
       % In SpotWeightsOptimization at line 85, the weight are divided by the number of fractions.
 

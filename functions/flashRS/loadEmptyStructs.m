@@ -1,13 +1,13 @@
-%% loadRSrtStructs
+%% loadEmptyStructs
 % Load the RT strcut that was used to create the RT plan on the Raystation
 % Update the REGGUI handles and the PLan structure and crate the ROI structure
 %
 %% Syntax
-% |[handles , Plan , ROI] = loadRSrtStructs(rtstructFileName , handles, Plan, RTstruct , DoseRate)|
+% |[handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, ExternalROI ,percentile)|
 %
 %
 %% Description
-% |[handles , Plan , ROI] = loadRSrtStructs(rtstructFileName , handles, Plan, RTstruct , DoseRate)| Description
+% |[handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, ExternalROI ,percentile)| Description
 %
 %
 %% Input arguments
@@ -21,6 +21,7 @@
 %
 % |ExternalROI| -_STRING_- Name of the RT struct with the body contour
 %
+% |percentile| -_SCLAR_- [OPTIONAL. If absent use default of DRaEstimate] The percentile to compute the percentile dose rate
 %
 %% Output arguments
 %
@@ -35,8 +36,7 @@
 %% Contributors
 % Authors : R. Labarbe (open.reggui@gmail.com)
 
-function [handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, ExternalROI )
-
+function [handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, ExternalROI ,percentile)
 
   %Load the RT struct
   if ~isempty(rtstructFileName)
@@ -57,6 +57,10 @@ function [handles , Plan ] = loadEmptyStructs( rtstructFileName, handles, Plan, 
   optFidx = 1;
   Plan.optFunction(optFidx) = createOptFunctionStruct();
   Plan.optFunction(optFidx).ROIname = Plan.ExternalROI;
+
+  if nargin >= 5
+    Plan.optFunction(optFidx).Vref = percentile;
+  end
 
 end
 

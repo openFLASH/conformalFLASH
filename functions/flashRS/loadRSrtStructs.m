@@ -78,6 +78,10 @@ for i = 1:numel(strName)
         %This is not a dose rate critical structure. Ignore it for the trajectory computation
         Plan.optFunction(i) = createOptFunctionStruct(remove_bad_chars(strName{i}) , ROI , DoseRate , false);
     end
+    if isfield(RTstruct , 'DRPercentile')
+      %Specify the percentile for the dose rate
+      Plan.optFunction(i).Vref = RTstruct.DRPercentile;
+    end
 
     if(i<numel(strName)) %Do not add EXTERNAL to the mask
         Plan.OptROIVoxels_nominal = Plan.OptROIVoxels_nominal | ROI(i).mask1D;
