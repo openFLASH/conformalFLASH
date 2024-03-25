@@ -32,8 +32,10 @@
 
 function snout = getParamSnout(snoutType)
   switch snoutType
-  case 'FLASH_SNOUT'
-    snout.snoutType = 'FLASH_SNOUT';
+  case 'FLASH_Snout_S' % latest format
+  %case 'FLASH_SNOUT' % older format
+    %snout.snoutType = 'FLASH_SNOUT'; % enable for older RSL plans
+    snout.snoutType = 'FLASH_Snout_S'; % enable for latest RSL plans
     snout.RangeShifterType = 'BINARY'; % These are slabs. So its binary: slabs in or out
     snout.RSslabThickness = sort([4 , 8 , 12 , 16]); %mm Thickness of the individual slabs of the range shifter
     snout.RangeShifterOffset = [194.5 , 177.5 , 160.5 , 143.5 , 126.5 , 109.5 , 92.5 , 75.5 , 58.5 , 41.5]; % mm The numbering start from the upstream slab. 1 is close to proton source. N is close to patient
