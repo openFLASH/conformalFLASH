@@ -188,20 +188,33 @@ end
 function hedgehog = addPrinterErrors(hedgehog , typeEr)
 
   switch typeEr
-    case 'dilate'
+    case 'dilate_sphere'
         %Uniform dilate in all direction
         NbPxl = 1; %Number of pixels of the dilation. This gives the magnitude of the printer error
         fprintf('Adding printing error. Type : %s with %d pixels \n', typeEr,NbPxl)
         se = strel('sphere',NbPxl);
         hedgehog = imdilate(hedgehog,se);
 
-    case 'erode'
+    case 'dilate_square'
+        %Uniform dilate in all direction
+        NbPxl = 3; %Number of pixels of the dilation. This gives the magnitude of the printer error. Adds 1 pixel in each direction
+        fprintf('Adding printing error. Type : %s with %d pixels \n', typeEr,NbPxl)
+        se = strel('square',NbPxl);
+        hedgehog = imdilate(hedgehog,se);
+
+    case 'erode_sphere'
         NbPxl = 1; %Number of pixels of the dilation. This gives the magnitude of the printer error
         fprintf('Adding printing error. Type : %s with %d pixels \n', typeEr,NbPxl)
         se = strel('sphere',NbPxl);
         hedgehog = imerode(hedgehog,se);
 
-    case 'TallSlim'
+      case 'erode_square'
+        NbPxl = 3; %Number of pixels of the dilation. This gives the magnitude of the printer error. Removes 1 pixel in each direction
+        fprintf('Adding printing error. Type : %s with %d pixels \n', typeEr,NbPxl)
+        se = strel('sphere',NbPxl);
+        hedgehog = imerode(hedgehog,se);
+
+      case 'TallSlim_sphere'
         %The printer makes the spikes slimer and taller than requested
         NbPxl = 2; %Number of pixels of the dilation. This gives the magnitude of the printer error
         fprintf('Adding printing error. Type : %s with %d pixels \n', typeEr,NbPxl)
@@ -228,7 +241,34 @@ function hedgehog = addPrinterErrors(hedgehog , typeEr)
           hedgehog = imdilate(hedgehog,se); %make one pixel taller towards isocentre
         end
 
-    case 'rough'
+      case 'TallSlim_square'
+        %The printer makes the spikes slimer and taller than requested
+        NbPxl = 4; %Number of pixels of the dilation. This gives the magnitude of the printer error
+        fprintf('Adding printing error. Type : %s with %d pixels \n', typeEr,NbPxl)
+        se = strel('square',NbPxl);
+        hedgehog = imerode(hedgehog,se); %Erode in all direction
+
+        k = zeros(3,3,3); %Kernel to expand in the Z direction
+        k(2,2,2)=1;
+        k(2,2,1)=1; %The isocentre is located towards z =0
+        k(2,2,3)=1;
+        se = strel(k);
+        %Cancel the erosion in the Z direction
+        for i=1:NbPxl
+          hedgehog = imdilate(hedgehog,se); %make one pixel taller towards isocentre
+        end
+
+        k = zeros(3,3,3); %Kernel to expand in the Z direction
+        k(2,2,2)=1;
+        k(2,2,1)=1; %The isocentre is located towards z =1
+        %k(2,2,3)=1; %TODO when the spike go towards the source, we should expend towards Z=3
+        %Dilate the height of the spike towards the isocentre by 3 pixels
+        se = strel(k);
+        for i=1:3
+          hedgehog = imdilate(hedgehog,se); %make one pixel taller towards isocentre
+        end
+
+      case 'rough'
         %The printer add chunk of material at different places on the spikes
         BlisterSize = 0.6; % Fraction of potential 'blister' voxels that will become actual rough surface of the spike
         NbPxl = 2; %Number of pixels of the dilation. This gives the magnitude of the printer error
@@ -241,10 +281,8 @@ function hedgehog = addPrinterErrors(hedgehog , typeEr)
         Pidx(Pidx==0)=[]; %REmove the zeros from the vecotr
         hedgehog(Pidx) = 1; %Add the rough surface to the hedgehog
 
-     otherwise
-      fprintf('No printer error added \n')
-
-
+      otherwise
+        fprintf('No printer error added \n')
   end
 
 end
