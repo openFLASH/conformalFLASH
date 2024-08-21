@@ -89,7 +89,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
 
 
     %Load the plan from disk
-    handles = Import_plan(planDir, [planFile EXT], 1, name, handles);
+    handles = Import_plan(planDir, [planFile EXT], 1, name, handles); %Import_plan only import TreatmentDeliveryType = TREATMENT and ignores SETUP beams.
     data = Get_reggui_data(handles,name,'plans');
 
 
@@ -211,13 +211,13 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
                     Plan.Beams(b).IsocenterToBlockTrayDistance = block.IsocenterToBlockTrayDistance;
               end
 
-              data = reshape(block.BlockData,2,block.BlockNumberOfPoints);
-              Plan.Beams(b).BlockData{BlckNb} = data';
+              dataBlock = reshape(block.BlockData,2,block.BlockNumberOfPoints);
+              Plan.Beams(b).BlockData{BlckNb} = dataBlock';
 
               if Plan.showGraph
                   figure(100+b)
                   hold on
-                  plot(data(1,:) , data(2,:) , '-r')
+                  plot(dataBlock(1,:) , dataBlock(2,:) , '-r')
                   hold off
                   drawnow
               end
@@ -227,10 +227,10 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         %Get snout information
         %---------------------
         Plan.Beams(b).SnoutID = monoPlan.IonBeamSequence.(itemBeam).SnoutSequence.Item_1.SnoutID;
-        % if ~strcmp(Plan.Beams(b).SnoutID , 'FLASH_SNOUT')
+        % if ~strcmp(Plan.Beams(b).SnoutID , 'FLASH_Snout_S')
         %   fprintf('SnoutID in the plan : %s \n',Plan.Beams(b).SnoutID)
         %   warning('This is not a FLASH snout. Overwriting snout ID')
-        %   Plan.Beams(b).SnoutID = 'FLASH_SNOUT';
+        %   Plan.Beams(b).SnoutID = 'FLASH_Snout_S';
         % end
         %The plan defines the snout position on the UPSTREAM side of the aperture block
         Plan.Beams(b).SnoutPosition = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.SnoutPosition;
@@ -279,7 +279,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         %--------------------------
 
         %The hedgehog is defined in a private tag in the plan
-        itemCEM = sprintf('Item_%i',b);
+        itemCEM = sprintf('Item_%i',1);
         Plan.Beams(b).NumberOfRidgeFilters = monoPlan.IonBeamSequence.(itemBeam).NumberOfRangeModulators;
         if Plan.Beams(b).NumberOfRidgeFilters
             %There is a range modulator
@@ -287,13 +287,15 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             Plan.Beams(b).RangeModulator.AccessoryCode = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).AccessoryCode;
             Plan.Beams(b).RangeModulator.RangeModulatorID = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).RangeModulatorID;
             Plan.Beams(b).RangeModulator.RangeModulatorType = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).RangeModulatorType;
-            if ~strcmp(Plan.Beams(b).RangeModulator.RangeModulatorType , '3D_PRINTED')
+            if ~strcmp(Plan.Beams(b).RangeModulator.RangeModulatorType , '3D_PRINTED') & ~strcmp(Plan.Beams(b).RangeModulator.RangeModulatorType , 'FIXED')
+              %In the first software reelase, the ConformalFLASH plan plans were exported with '3D_PRINTED'
+              %In the new software release, the plans are exported with 'FIXED' because '3D_PRINTED' is not in the list of Defined Terms of the DICOM standard and Aria reject it
               Plan.Beams(b).RangeModulator.RangeModulatorType
               error('Wrong type of ConformalFLASH energy modulator')
             end
 
-            Plan.Spike.MaterialID = strip(Plan.Spike.MaterialID);
             Plan.Spike.MaterialID = remove_bad_chars(getPrivateTag('300D' , '0018' , 'IBA'  , monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorMaterialID'));
+            Plan.Spike.MaterialID = strip(Plan.Spike.MaterialID);
             if (strcmp(Plan.Spike.MaterialID(end),"_"))
                 Plan.Spike.MaterialID = Plan.Spike.MaterialID(1:end-1);
             end
@@ -316,7 +318,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             if(Modulator3DPixelSpacing(1) ~= Modulator3DPixelSpacing(2))
               error('Pixels of the elevation map are not square')
             end
-            Plan.Beams.RangeModulator.Modulator3DPixelSpacing = Modulator3DPixelSpacing;
+            Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing = Modulator3DPixelSpacing;
 
             %Convert the 3D elevation map from DICOM file into a 3D mask.
             %elvMap2mask takes care of the flip of the Y axis

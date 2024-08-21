@@ -77,7 +77,7 @@ function param = getMachineParam(BDL)
             % The delivery of a PBS spot requires at least 5 cycle. ScanAlgo reduce the spot current to be sure to deliver the spot in 5 cycles
 
         %Parameters of the FLASH accessory holder
-        param.snout = getParamSnout('FLASH_SNOUT');
+        param.snout = getParamSnout('FLASH_Snout_S');
 
     case 'PROTEUSone'
         param.MAXcurrent = 1; %uA
@@ -86,7 +86,7 @@ function param = getMachineParam(BDL)
         param.ScanSpeed = 8000; %Approximate scanning speed (mm/s) to move from one spot location to another spot location
 
         %Parameters of the FLASH accessory holder
-        param.snout = getParamSnout('FLASH_SNOUT');
+        param.snout = getParamSnout('FLASH_Snout_S');
 
     otherwise
       MachineType

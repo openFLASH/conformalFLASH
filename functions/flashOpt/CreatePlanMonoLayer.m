@@ -156,10 +156,10 @@ function PlanMono = CreatePlanMonoLayer(Plan , filename , protonsFullDose)
         % Indeed, the CEF is doing both compensator and modulator.
         PlanMono.Beams(b).NumberOfRangeModulators = 1;
         PlanMono.Beams(b).RangeModulator.IBA_ConformalFLASH_energy_modulator = 'IBA'; %Private Creator identifier
-        PlanMono.Beams(b).RangeModulator.RangeModulatorType = '3D_PRINTED';
+        %PlanMono.Beams(b).RangeModulator.RangeModulatorType = '3D_PRINTED';
+        PlanMono.Beams(b).RangeModulator.RangeModulatorType = 'FIXED';
                                                         %NB: The term '3D_PRINTED' is not in the list of Defined Terms of the DICOM standard.
-                                                        %We define a new term as none of these are reflecting the situation of a “variable modulation according to position��?
-                                                        %If there is a term commonly or most used for this in the scientific literature, it may be worth to use it. I have seen 3D or 3D-printed for example.
+                                                        %Aria reject '3D_PRINTED'. We will use 'FIXED' instead
 
         %Create private DICOM tags in order to store the description of the spikes of the hedhgehog CEF
         PlanMono.Beams(b).RangeModulator.Modulator3DPixelSpacing = Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing;
