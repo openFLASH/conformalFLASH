@@ -38,7 +38,7 @@ function [spotSpacing , spotSigma] = getOptimumSpotSpacing(handles , Plan , b , 
   Plan.Beams.Layers.Energy = maxE; %One single energy, the maximum one
   Plan.Beams.Layers.SpotWeights = 1; %One single spot with a weight of 1
   Plan.Beams.Layers.SpotPositions = [0,0]; % The single spot is at isocentre
-  Plan.fractions = 1; % use fraction = 1 for pseudo-plan
+  Plan.fractions = 1; % use fraction = 1 for pseudo-plan. there is one single beam
   Plan.output_path = fullfile(Plan.output_path,'SingleSpot');
   if (~exist(Plan.output_path))
     mkdir (Plan.output_path)

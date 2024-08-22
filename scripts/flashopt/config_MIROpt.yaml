@@ -61,7 +61,7 @@ Plan:
     addPrinterErrors : false  # Type of error to introduce: false , 'dilate' , 'erode' , 'TallSlim','rough'
     ApertureBlock : 1         # 0 = do not use an aperture for this beam 1 = use an aperture for the beam
     AirGap : 0               # Air gap (mm) between skin and aperture block
-    SnoutID : FLASH_SNOUT      # Snout type
+    SnoutID : FLASH_Snout_S      # Snout type
   TargetROI: ct_PTV               # name for target ROI
   ExternalROI: ct_BODY            # name for external ROI - the body contour
   optFunction:
@@ -112,7 +112,7 @@ Plan:
     - []                     # Path phase 2. You can input as many phases as needed
     DirDeformFields:         # Path to deformation fields (given by REGGUI workflow)
     Num_4D_Phases: 10        # Number of phases in 4DCT. Must coincide with the number of entries in the Dir4DCT list above.
-  fractions: 1               # Number of fractions for the treatment. The final spot weights vector will be divided by this number (w_per_fraction). For FLASH, this is the number of fraction PER beam; the total number of fraction is #beam .* |fractions| as one beam is delivered per fraction
+  fractions: 1               # Number of fractions for the treatment. The final spot weights vector will be divided by this number (w_per_fraction). These is one beam in the plan, so there is one element in the fraction vector
   Inozzle: 500               # Nozzle current (nA) during spot delivery
   protonsBeamlet: 5e4        # Number of protons per beamlet. Default 5e4
   protonsFullDose: 1e4       # Number of protons in the full target. Default 1e7

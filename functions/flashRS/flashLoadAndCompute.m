@@ -28,7 +28,7 @@
 %
 % |BeamProp| -_STRUCTURE_- INformation about beam properties
 %   *  |BeamProp.Inozzle| -_SCALAR_- Nozzle average current (nA)
-%   *  |BeamProp.fractions| -_SCALAR_- Number of fractions for the treatment.
+%   *  |BeamProp.fractions| -_SCALAR VECTOR_- |fractions(b)| Number of fraction to deliver the b-th beam.
 %   *  |BeamProp.BDL| -_STRING_- Beam data library. Name of the folder in REGGUI\plugins\openMCsquare\lib\BDL
 %   *  |BeamProp.ScannerDirectory| - _STRING_ - Name of the folder containing the definition of the CT scanner properties in MCsquare in folder "plugins\openMCsquare\lib\Scanners"
 %   *  |BeamProp.MachineType| - _STRING_ - Description of the treatment machine (PROTEUSone , PROTEUSplus)
@@ -167,7 +167,8 @@ else
   Plan.SpotTrajectoryInfo.weight2spot = weight2spot;
 
   for b = 1:numel(Plan.Beams)
-    Plan.SpotTrajectoryInfo.beam{b}.sobpSequence  = weight2spot(:,2);
+
+    Plan.SpotTrajectoryInfo.beam{b}.sobpSequence  = weight2spot(weight2spot(:,1)==b,2); %Take the spot only for the selected beam
 
     if isfield(Plan.Beams(b).Layers ,'time') && isfield(Plan.Beams(b).Layers ,'duration')
 
@@ -183,7 +184,7 @@ else
 
     else
       %No spot timing provided. We will compute the trajectory using the simple model or scanAlgo
-      Plan.SpotTrajectoryInfo.beam{b}.Nmaps = getTopologicalMaps(sobpPosition{b} , Plan.BDL , Plan.Beams(b).spotSigma(b) , scanAlgoGW); %Get the inital topological map;
+      Plan.SpotTrajectoryInfo.beam{b}.Nmaps = getTopologicalMaps(sobpPosition{b} , Plan.BDL , Plan.Beams(b).spotSigma , scanAlgoGW); %Get the inital topological map;
       Plan.SpotTrajectoryInfo.TimingMode = 'Model'; %The spot timing is from a model
     end
 
@@ -191,6 +192,7 @@ else
       figure(100+b)
       hold on
       plot(Plan.SpotTrajectoryInfo.sobpPosition{b}(:,1) , Plan.SpotTrajectoryInfo.sobpPosition{b}(:,2) , '-k')
+      drawnow
     end
   end
 end
@@ -200,20 +202,13 @@ end
 % Compute the dose through the CEF using the high resolution CT scan
 %Save the high resolution dose map of each beamlet in separate files
 fprintf('Computing the dose map in high resolution CT scan \n')
-for b = 1:numel(Plan.Beams)
-  %TODO deal with plan contianing setup beams
-  fprintf('Beam %d \n' , b)
-
-  %Compute the dose of each beamlet
-  path2beamResults = getOutputDir(Plan.output_path , b);
-  [Plan , MinDose , MaxDose] = computeDoseWithCEF(Plan , path2beamResults , handles , Plan.CTname , true);
-  movefile (fullfile(Plan.output_path,'Outputs','Plan.dcm') , fullfile(path2beamResults,'Plan_CEM.dcm'));
-end
+[Plan , MinDose , MaxDose] = computeDoseWithCEF(Plan , Plan.output_path , handles , Plan.CTname , true);
+movefile (fullfile(Plan.output_path,'Outputs','Plan.dcm') , fullfile(output_path,'Plan_CEM.dcm'));
 
 %Compute the dose rate and save the results to disk
 %--------------------------------------------------
-
 %Compute dose rate in all structures
 [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI);
+
 
 end

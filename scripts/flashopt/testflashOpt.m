@@ -18,4 +18,4 @@ BeamProp.MCsqExecPath = 'D:\programs\openREGGUI\REGGUI\plugins\openMCsquare\lib'
 CEMprop.makeSTL = false;
 
 
-[handles, Plan]                   = flashLoadAndCompute (planFileName, CTname , rtstructFileName , output_path , BeamProp , ExternalROI, CEMprop);
+[handles, Plan] = flashLoadAndCompute (planFileName, CTname , rtstructFileName , output_path , BeamProp , ExternalROI, CEMprop);

@@ -24,7 +24,7 @@
 %
 % |BeamProp| -_STRUCTURE_- INformation about beam properties
 %   *  |BeamProp.Inozzle| -_SCALAR_- Nozzle average current (nA)
-%   *  |BeamProp.fractions| -_SCALAR_- Number of fractions for the treatment.
+%   *  |BeamProp.fractions|  -_SCALAR VECTOR_- |fractions(b)| Number of fraction to deliver the b-th beam.
 %   *  |BeamProp.BDL| -_STRING_- Beam data library. Name of the folder in REGGUI\plugins\openMCsquare\lib\BDL
 %   *  |BeamProp.ScannerDirectory| - _STRING_ - Name of the folder containing the definition of the CT scanner properties in MCsquare in folder "plugins\openMCsquare\lib\Scanners"
 %   *  |BeamProp.MachineType| - _STRING_ - Description of the treatment machine (PROTEUSone , PROTEUSplus)

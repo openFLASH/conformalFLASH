@@ -5,7 +5,10 @@
 %       * dose averaged dose rate |DADR| [3]
 %
 % The dose rate indicators are computed per beam.
-% Note that the spot weights provided to the function are spot weight for the TOTAL dose (sum of all fractions)
+% Note that the spot weights provided to the function are spot weight for the TOTAL dose (sum of all fractions).
+% Typically in a treatment plan, the weight (meterset) are defined per fraction. However, getDRa.m requires the total weight (for all fractions) because it is intensily called
+% by NLPsolver_double_matlabNative2.m during the plan optimisation. And during thep lan optimisation, the weight vector ('x' in NLPsolver_double_matlabNative2.m) represents
+% the total weight (sum of all fraction). so, getDRa.m receives the total weight from NLPsolver_double_matlabNative2.m and it then divides by the number of fraction of the beam.
 %
 % The dose rate requires the spot duration and the sweep time between spots. The spot duration is computed using the spot |weightIN|.
 % The sweep time between spot depends on the sequence of spots (depending on the wpot weight, some spot may be removed from the sequence)
@@ -52,7 +55,7 @@
 %
 % |Plan| - _struct_ - MIROpt structure where all the plan parameters are
 % stored. The following data must be present in the structure:
-%  * |Plan.fractions| -_SCALAR_- Number of fraction to deliver the dose. Used to compute the dose per fraction (and hence dose rate per fraction)
+%  * |Plan.fractions| -_SCALAR VECTOR_- |Plan.fractions(b)| Number of fraction to deliver the b-th beam.
 %  * |Plan.Inozzle| -_SCALAR_- Nozzle current (nA) during spot delivery
 %  * |Plan.Beams(b).spotSigma| -_SCALAR_- Spot lateral sigma (mm) at maximum of deepest Bragg peak along the optical axis
 %  * |Plan.DoseGrid.size| -_SCALAR VECTOR_- [Nx, Ny, Nz] Number of pixels of the Dose map along each dimension
@@ -123,13 +126,9 @@ if isempty(plotID)
   plotID.SaveHisto = false;
 end
 
-
 sobp = SpotTrajectoryInfo.sobpPosition;
 weight2spot = SpotTrajectoryInfo.weight2spot;
-fractions = Plan.fractions;
 Inozzle = Plan.Inozzle .* 1e-9; % nA -> A Current in nozzle
-weightIN = weightIN' ./ fractions; %Compute MU PER FRACTION because the dose rate is computed per fraction. Make it a sparse matrix
-
 
 dr = zeros(length(sobp),1); %dr(b) average of the percentile dose rate for the b-th beam
 drm = zeros(length(sobp),1); %drm(b) Median of the percentile dose rate for the b-th beam
@@ -180,9 +179,11 @@ for b = 1:length(sobp) %Loop for each beam
 
           if (size(weightIN(spotIndices),1)==1)
             %transpose weights
-            tmp = full(Pij(:,spotIndices)) * full(weightIN(spotIndices)'); %Compute dose only for voxels in mask and above dose threshold
+            tmp = full(Pij(:,spotIndices)) * full(weightIN(spotIndices)') ./ Plan.fractions(b); %Compute dose only for voxels in mask and above dose threshold
+                                                                  %Compute MU PER FRACTION (for the chosen beam) because the dose rate is computed per fraction.
           else
-            tmp = full(Pij(:,spotIndices)) * full(weightIN(spotIndices)); %Compute dose only for voxels in mask and above dose threshold
+            tmp = full(Pij(:,spotIndices)) * full(weightIN(spotIndices)) ./ Plan.fractions(b); %Compute dose only for voxels in mask and above dose threshold
+                                                                  %Compute MU PER FRACTION (for the chosen beam) because the dose rate is computed per fraction.
           end
 
           Dose(:,beamletIndex) = sparse(tmp(T)); %Select only the pixel above the minimum dose |Dref|
