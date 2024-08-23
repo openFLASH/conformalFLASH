@@ -32,6 +32,7 @@
 
 function snout = getParamSnout(snoutType)
   switch snoutType
+
   case 'FLASH_Snout_S'
     snout.snoutType = 'FLASH_Snout_S';
     snout.RangeShifterType = 'BINARY'; % These are slabs. So its binary: slabs in or out
