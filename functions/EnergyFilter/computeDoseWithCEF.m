@@ -796,11 +796,11 @@ function handlesHR = setRangeShifterinHRCT(handlesHR , PlanHR , hrCTName)
           %%Compute Zg of upstream side of range shifter
           ZgUp =  PlanHR.Beams.RSinfo.IsocenterToRangeShifterDistance +  ... %Donwstream side of slab close to isocenter
                  PlanHR.Beams.RSinfo.SlabOffset(slab) - ...  %distance from downstream side of 1st slab to upstream side of |slab|
-                 handlesHR.spacing(3) ./2 ; %Remove half a pixel to getthe coordinate of the center of last pixel
+                 handlesHR.spacing(2) ./2 ; %Remove half a pixel to getthe coordinate of the center of last pixel
 
           %+Zg is aligned with -Y CT
           [ ~, ~ , Zup ]= DICOM2PXLindex([] , handlesHR.spacing , handlesHR.origin , true, 0 , -ZgUp , 0 );
-          ZgDwn = ZgUp -  PlanHR.Beams.RSinfo.RSslabThickness(slab) + handlesHR.spacing(3) ./2; %Add half a pixel to get coordinate of center of first pixel
+          ZgDwn = ZgUp -  PlanHR.Beams.RSinfo.RSslabThickness(slab) + handlesHR.spacing(2) ./2; %Add half a pixel to get coordinate of center of first pixel
           [ ~, ~ , Zdn ]= DICOM2PXLindex([] , handlesHR.spacing , handlesHR.origin , true, 0 , -ZgDwn , 0 );
 
           stp = 1 .* sign(Zup-Zdn) ;
