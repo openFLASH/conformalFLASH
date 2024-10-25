@@ -21,7 +21,7 @@
 % |Plan| -_STRUCTURE_- Structure defining a multi energy layer PBS plan
 %  * |Plan.name| -_STRING_- plan name tag inside the plan file
 %  * |Plan.TargetROI_ID| -_SCALAR_- Index of the target volume, as it %   appears in the RTSTRUCT file.
-%  * |Plan.fractions| -_SCALAR_- Number of fractions for the treatment.
+%  * |Plan.fractions| -_SCALAR VECTOR_- |Plan.fractions(b)| Number of fraction to deliver the b-th beam.
 %  * |Plan.Machine| -_STRING_- Name of the treatment machine. Must be defined in Beam Data Library
 %  * |Plan.CTinfo| -_STRUCTURE_- DICOM header of the CT scan
 %  * |Plan.output_path| -_STRING_- Folder in which the results are saved
@@ -110,6 +110,7 @@ function PlanMono = CreatePlanMonoLayer(Plan , filename , protonsFullDose)
   end
 
   %Create a beam with a single energy layer
+  %Loop for every beam
   for b = 1: size(Plan.Beams,2)
 
       snout = getParamSnout(Plan.Beams(b).SnoutID);
@@ -156,10 +157,10 @@ function PlanMono = CreatePlanMonoLayer(Plan , filename , protonsFullDose)
         % Indeed, the CEF is doing both compensator and modulator.
         PlanMono.Beams(b).NumberOfRangeModulators = 1;
         PlanMono.Beams(b).RangeModulator.IBA_ConformalFLASH_energy_modulator = 'IBA'; %Private Creator identifier
-        PlanMono.Beams(b).RangeModulator.RangeModulatorType = '3D_PRINTED';
+        %PlanMono.Beams(b).RangeModulator.RangeModulatorType = '3D_PRINTED';
+        PlanMono.Beams(b).RangeModulator.RangeModulatorType = 'FIXED';
                                                         %NB: The term '3D_PRINTED' is not in the list of Defined Terms of the DICOM standard.
-                                                        %We define a new term as none of these are reflecting the situation of a “variable modulation according to position��?
-                                                        %If there is a term commonly or most used for this in the scientific literature, it may be worth to use it. I have seen 3D or 3D-printed for example.
+                                                        %Aria reject '3D_PRINTED'. We will use 'FIXED' instead
 
         %Create private DICOM tags in order to store the description of the spikes of the hedhgehog CEF
         PlanMono.Beams(b).RangeModulator.Modulator3DPixelSpacing = Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing;

@@ -52,7 +52,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
     handles.dataPath = planDir;
     name = 'FLASHplan';
 
-    %Load the plan from disk
+    %Load the plan from disk. Keep all the DICOM tags
     setFlashDICOMdict(); %If not already defined, load the DICOM dictionary with private FLASH tags
     monoPlan = dicominfo(planFileName);
 
@@ -88,27 +88,58 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
     end
 
 
-    %Load the plan from disk
-    handles = Import_plan(planDir, [planFile EXT], 1, name, handles);
+    %Load the plan from disk. Use a REGGUI function that will do some processing ofthe data to put it at the REGGUI format
+    handles = Import_plan(planDir, [planFile EXT], 1, name, handles); %Import_plan only import TreatmentDeliveryType = TREATMENT and ignores SETUP beams.
     data = Get_reggui_data(handles,name,'plans');
-
 
     %Analyse the content of the FLASH plan and convert into a MIROPT plan
     NbBeams = numel(data);
 
-    Plan.fractions = monoPlan.FractionGroupSequence.Item_1.NumberOfFractionsPlanned; %Number of fractions for the treatment. The final spot weights vector will be divided by this number
+    for b = 1:NbBeams
+      %Create a list with the beam name as read by Reggui importer
+      BeamNameListReggui{b} = data{b}.name;
+    end
+
+    for b = 1:length(fieldnames(monoPlan.IonBeamSequence))
+      %Create list of beam name and beam number as read by DICOM importer
+      itemBeam = sprintf('Item_%i',b);
+      BeamNumberList(b) = monoPlan.IonBeamSequence.(itemBeam).BeamNumber;
+      BeamNameListPlan{b} =  monoPlan.IonBeamSequence.(itemBeam).BeamName;
+    end
+
+    %Determine the number of fractions in which each beam is delivered
+    %-----------------------------------------------------------------------
+    %The ConformalFLASH beams are delivered as one beam per fraction.
+    %Plan.fractions(b) : Number of fractions for the b-th beam. The spot weights vector for the beam define the weight per fraction
+    %
+    %This is encoded in the plan in one of the following methods:
+    % METHOD 1:
+    % .........
+    % Each beam is duplicated in IonBeamSequence the the number of times it will be delivered. The spot weight of each duplicated beam is divided (at the TPS)
+    % by the number of duplications so that the dose adds up to the correct value
+    % "FractionSequenceGroup" contains one element which references all the beams to be delivered. "NumberOfFractionPLanned" for this sequence is equal to 1
+    % We just need to compute the dose for each beam, with a fraction of 1 each time.
+    Plan.fractions = zeros(1,NbBeams);
+    for FracG = 1:length(fieldnames(monoPlan.FractionGroupSequence))
+      %Loop for every fraction defined in the plan
+      itemFrac = sprintf('Item_%i',FracG);
+      NbFraction = monoPlan.FractionGroupSequence.(itemFrac).NumberOfFractionsPlanned; %Number of fraction for this item
+      BeamSequence = monoPlan.FractionGroupSequence.(itemFrac).ReferencedBeamSequence;
+      %Loop for every beam reference in the fraction
+      for rb = 1:length(fieldnames(BeamSequence))
+        itemRefBeam = sprintf('Item_%i',rb);
+        RefBeamNb = monoPlan.FractionGroupSequence.(itemFrac).ReferencedBeamSequence.(itemRefBeam).ReferencedBeamNumber; %Beam number reference in DICOM plan
+        b = find(BeamNumberList == RefBeamNb); %Find the index in the list that has that beam number
+        if ~isempty(b)
+          %Add the number of fraction only if this is a treatment beam that was loaded by Reggui
+          bReggui = strmatch(BeamNameListPlan{b} , BeamNameListReggui ); %Find the beam that has the same name and was loaded by REGGUI
+          Plan.fractions(bReggui) = Plan.fractions(bReggui) + NbFraction; %Plan.fractions(b) Number of fractions for the b-th beam. The final spot weights vector for that beam will be divided by this number
+        end %if ~isempty(b)
+      end %for rb
+    end %for FracG
+
     Plan.name = monoPlan.RTPlanLabel;
     Plan.FileName = 'Plan'; %default value for the file name of the plan
-
-
-    %Find the ROI number of the target structure for this plan
-    % for d = 1:numel(monoPlan.DoseReferenceSequence)
-    %   itemDose = sprintf('Item_%i',d);
-    %   if strcmp(monoPlan.DoseReferenceSequence.(itemDose).DoseReferenceType , 'TARGET')
-    %     Plan.TargetROI_ID = monoPlan.DoseReferenceSequence.(itemDose).ReferencedROINumber;
-    %     break;
-    %   end
-    % end
 
     %Construct the beam structure
     %------------------------------
@@ -211,13 +242,13 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
                     Plan.Beams(b).IsocenterToBlockTrayDistance = block.IsocenterToBlockTrayDistance;
               end
 
-              data = reshape(block.BlockData,2,block.BlockNumberOfPoints);
-              Plan.Beams(b).BlockData{BlckNb} = data';
+              dataBlock = reshape(block.BlockData,2,block.BlockNumberOfPoints);
+              Plan.Beams(b).BlockData{BlckNb} = dataBlock';
 
               if Plan.showGraph
                   figure(100+b)
                   hold on
-                  plot(data(1,:) , data(2,:) , '-r')
+                  plot(dataBlock(1,:) , dataBlock(2,:) , '-r')
                   hold off
                   drawnow
               end
@@ -227,10 +258,10 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         %Get snout information
         %---------------------
         Plan.Beams(b).SnoutID = monoPlan.IonBeamSequence.(itemBeam).SnoutSequence.Item_1.SnoutID;
-        % if ~strcmp(Plan.Beams(b).SnoutID , 'FLASH_SNOUT')
+        % if ~strcmp(Plan.Beams(b).SnoutID , 'FLASH_Snout_S')
         %   fprintf('SnoutID in the plan : %s \n',Plan.Beams(b).SnoutID)
         %   warning('This is not a FLASH snout. Overwriting snout ID')
-        %   Plan.Beams(b).SnoutID = 'FLASH_SNOUT';
+        %   Plan.Beams(b).SnoutID = 'FLASH_Snout_S';
         % end
         %The plan defines the snout position on the UPSTREAM side of the aperture block
         Plan.Beams(b).SnoutPosition = monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1.SnoutPosition;
@@ -279,7 +310,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
         %--------------------------
 
         %The hedgehog is defined in a private tag in the plan
-        itemCEM = sprintf('Item_%i',b);
+        itemCEM = sprintf('Item_%i',1);
         Plan.Beams(b).NumberOfRidgeFilters = monoPlan.IonBeamSequence.(itemBeam).NumberOfRangeModulators;
         if Plan.Beams(b).NumberOfRidgeFilters
             %There is a range modulator
@@ -287,13 +318,15 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             Plan.Beams(b).RangeModulator.AccessoryCode = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).AccessoryCode;
             Plan.Beams(b).RangeModulator.RangeModulatorID = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).RangeModulatorID;
             Plan.Beams(b).RangeModulator.RangeModulatorType = monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM).RangeModulatorType;
-            if ~strcmp(Plan.Beams(b).RangeModulator.RangeModulatorType , '3D_PRINTED')
+            if ~strcmp(Plan.Beams(b).RangeModulator.RangeModulatorType , '3D_PRINTED') & ~strcmp(Plan.Beams(b).RangeModulator.RangeModulatorType , 'FIXED')
+              %In the first software reelase, the ConformalFLASH plan plans were exported with '3D_PRINTED'
+              %In the new software release, the plans are exported with 'FIXED' because '3D_PRINTED' is not in the list of Defined Terms of the DICOM standard and Aria reject it
               Plan.Beams(b).RangeModulator.RangeModulatorType
               error('Wrong type of ConformalFLASH energy modulator')
             end
 
-            Plan.Spike.MaterialID = strip(Plan.Spike.MaterialID);
             Plan.Spike.MaterialID = remove_bad_chars(getPrivateTag('300D' , '0018' , 'IBA'  , monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM) , 'ModulatorMaterialID'));
+            Plan.Spike.MaterialID = strip(Plan.Spike.MaterialID);
             if (strcmp(Plan.Spike.MaterialID(end),"_"))
                 Plan.Spike.MaterialID = Plan.Spike.MaterialID(1:end-1);
             end
@@ -307,8 +340,6 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             ModulatorPixelSpacing = flip(ModulatorPixelSpacing,2); %Stored in DICOM as [Y,X]
 
             %Define Z resolution: this is the smallest dZ step between two terraces of the tower
-            %Z = getPrivateTag('300D' , '0010' , 'IBA'  ,monoPlan.IonBeamSequence.(itemBeam).RangeModulatorSequence.(itemCEM), 'ModulatorThicknessData');
-            %dZ = double(min(diff(unique(Z)))); %Smallest Z step in the elevation map
             z_unif_val = 1; % we consider 1 mm as uniform step value in tower
             Modulator3DPixelSpacing = round(double([ModulatorPixelSpacing', z_unif_val]),1); %| -_SCALAR VECTOR_- |CompensatorPixelSpacing = [x,y,z]| Pixel size (mm) in the plane of the CEF for the |CompensatorThicknessData| matrix in the plane of the CEM
             fprintf('CEM pixel size from Dicom plan : (%3.1f, %3.1f, %3.1f) mm \n',Modulator3DPixelSpacing(1),Modulator3DPixelSpacing(2),Modulator3DPixelSpacing(3))
@@ -316,7 +347,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             if(Modulator3DPixelSpacing(1) ~= Modulator3DPixelSpacing(2))
               error('Pixels of the elevation map are not square')
             end
-            Plan.Beams.RangeModulator.Modulator3DPixelSpacing = Modulator3DPixelSpacing;
+            Plan.Beams(b).RangeModulator.Modulator3DPixelSpacing = Modulator3DPixelSpacing;
 
             %Convert the 3D elevation map from DICOM file into a 3D mask.
             %elvMap2mask takes care of the flip of the Y axis
@@ -347,7 +378,7 @@ function [handles, Plan] = parseFLASHplan(planFileName , Plan, handles)
             ModulatorOrigin(2) = Plan.Beams(b).RangeModulator.ModulatorOrigin(2);
             X = (X-1) .* ModulatorPixelSpacing(1) + ModulatorOrigin(1);
             Y = (Y-1) .* ModulatorPixelSpacing(2) + ModulatorOrigin(2);
-            CEMcontourPlot(50 , X , Y, CEMThicknessData , Plan.Beams(b).BlockData, Plan.Beams(b).VDSA , Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance);
+            CEMcontourPlot(48+b*2 , X , Y, CEMThicknessData , Plan.Beams(b).BlockData, Plan.Beams(b).VDSA , Plan.Beams(b).RangeModulator.IsocenterToRangeModulatorDistance);
 
 
             if isfield(monoPlan.IonBeamSequence.(itemBeam).IonControlPointSequence.Item_1, 'RangeModulatorSettingsSequence')

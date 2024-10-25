@@ -82,7 +82,7 @@ function CEMcontourPlot(fig , Xvec, Yvec, CEFelevation , BlockData , VDSA , Isoc
 %   grid on
 %   drawnow
 
-  figure(fig+2)
+  figure(fig+1)
   tmp = flip(CEFelevation',1);
   tmp = flip(tmp,1);
   h = bar3(Yvec , tmp , 1 , 'y');

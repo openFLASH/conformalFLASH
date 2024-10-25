@@ -44,7 +44,7 @@
 %         * |Nmaps.NeighbourghTimeMap| -_SCALAR MATRIX_- |NeighbourghTimeMap(d,i)| Time (ms) required to go from spot d to spot i
 %
 % |Plan| - _struct_ - MIROpt structure where all the plan parameters are stored. The following data must be present in the structure:
-%  * |Plan.fractions| -_SCALAR_- Number of fraction to deliver the dose. Used to compute the dose per fraction (and hence dose rate per fraction)
+%  * |Plan.fractions| -_SCALAR VECTOR_- |Plan.fractions(b)| Number of fraction to deliver the b-th beam. Used to compute the dose per fraction (and hence dose rate per fraction)
 %  * |Plan.Inozzle| -_SCALAR_- Nozzle current (nA) during spot delivery
 %  * |Plan.Beams(b).spotSigma| -_SCALAR_- Spot lateral sigma (mm) at maximum of deepest Bragg peak along the optical axis
 %  * |Plan.DoseGrid.size| -_SCALAR VECTOR_- [Nx, Ny, Nz] Number of pixels of the Dose map along each dimension
@@ -88,12 +88,10 @@ function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI, 
 
 
     %Construct the vector of SOBP weights from the content of the plan
-    w = plan2weight(Plan); %This is the spot weight PER FRACTION
-
+    [~, w] = plan2weight(Plan); %This is the spot weight, sul of all fractions
     %In SpotWeightsOptimization at line 85, the weight are divided by the number of fractions.
     %But getDRa expects the total dose, for whole plan
     %So we must rescale the weight for whole treatment
-    w = w .* Plan.fractions;
 
     %Compute the total dose delivered to a voxel.
     %This will be used for the dose threshold in the dose rate computation
@@ -152,7 +150,7 @@ function [handles, doseRatesCreated] = ComputeFinalDoseRate(Plan, handles, ROI, 
             for b = 1:length(DRaStru)
               %Loop for each beam
               path2beamResults = getOutputDir(Plan.output_path , b);
-              planFullPath = fullfile(path2beamResults,'Plan');
+              planFullPath = fullfile(Plan.output_path ,'Plan');
 
               %Save the percentile dose rate
               [handles, doseRateName] = save2Disk(handles, DRaStru{b}, Plan.DoseGrid.size, Plan.CTinfo, ['DRprct_beam_',num2str(b),'_in_' , Plan.optFunction(optFidx).ROIname], path2beamResults , planFullPath ,'PERCENTILE');
