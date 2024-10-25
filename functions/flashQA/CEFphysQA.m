@@ -212,7 +212,6 @@ handles = loadAlldatasets(scanCEF_path , CT_air_path , RSplanFileName , outputPa
 % Save scan to disk
 handles = save2Disk(handles, scan_cef_data, size(scan_cef_data), scan_cef_info, 'scan_CEF_image', outputPath);           
 
-
 % Import ref CEF
 ref_CEF_imageName = 'air_CT';
 [ref_cef_data, ~, ~] = Get_reggui_data(handles, ref_CEF_imageName);
@@ -230,6 +229,9 @@ fprintf('Computing rigid registration between scan (fixed) and reference (moving
 ref_rigid_def = 'ref_rigid_def';
 ref_rigid_trans = 'ref_rigid_trans';
 handles = Registration_ITK_rigid_multimodal(scan_CEF_imageName, ref_CEF_imageName, ref_rigid_def, ref_rigid_trans, handles);
+%handles = Registration_rigid(scan_CEF_imageName, ref_CEF_imageName, ref_rigid_def, ref_rigid_trans, 3, 'ssd', handles);
+%handles = Data_deformation(ref_CEF_imageName, ref_rigid_trans, ref_rigid_def, handles); 
+%handles = Data2image(ref_CEF_imageName, ref_rigid_def, handles);
 
 [ref_rigid_def_data, ref_rigid_def_info, ~] = Get_reggui_data(handles, ref_rigid_def);
 
@@ -376,8 +378,8 @@ if(geomGammaIndexAnalysis)
     contourf(gamma,100,'LineColor','none');
     colorbar;
     clim([0 5]); % limited to meaningful gamma index of 2. The actual values may go higher in certain areas...
-    xlabel('X (mm)');
-    ylabel('Y (mm)');
+    xlabel('Y (mm)');
+    ylabel('X (mm)');
     title('Gamma index (scan - ref) Z direction');
     xticklabels(xticks * pxlSizeXY)
     yticklabels(yticks * pxlSizeXY)
@@ -543,8 +545,8 @@ if (weplGammaIndexAnalysis)
     figure(1005);
     contourf(squeeze(WEPL_diff_2Dmap),100,'LineColor','none');
     colorbar;
-    xlabel('X (mm)');
-    ylabel('Y (mm)');
+    xlabel('Y (mm)');
+    ylabel('X (mm)');
     title('WET difference Z direction (scan - ref)(mm)');
     xticklabels(xticks * pxlSizeXY)
     yticklabels(yticks * pxlSizeXY)
@@ -664,18 +666,27 @@ function pre_handles = loadAlldatasets(scanCEF_path, CT_air_path, RSplanFileName
             Plan.showGraph = 'false';
             Plan.CTname = air_CT_imageName;
             [~, Plan] = parseFLASHplan(RSplanFileName , Plan , pre_handles);
+
+            HUair =  getMaterialPropCT('Schneider_Air' , Plan.ScannerDirectory ) + 1; %Hounsfield unit associated to air in the material file
+            HUcem =  getMaterialPropCT(Plan.Spike.MaterialID , Plan.ScannerDirectory) +1 ; %Hounsfield unit associated to CEM in the material file
             
+
             pre_handles.origin(2) = -Plan.Beams.RangeModulator.IsocenterToRangeModulatorDistance; %Move CT scan to the position of the CEM, to save memory space
-            
+                       
             Plan.Beams.GantryAngle = 0;
             Plan.Beams.Beam.PatientSupportAngle =0;
             minField = Plan.Beams.RangeModulator.ModulatorOrigin;
             maxField = Plan.Beams.RangeModulator.ModulatorOrigin + Plan.Beams.RangeModulator.Modulator3DPixelSpacing .* size(Plan.Beams.RangeModulator.CEM3Dmask);
             Zdistal = Plan.Beams.RangeModulator.IsocenterToRangeModulatorDistance - Plan.Beams.RangeModulator.Modulator3DPixelSpacing(3) .* size(Plan.Beams.RangeModulator.CEM3Dmask,3);
             
+
+            Plan.CTinfo = [];
+
             %Create a high res CT scan
+            fprintf('Creating high resolution CT\n')
             pre_handles  = createHighResCT(pre_handles , air_CT_imageName , air_CT_imageName, Plan.Beams , Plan.Beams.RangeModulator.Modulator3DPixelSpacing , -1050 , minField , maxField , Zdistal , pre_air_CT_info);
-            [~, pre_handles] = setCEMinCT(pre_handles, Plan, air_CT_imageName);
+            fprintf('Adding CEM to high resolution CT\n')
+            pre_handles = setCEMinhrCT(pre_handles, Plan, air_CT_imageName, HUcem , HUair);
             
             %Rotate CT so that Z axis is paralell to spikes, i.e. paralell to Zg
             pre_handles.images.data{2} = permute(pre_handles.images.data{2},[1,3,2]);

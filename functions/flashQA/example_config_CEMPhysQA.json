@@ -1,0 +1,25 @@
+{
+ "files" : {
+  "scanCEF_path"      : "your_path_CEM_CT_scan_directory",
+  "ct_air_path"       : "your_path_empty_air_CT_directory(to_generate_reference_CEM_from_plan)",
+  "RS_plan_fileName"  : "your_path_TPS_plan_file(dcm)",
+  "BDL"               : "your_path_MCsquare_BDL_file(txt)",
+  "scanner_directory" : "your_path_MCsquare_scanner_directory",
+  "outputPath"        : "your_output_path_directory"
+ },
+
+ "ct_scan_operations" : {
+    "PSF_FWHM"      : 0.8,
+    "maskLowThres"  : -350,
+    "maskHighThres" : 1e6
+ },
+
+ "flags": {
+    "geomGammaIndexAnalysis"  : true,
+    "geom_dd"                 : 1,
+    "geom_DD"                 : 1,
+    "weplGammaIndexAnalysis"  : false,
+    "wepl_dd"                 : 0.5, 
+    "wepl_DD"                 : 1
+ }
+}
